@@ -3,3 +3,5 @@ node_modules
 out
 build
 public
+# Corrupt file — locked by VS Code. Replace with database.types.new.ts when unlocked.
+lib/supabase/types/database.types.ts
