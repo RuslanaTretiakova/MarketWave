@@ -5,7 +5,27 @@ import Link from 'next/link'
 import { Logo } from '@/components/layout/logo'
 import { SITE_TAGLINE } from '@/lib/brand'
 
-export function AuthSplitLayout({ children }: { children: ReactNode }) {
+type AuthSplitLayoutProps = {
+  children: ReactNode
+  /** `split` keeps the original marketing sidebar; `card` is a centered column (login / reset flows). */
+  variant?: 'split' | 'card'
+}
+
+export function AuthSplitLayout({ children, variant = 'card' }: AuthSplitLayoutProps) {
+  if (variant === 'card') {
+    return (
+      <div className="bg-muted/35 px-block py-layout flex min-h-screen flex-col items-center">
+        <div className="mb-layout w-full max-w-md shrink-0 text-center">
+          <Link href="/" className="inline-flex justify-center transition-opacity hover:opacity-90">
+            <Logo serifWordmark className="justify-center" />
+          </Link>
+          <p className="text-muted-foreground mt-inset text-sm leading-relaxed">{SITE_TAGLINE}</p>
+        </div>
+        <div className="w-full max-w-md flex-1">{children}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <div className="border-sidebar-border bg-sidebar text-sidebar-foreground lg:p-section md:p-layout relative hidden flex-col justify-between overflow-hidden border-b shadow-(--shadow-shell) md:flex md:w-[42%] md:border-r md:border-b-0">

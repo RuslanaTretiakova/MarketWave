@@ -33,7 +33,7 @@ Use the **Supabase CLI** (install globally or run via `npx supabase …`). Local
 
 ## DB Schema (quick ref)
 
-Tables: `profiles` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs`
+Tables: `profiles` · `auth_audit_log` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs` — there is **no** `public.users` table; identities are `auth.users` (Supabase) + `public.profiles` (app).
 
 Key rules baked into the DB (do not re-implement in app code):
 
@@ -57,7 +57,9 @@ Roles (stored in `profiles.role`, read via `public.get_my_role()`): `admin` · `
 ## Security
 
 - RLS is on every table — security is enforced at the DB level, not the app level
-- **Bootstrap sign-up:** `public.bootstrap_signup_allowed()` (SECURITY DEFINER) exposes whether `profiles` is empty—used for the first-admin gate. After the org exists, disable public sign-up in the Supabase Auth dashboard for defense in depth.
+- **Single admin:** One `profiles.role = 'admin'` row (partial unique index). Create that user in **Supabase Dashboard** with **User metadata** JSON: `{ "is_bootstrap_admin": true, "role": "admin", "full_name": "Your Name" }` so `handle_new_user` assigns admin and `require_password_change = false`. Everyone else is invited (`inviteUserByEmail`) from **Settings** in the app. `public.bootstrap_signup_allowed()` always returns `false` (RPC kept for compatibility); disable public sign-up in the Supabase Auth dashboard for defense in depth.
+- **First sign-in:** Invited users have `profiles.require_password_change = true` until they set a password; cleared only via **service role** (Server Action + `adminClient`), enforced by a DB trigger.
+- **Email links:** Set **`NEXT_PUBLIC_SITE_URL`** to your deployed origin so invite/reset `redirectTo` URLs match the Supabase redirect allow-list (see `.env.example`).
 - Clients cannot INSERT orders directly — only via Server Action with `adminClient`
 - Clients cannot change their own `role` (enforced by RLS WITH CHECK)
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client
@@ -67,9 +69,19 @@ Roles (stored in `profiles.role`, read via `public.get_my_role()`): `admin` · `
 All migrations live in `supabase/migrations/`. Never edit a migration that has been pushed to remote — create a new one with ALTER statements.
 
 ```bash
-npx supabase db reset      # rebuild local DB from scratch (or: supabase db reset)
-npx supabase db push       # deploy to remote (or: supabase db push)
+npx supabase db reset      # rebuild local DB from scratch (or: supabase db reset) — requires Docker; or: npm run db:reset
+npx supabase db push       # deploy to remote (or: supabase db push) — or: npm run db:push
 ```
+
+## Tailwind CSS (v4)
+
+Do **not** reintroduce patterns the linter flags in favor of built-in scale or v4 shorthand:
+
+- **CSS variables:** use `bg-(--my-token)`, `text-(--my-token)`, `from-(--my-token)`, etc. — **not** `bg-[var(--my-token)]` or `text-[var(--my-token)]`. For `hsl(var(--x))` channel tokens, prefer `bg-hsl-(--x)` (or a theme utility like `bg-foreground` when it maps to the same color).
+- **Theme colors:** prefer utilities such as `bg-cta`, `text-cta-foreground`, `bg-foreground`, `text-background`, `ring-offset-sidebar`, `shadow-soft` instead of arbitrary `[var(...)]` / `[hsl(var(...))]` when equivalent.
+- **Spacing / size:** prefer scale classes (`size-4.5`, `p-6`, etc.) — **not** arbitrary rem equivalents like `size-[1.125rem]` when a named step exists.
+
+Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above.
 
 ## Code style
 

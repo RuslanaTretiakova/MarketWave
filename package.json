@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:types": "node scripts/gen-db-types.mjs",
     "prepare": "husky"
   },
   "dependencies": {

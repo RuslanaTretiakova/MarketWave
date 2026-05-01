@@ -13,7 +13,7 @@ const links = [
 export function SiteFooter() {
   const y = new Date().getFullYear()
   return (
-    <footer className="border-border/70 py-layout mt-auto border-t bg-[var(--marketing-page-bg)]">
+    <footer className="border-border/70 py-layout mt-auto border-t bg-(--marketing-page-bg)">
       <div className="gap-layout px-block sm:px-section mx-auto flex max-w-6xl flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="gap-block flex flex-col">
           <Link href="/" className="inline-flex w-fit transition-opacity hover:opacity-90">
@@ -32,7 +32,7 @@ export function SiteFooter() {
           <Link
             href="/auth/login"
             className={cn(
-              'marketing-lift-hover inline-flex font-semibold text-[var(--marketing-teal-deep)]'
+              'marketing-lift-hover inline-flex font-semibold text-(--marketing-teal-deep)'
             )}
           >
             Log in →

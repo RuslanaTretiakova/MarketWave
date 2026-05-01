@@ -30,14 +30,14 @@ export function LandingRoles() {
   return (
     <section
       id="roles"
-      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-[var(--marketing-nav-h)] bg-[var(--marketing-page-bg)]"
+      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h) bg-(--marketing-page-bg)"
     >
       <div className="mx-auto max-w-6xl text-center">
-        <p className="mb-block font-mono text-xs font-semibold tracking-wide text-[var(--marketing-teal-accent)] uppercase">
+        <p className="mb-block font-mono text-xs font-semibold tracking-wide text-(--marketing-teal-accent) uppercase">
           / 03 — ROLES
         </p>
         <h2 className="marketing-heading text-foreground mx-auto max-w-3xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl md:text-[2.75rem]">
-          Five roles. <span className="text-[var(--marketing-teal-accent)]">One record.</span>
+          Five roles. <span className="text-(--marketing-teal-accent)">One record.</span>
           <span className="block">Zero confusion.</span>
         </h2>
         <p className="text-muted-foreground mt-layout mx-auto max-w-2xl font-sans text-base leading-relaxed">
@@ -45,14 +45,11 @@ export function LandingRoles() {
           by convention.
         </p>
 
-        <div
-          className="border-border/70 mt-layout overflow-hidden rounded-[28px] border bg-[var(--marketing-card)] text-left font-sans shadow-[var(--shadow-elevated)]"
-          style={{ boxShadow: 'var(--shadow-elevated)' }}
-        >
+        <div className="border-border/70 mt-layout shadow-soft overflow-hidden rounded-[28px] border bg-(--marketing-card) text-left font-sans">
           {roles.map((r) => (
             <div
               key={r.num}
-              className="border-border/60 marketing-lift-hover gap-inset px-section py-layout sm:gap-layout flex cursor-default flex-col border-b last:border-b-0 hover:bg-[var(--marketing-row-hover)] sm:flex-row sm:items-start"
+              className="border-border/60 marketing-lift-hover gap-inset px-section py-layout sm:gap-layout flex cursor-default flex-col border-b last:border-b-0 hover:bg-(--marketing-row-hover) sm:flex-row sm:items-start"
             >
               <span className="text-muted-foreground/80 w-8 shrink-0 pt-1 font-mono text-xs tabular-nums">
                 {r.num}

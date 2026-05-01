@@ -41,16 +41,15 @@ export function FeaturesGrid() {
   return (
     <section
       id="built-for-ops"
-      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-[var(--marketing-nav-h)]"
+      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h)"
     >
       <div className="gap-layout mx-auto grid max-w-6xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
         <header className="max-w-md">
-          <p className="mb-block font-mono text-xs font-semibold tracking-wide text-[var(--marketing-teal-accent)] uppercase">
+          <p className="text-primary mb-block font-mono text-xs font-semibold tracking-wide uppercase">
             / 01 — BUILT FOR OPS
           </p>
-          <h2 className="marketing-heading text-foreground text-3xl leading-tight font-semibold tracking-tight sm:text-4xl md:text-[2.75rem]">
-            Built for link-building{' '}
-            <span className="text-[var(--marketing-teal-accent)]">operations.</span>
+          <h2 className="font-display text-foreground text-3xl leading-[1.12] font-semibold tracking-tight sm:text-4xl md:text-[2.75rem]">
+            Built for link-building <span className="text-primary">operations.</span>
           </h2>
           <p className="text-muted-foreground mt-layout font-sans text-base leading-relaxed">
             Fewer handoffs, fewer mistakes, and a single source of truth your whole team — and
@@ -58,14 +57,11 @@ export function FeaturesGrid() {
           </p>
         </header>
 
-        <div
-          className="border-border/70 grid overflow-hidden rounded-[28px] border bg-[var(--marketing-card)] font-sans shadow-[var(--shadow-elevated)] sm:grid-cols-2"
-          style={{ boxShadow: 'var(--shadow-elevated)' }}
-        >
+        <div className="border-border/60 shadow-card grid overflow-hidden rounded-[28px] border bg-(--marketing-card) font-sans sm:grid-cols-2">
           {features.map((f, idx) => (
             <div
               key={f.title}
-              className="border-border/60 gap-block p-section relative flex flex-col border-r border-b [&:nth-child(2n)]:border-r-0 [&:nth-child(n+5)]:border-b-0"
+              className="border-border/60 gap-block p-section relative flex flex-col border-r border-b nth-[2n]:border-r-0 nth-[n+5]:border-b-0"
             >
               <div className="gap-block flex items-start justify-between">
                 <f.Icon className="text-primary size-5 shrink-0" aria-hidden />

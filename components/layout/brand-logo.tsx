@@ -19,7 +19,7 @@ export function BrandLogoMark({ className, tile = false }: BrandLogoMarkProps) {
     return (
       <span
         className={cn(
-          'inline-flex shrink-0 items-center justify-center rounded-[10px] bg-[var(--marketing-teal-deep)] p-2 shadow-sm',
+          'inline-flex shrink-0 items-center justify-center rounded-[10px] bg-(--marketing-teal-deep) p-2 shadow-sm',
           className
         )}
         aria-hidden
