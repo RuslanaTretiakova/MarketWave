@@ -79,7 +79,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error(
-      '[supabase/middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both to your deployment environment (e.g. Vercel → Settings → Environment Variables) and redeploy.'
+      '[supabase/proxy] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both to your deployment environment (e.g. Vercel → Settings → Environment Variables) and redeploy.'
     )
     return failureResponse(request)
   }
@@ -87,14 +87,14 @@ export async function updateSession(request: NextRequest) {
   try {
     new URL(supabaseUrl)
   } catch {
-    console.error('[supabase/middleware] NEXT_PUBLIC_SUPABASE_URL is not a valid absolute URL.')
+    console.error('[supabase/proxy] NEXT_PUBLIC_SUPABASE_URL is not a valid absolute URL.')
     return failureResponse(request)
   }
 
   try {
     return await refreshSession(request, supabaseUrl, supabaseAnonKey)
   } catch (err) {
-    console.error('[supabase/middleware] Session refresh failed:', err)
+    console.error('[supabase/proxy] Session refresh failed:', err)
     return failureResponse(request)
   }
 }
