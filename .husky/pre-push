@@ -1,1 +1,6 @@
-npm run lint && npx prettier --check .
+npm run format
+if ! git diff --quiet 2>/dev/null; then
+  git add -u
+  git commit -m "style: apply prettier" --no-verify
+fi
+npm run lint

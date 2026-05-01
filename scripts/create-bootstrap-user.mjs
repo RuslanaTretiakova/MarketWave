@@ -16,10 +16,7 @@ function loadDotEnv() {
       if (eq === -1) continue
       const k = trimmed.slice(0, eq).trim()
       let v = trimmed.slice(eq + 1).trim()
-      if (
-        (v.startsWith('"') && v.endsWith('"')) ||
-        (v.startsWith("'") && v.endsWith("'"))
-      ) {
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
         v = v.slice(1, -1)
       }
       if (!process.env[k]) process.env[k] = v
@@ -56,7 +53,9 @@ if (listErr) {
 
 const existing = listData?.users?.find((u) => u.email?.toLowerCase() === email)
 if (existing) {
-  console.error(`User already exists (id ${existing.id}). Use Dashboard to edit metadata or delete first.`)
+  console.error(
+    `User already exists (id ${existing.id}). Use Dashboard to edit metadata or delete first.`
+  )
   process.exit(1)
 }
 

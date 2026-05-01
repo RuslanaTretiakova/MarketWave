@@ -15,10 +15,7 @@ function loadDotEnv() {
       if (eq === -1) continue
       const k = trimmed.slice(0, eq).trim()
       let v = trimmed.slice(eq + 1).trim()
-      if (
-        (v.startsWith('"') && v.endsWith('"')) ||
-        (v.startsWith("'") && v.endsWith("'"))
-      ) {
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
         v = v.slice(1, -1)
       }
       if (!process.env[k]) process.env[k] = v
