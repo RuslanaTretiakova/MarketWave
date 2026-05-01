@@ -6,10 +6,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Stack
 
-- **Next.js 16** (App Router) · **React 19** · **TypeScript 5** strict
-- **Supabase** — Postgres + Auth + RLS (no backend framework)
-- **Tailwind CSS v4** + **shadcn/ui** (base-nova style, neutral palette)
+Pinned versions from `package.json` (keep in sync when upgrading):
+
+- **Next.js** 16.2.4 (App Router) · **React** 19.2.4 · **TypeScript** 5.x strict
+- **Supabase** — `@supabase/ssr` ^0.10.2 · `@supabase/supabase-js` ^2.105.1 — Postgres + Auth + RLS (no backend framework)
+- **Tailwind CSS** ^4 · **shadcn** ^4.6.0 (base-nova style via `components.json`)
 - **Path alias:** `@/` → project root
+- **Spacing (padding / gap):** `inset` · `block` · `section` · `layout` · `hero` · `hero-wide` — utilities like `p-inset`, `py-hero`; see [UI.md](UI.md) and `@theme` in [app/globals.css](app/globals.css).
 
 ## Supabase Clients — use the right one
 
@@ -19,11 +22,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | `lib/supabase/server.ts` | Server Components, most Server Actions                                                                       |
 | `lib/supabase/admin.ts`  | Server Actions that need to bypass RLS (order creation, privileged writes) — **never import in client code** |
 
-After any schema change regenerate types:
+After any schema change regenerate types. The app imports generated types from **`lib/supabase/types/database.types.new.ts`** (see `lib/supabase/types/index.ts`); `database.types.ts` in that folder is a placeholder—do not overwrite it with codegen.
 
 ```
-npx supabase gen types typescript --local > lib/supabase/types/database.types.ts
+npx supabase gen types typescript --local > lib/supabase/types/database.types.new.ts
 ```
+
+Use the **Supabase CLI** (install globally or run via `npx supabase …`). Local Postgres major version is **17** (`supabase/config.toml`); match remote when using `db push`.
 
 ## DB Schema (quick ref)
 
@@ -40,7 +45,7 @@ Key rules baked into the DB (do not re-implement in app code):
 
 Order status flow: `new → in_progress → content_sent → [content_approved | needs_changes] → published → completed` · also `new → canceled`
 
-Roles: `client` · `admin` · `moderator` (stored in `profiles.role`, read via `public.get_my_role()`)
+Roles (stored in `profiles.role`, read via `public.get_my_role()`): `admin` · `client` · `sourcer` · `manager` · `copywriter`
 
 ## Mutations — placement rules
 
@@ -51,6 +56,7 @@ Roles: `client` · `admin` · `moderator` (stored in `profiles.role`, read via `
 ## Security
 
 - RLS is on every table — security is enforced at the DB level, not the app level
+- **Bootstrap sign-up:** `public.bootstrap_signup_allowed()` (SECURITY DEFINER) exposes whether `profiles` is empty—used for the first-admin gate. After the org exists, disable public sign-up in the Supabase Auth dashboard for defense in depth.
 - Clients cannot INSERT orders directly — only via Server Action with `adminClient`
 - Clients cannot change their own `role` (enforced by RLS WITH CHECK)
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client
@@ -60,8 +66,8 @@ Roles: `client` · `admin` · `moderator` (stored in `profiles.role`, read via `
 All migrations live in `supabase/migrations/`. Never edit a migration that has been pushed to remote — create a new one with ALTER statements.
 
 ```bash
-supabase db reset          # rebuild local DB from scratch
-supabase db push           # deploy to remote
+npx supabase db reset      # rebuild local DB from scratch (or: supabase db reset)
+npx supabase db push       # deploy to remote (or: supabase db push)
 ```
 
 ## Code style

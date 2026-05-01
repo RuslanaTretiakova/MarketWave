@@ -477,6 +477,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_signup_allowed: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_my_role: {
         Args: never
         Returns: Database['public']['Enums']['user_role']
@@ -496,7 +500,7 @@ export type Database = {
         | 'completed'
         | 'canceled'
       site_status: 'active' | 'inactive' | 'pending_review'
-      user_role: 'client' | 'admin' | 'moderator'
+      user_role: 'client' | 'admin' | 'manager' | 'sourcer' | 'copywriter'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -604,7 +608,7 @@ export const Constants = {
         'canceled',
       ],
       site_status: ['active', 'inactive', 'pending_review'],
-      user_role: ['client', 'admin', 'moderator'],
+      user_role: ['client', 'admin', 'manager', 'sourcer', 'copywriter'],
     },
   },
 } as const

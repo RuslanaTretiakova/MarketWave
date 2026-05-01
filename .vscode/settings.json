@@ -1,5 +1,5 @@
 {
   "cSpell.words": ["supabase"],
   "mssql.lintingEnabled": false,
-  "extensions.ignoreRecommendations": false
+  "extensions.ignoreRecommendations": true
 }

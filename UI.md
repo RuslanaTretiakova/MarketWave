@@ -1,5 +1,7 @@
 # UI Description & Components
 
+**Tokens:** design CSS variables and `@theme` live in [app/globals.css](app/globals.css). Product name and tagline: [lib/brand.ts](lib/brand.ts).
+
 ## Design System
 
 ### Colors
@@ -15,10 +17,20 @@
 - **Base Font Size**: [TBD]
 - **Line Height**: [TBD]
 
-### Spacing
+### Spacing (padding / gap)
 
-- **Unit**: [TBD]
-- **Scale**: [TBD]
+Tailwind tokens from `@theme` in [globals.css](app/globals.css):
+
+| Token       | Value | Typical use                                                   |
+| ----------- | ----- | ------------------------------------------------------------- |
+| `inset`     | 8px   | Tight gaps (icon + label), small stacks, list rhythm          |
+| `block`     | 16px  | Page gutters, default card/header padding, form field spacing |
+| `section`   | 24px  | Denser sections, grids, roomy cards                           |
+| `layout`    | 32px  | Major section vertical padding, wide empty states             |
+| `hero`      | 64px  | Landing hero vertical padding (mobile)                        |
+| `hero-wide` | 80px  | Landing hero vertical padding (`sm+`)                         |
+
+Utilities: `p-inset`, `px-block`, `py-layout`, `gap-section`, `space-y-inset`, etc. Prefer these over raw `p-4` / `gap-3` in app UI so spacing stays on-scale.
 
 ---
 

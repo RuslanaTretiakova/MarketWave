@@ -3,75 +3,32 @@
 ## Overview
 
 - **Type**: PostgreSQL (via Supabase)
-- **Location**: `https://eygxneombxwczuvzrzyu.supabase.co`
-- **Access**: Through Supabase client or direct SQL
+- **Source of truth**: SQL migrations in [`supabase/migrations/`](supabase/migrations/)
+- **Access**: Supabase clients in [`lib/supabase/`](lib/supabase/) (see [AGENTS.md](AGENTS.md) for which client to use)
 
-## Tables
+Do not rely on this file for column-level detail when migrations disagree—**migrations always win**.
 
-### users
+## Public tables (quick ref)
 
-```sql
-CREATE TABLE public.users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  name TEXT,
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-  avatar_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+Same list as [AGENTS.md](AGENTS.md) DB quick ref:
 
-**Columns:**
+`profiles` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs`
 
-- `id` - UUID, primary key, auto-generated
-- `email` - Unique email address (required)
-- `name` - User's full name
-- `status` - 'active' or 'inactive' (default: 'active')
-- `avatar_url` - Profile picture URL
-- `created_at` - Creation timestamp (auto)
-- `updated_at` - Last modification timestamp (auto-updated)
+## Authentication (managed by Supabase)
 
-**Relationships:**
+- **`auth.users`** — identities and sessions (not defined in app migrations)
+- **`public.profiles`** — app profile row per user (`id` references `auth.users`)
 
-- Can be extended with profiles, posts, etc.
+Triggers create a profile (and related cart) when a new auth user is created—see migration `20260430000012_create_functions_triggers.sql`.
 
-**Indexes:**
+## Development notes
 
-- `idx_users_email` - Email lookup optimization
-
-**Triggers:**
-
-- `update_users_updated_at` - Auto-updates `updated_at` on every modification
-
-**Row Level Security (RLS):**
-
-- ✅ Enabled
-- Policy: Users can read all profiles
-- Policy: Users can update only their own profile
-
----
-
-## Authentication Tables (Managed by Supabase)
-
-- `auth.users` - User accounts
-- `auth.sessions` - Active sessions
-- `public.profiles` - User profiles (if applicable)
-
----
-
-## Development Notes
-
-- Use migrations for schema changes
-- Always test migrations locally first
-- Document breaking schema changes
-- Keep audit timestamps on important tables
+- Apply schema changes only via new migration files in `supabase/migrations/`
+- Test locally (`npx supabase db reset`) before pushing to remote
+- Regenerate TypeScript types after schema changes (command in [AGENTS.md](AGENTS.md))
 
 ---
 
 ### Update this file when:
 
-- Creating new tables
-- Adding/removing columns
-- Changing constraints or relationships
-- Creating indexes or triggers
+- You need a high-level summary of new domains; keep the definitive schema in migrations
