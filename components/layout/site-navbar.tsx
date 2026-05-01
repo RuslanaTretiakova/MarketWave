@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { SiteBrandLink } from '@/components/layout/site-brand-link'
 import { buttonVariants } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/server'
+import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 
 const nav = [
@@ -13,10 +13,10 @@ const nav = [
 ] as const
 
 export async function SiteNavbar() {
-  const supabase = await createClient()
+  const supabase = await createClientOrNull()
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
 
   return (
     <header className="border-border/60 sticky top-0 z-50 border-b bg-(--marketing-page-bg)/90 backdrop-blur-md">

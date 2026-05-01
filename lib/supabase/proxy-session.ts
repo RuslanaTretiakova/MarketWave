@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { isAuthPasswordCompletionPath, isAuthPublicPath } from '@/lib/auth/auth-paths'
 import { isAppProtectedPath } from '@/lib/app-protected-paths'
 import { safeReturnPath } from '@/lib/auth-redirect'
+import { tryGetPublicSupabaseEnv } from '@/lib/supabase/public-env'
 
 function failureResponse(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -110,29 +111,19 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
 }
 
 export async function updateSession(request: NextRequest) {
-  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const supabaseUrl = rawUrl?.trim()
-  const supabaseAnonKey = rawKey?.trim()
-
-  if (!supabaseUrl || !supabaseAnonKey) {
+  const env = tryGetPublicSupabaseEnv()
+  if (!env) {
     console.error(
-      '[supabase/proxy] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both to your deployment environment (e.g. Vercel → Settings → Environment Variables) and redeploy.'
+      '[supabase/middleware] Missing or invalid NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.'
     )
     return failureResponse(request)
   }
-
-  try {
-    new URL(supabaseUrl)
-  } catch {
-    console.error('[supabase/proxy] NEXT_PUBLIC_SUPABASE_URL is not a valid absolute URL.')
-    return failureResponse(request)
-  }
+  const { supabaseUrl, supabaseAnonKey } = env
 
   try {
     return await refreshSession(request, supabaseUrl, supabaseAnonKey)
   } catch (err) {
-    console.error('[supabase/proxy] Session refresh failed:', err)
+    console.error('[supabase/middleware] Session refresh failed:', err)
     return failureResponse(request)
   }
 }
