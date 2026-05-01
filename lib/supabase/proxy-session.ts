@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 import { isAppProtectedPath } from '@/lib/app-protected-paths'
 import { safeReturnPath } from '@/lib/auth-redirect'
-import { getPublicSupabaseEnv } from '@/lib/supabase/public-env'
+import { tryGetPublicSupabaseEnv } from '@/lib/supabase/public-env'
 
 function failureResponse(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -73,14 +73,14 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
 }
 
 export async function updateSession(request: NextRequest) {
-  let supabaseUrl: string
-  let supabaseAnonKey: string
-  try {
-    ;({ supabaseUrl, supabaseAnonKey } = getPublicSupabaseEnv())
-  } catch (err) {
-    console.error('[supabase/middleware]', err)
+  const env = tryGetPublicSupabaseEnv()
+  if (!env) {
+    console.error(
+      '[supabase/middleware] Missing or invalid NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    )
     return failureResponse(request)
   }
+  const { supabaseUrl, supabaseAnonKey } = env
 
   try {
     return await refreshSession(request, supabaseUrl, supabaseAnonKey)
