@@ -3,7 +3,7 @@ import 'server-only'
 import { appendFile } from 'node:fs/promises'
 import path from 'path'
 
-/** NDJSON to project root; enable with `DEBUG_AGENT_SESSION=6cb796` (dev or Node server only). */
+/** NDJSON to project root; enable with `DEBUG_AGENT_SESSION=6cb796`. After changing call sites, run `npm run build` before `next start` so `.next` includes this instrumentation. */
 export function agentDebugLog(entry: Record<string, unknown>) {
   if (process.env.DEBUG_AGENT_SESSION !== '6cb796') return
 

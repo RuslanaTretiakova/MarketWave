@@ -20,7 +20,15 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
+
+  agentDebugLog({
+    hypothesisId: 'H3',
+    location: 'app/(app)/layout.tsx:getUser',
+    hasUser: Boolean(user),
+    hasAuthError: Boolean(authError?.message),
+  })
 
   if (!user) {
     redirect('/auth/login')
