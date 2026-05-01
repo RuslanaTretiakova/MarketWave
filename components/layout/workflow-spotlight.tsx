@@ -15,12 +15,12 @@ const boardColumns = [
   },
   {
     title: 'In progress',
-    badgeClass: 'bg-[var(--marketing-teal-deep)] text-white',
+    badgeClass: 'bg-(--marketing-teal-deep) text-white',
     items: ['Order #1039'],
   },
   {
     title: 'Review',
-    badgeClass: 'bg-[var(--marketing-yellow-underline)] text-[var(--marketing-teal-deep)]',
+    badgeClass: 'bg-(--marketing-yellow-underline) text-(--marketing-teal-deep)',
     items: ['Order #1037'],
   },
   {
@@ -30,7 +30,7 @@ const boardColumns = [
   },
   {
     title: 'Paid',
-    badgeClass: 'bg-[var(--cta)] text-[var(--cta-foreground)]',
+    badgeClass: 'bg-cta text-cta-foreground',
     items: ['Order #1030'],
   },
 ] as const
@@ -39,7 +39,7 @@ export function WorkflowSpotlight() {
   return (
     <section
       id="workflow"
-      className="marketing-section-screen marketing-grid-dark px-block py-layout sm:px-section scroll-mt-[var(--marketing-nav-h)] bg-[var(--marketing-flow-dark)] text-[#e8eef4]"
+      className="marketing-section-screen marketing-grid-dark px-block py-layout sm:px-section bg-hsl-(--marketing-flow-dark) scroll-mt-(--marketing-nav-h) text-[#e8eef4]"
     >
       <div className="mx-auto max-w-6xl">
         <div className="gap-layout lg:grid lg:grid-cols-[1fr_1fr] lg:items-end">
@@ -68,7 +68,7 @@ export function WorkflowSpotlight() {
                 <div className="mb-block relative z-1 flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#2a3138] bg-white shadow-sm">
                   <span className="text-foreground font-sans text-lg font-bold">{i + 1}</span>
                   <span
-                    className="absolute -right-1 -bottom-1 size-2 rounded-full bg-[var(--cta)]"
+                    className="bg-cta absolute -right-1 -bottom-1 size-2 rounded-full"
                     aria-hidden
                   />
                 </div>
@@ -86,7 +86,7 @@ export function WorkflowSpotlight() {
               Status board · live
             </p>
             <p className="gap-inset flex items-center text-[11px] font-medium text-[#9ca8b8]">
-              <span className="size-2 shrink-0 rounded-full bg-[var(--cta)]" aria-hidden />
+              <span className="bg-cta size-2 shrink-0 rounded-full" aria-hidden />
               synced
             </p>
           </div>

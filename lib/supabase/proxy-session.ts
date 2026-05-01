@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 
+import { isAuthPasswordCompletionPath, isAuthPublicPath } from '@/lib/auth/auth-paths'
 import { isAppProtectedPath } from '@/lib/app-protected-paths'
 import { safeReturnPath } from '@/lib/auth-redirect'
 import { tryGetPublicSupabaseEnv } from '@/lib/supabase/public-env'
@@ -32,7 +33,6 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     },
   })
 
-  // Refresh session — do not remove, required for server-side auth to work
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -40,22 +40,39 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
   const pathname = request.nextUrl.pathname
 
   if (pathname === '/auth/sign-up') {
-    const { data, error } = await supabase.rpc('bootstrap_signup_allowed')
-    if (!error && data === false) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  let requirePasswordChange = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('require_password_change')
+      .eq('id', user.id)
+      .maybeSingle()
+    requirePasswordChange = profile?.require_password_change ?? false
+  }
+
+  if (user && requirePasswordChange) {
+    if (!isAuthPasswordCompletionPath(pathname)) {
       const url = request.nextUrl.clone()
-      url.pathname = '/auth/login'
+      url.pathname = '/auth/first-login-password'
+      url.search = ''
       return NextResponse.redirect(url)
     }
   }
 
-  if (user && pathname === '/auth/login') {
+  if (user && !requirePasswordChange && pathname === '/auth/login') {
     const url = request.nextUrl.clone()
     url.pathname = safeReturnPath(request.nextUrl.searchParams.get('next'))
     url.search = ''
     return NextResponse.redirect(url)
   }
 
-  if (user && pathname === '/auth/sign-up') {
+  if (user && !requirePasswordChange && pathname === '/auth/first-login-password') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     url.search = ''
@@ -67,6 +84,27 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     url.pathname = '/auth/login'
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
+  }
+
+  if (
+    !user &&
+    !isAuthPublicPath(pathname) &&
+    (pathname === '/auth/first-login-password' ||
+      pathname.startsWith('/auth/first-login-password/') ||
+      pathname === '/auth/update-password' ||
+      pathname.startsWith('/auth/update-password/'))
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAppProtectedPath(pathname)) {
+    supabaseResponse.headers.set(
+      'Cache-Control',
+      'private, no-store, no-cache, must-revalidate, max-age=0'
+    )
   }
 
   return supabaseResponse

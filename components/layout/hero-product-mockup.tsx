@@ -18,10 +18,7 @@ export function HeroProductMockup() {
   return (
     <div className="relative mx-auto min-h-[440px] w-full max-w-xl lg:min-h-[500px]">
       {/* Floating detail */}
-      <div
-        className="border-border/80 p-block absolute top-[6%] left-[4%] z-20 max-w-[200px] rounded-2xl border bg-[var(--marketing-card)] md:left-[8%]"
-        style={{ boxShadow: 'var(--shadow-elevated)' }}
-      >
+      <div className="border-border/80 p-block shadow-soft absolute top-[6%] left-[4%] z-20 max-w-[200px] rounded-2xl border bg-(--marketing-card) md:left-[8%]">
         <div className="gap-inset mb-inset flex items-start justify-between">
           <div>
             <p className="text-foreground font-sans text-[11px] font-semibold">ORDER #1042</p>
@@ -35,17 +32,14 @@ export function HeroProductMockup() {
               outreachhq.com
             </p>
           </div>
-          <span className="px-inset rounded-md bg-[var(--marketing-yellow-underline)] py-0.5 font-sans text-[9px] font-bold text-[var(--marketing-teal-deep)]">
+          <span className="px-inset rounded-md bg-(--marketing-yellow-underline) py-0.5 font-sans text-[9px] font-bold text-(--marketing-teal-deep)">
             NEW
           </span>
         </div>
       </div>
 
       {/* Floating assignee */}
-      <div
-        className="border-border/80 p-block absolute right-[2%] bottom-[18%] z-20 max-w-[180px] rounded-2xl border bg-[var(--marketing-card)] md:right-[6%]"
-        style={{ boxShadow: 'var(--shadow-elevated)' }}
-      >
+      <div className="border-border/80 p-block shadow-soft absolute right-[2%] bottom-[18%] z-20 max-w-[180px] rounded-2xl border bg-(--marketing-card) md:right-[6%]">
         <p className="text-muted-foreground mb-inset font-sans text-[9px] font-semibold tracking-wider uppercase">
           Assigned
         </p>
@@ -61,10 +55,7 @@ export function HeroProductMockup() {
       </div>
 
       {/* Main card */}
-      <div
-        className="border-border/70 mt-layout relative z-10 mx-auto max-w-[340px] rounded-[20px] border bg-[var(--marketing-card)] sm:mt-0 sm:max-w-none md:mx-0"
-        style={{ boxShadow: 'var(--shadow-elevated)' }}
-      >
+      <div className="border-border/70 mt-layout shadow-soft relative z-10 mx-auto max-w-[340px] rounded-[20px] border bg-(--marketing-card) sm:mt-0 sm:max-w-none md:mx-0">
         <div className="border-border/60 gap-y-inset px-section py-block flex flex-wrap items-center border-b">
           {stages.map((s, i) => (
             <div key={s} className="flex min-w-0 flex-1 items-center">
@@ -80,7 +71,7 @@ export function HeroProductMockup() {
               <p className="text-foreground text-xs font-semibold">ORDER #1839</p>
               <p className="text-muted-foreground text-[11px]">Resource page · DA 71</p>
             </div>
-            <span className="px-block py-inset rounded-full bg-[var(--marketing-teal-deep)] text-[10px] font-semibold text-white">
+            <span className="px-block py-inset rounded-full bg-(--marketing-teal-deep) text-[10px] font-semibold text-white">
               IN PROGRESS
             </span>
           </div>
@@ -89,7 +80,7 @@ export function HeroProductMockup() {
               <p className="text-foreground text-xs font-semibold">ORDER #1837</p>
               <p className="text-muted-foreground text-[11px]">Niche edit · DA 54</p>
             </div>
-            <span className="px-block py-inset rounded-full bg-[var(--marketing-yellow-underline)] text-[10px] font-semibold text-[var(--marketing-teal-deep)]">
+            <span className="px-block py-inset rounded-full bg-(--marketing-yellow-underline) text-[10px] font-semibold text-(--marketing-teal-deep)">
               REVIEW
             </span>
           </div>
@@ -105,10 +96,12 @@ export function HeroProductMockup() {
         </div>
 
         <div className="bg-foreground text-background gap-inset px-section py-block flex flex-wrap items-center justify-between rounded-b-[18px]">
-          <p className="font-sans text-[10px] font-semibold tracking-wide uppercase opacity-90">
-            Invoice · April · $12,840 archived
+          <p className="font-sans text-[10px] font-semibold tracking-wide uppercase opacity-95">
+            <span className="opacity-80">Invoice · April ·</span>{' '}
+            <span className="text-background font-bold">$12,840</span>{' '}
+            <span className="opacity-80">archived</span>
           </p>
-          <span className="px-block py-inset rounded-full bg-[var(--cta)] text-[10px] font-bold text-[var(--cta-foreground)]">
+          <span className="px-block py-inset bg-cta text-cta-foreground rounded-full text-[10px] font-bold shadow-sm">
             PAID
           </span>
         </div>

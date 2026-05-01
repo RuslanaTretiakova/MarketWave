@@ -19,7 +19,7 @@ export async function SiteNavbar() {
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
 
   return (
-    <header className="border-border/60 sticky top-0 z-50 border-b bg-[var(--marketing-page-bg)]/90 backdrop-blur-md">
+    <header className="border-border/60 sticky top-0 z-50 border-b bg-(--marketing-page-bg)/90 backdrop-blur-md">
       <div className="gap-block px-block sm:px-section mx-auto flex h-[60px] max-w-6xl items-center justify-between">
         <SiteBrandLink />
         <nav

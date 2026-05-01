@@ -4,54 +4,66 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─── Tailwind v4 theme (maps Lovable-style HSL channels → utilities) ───────── */
 @theme inline {
-  /* Design-system padding/gap: use only these steps (8 · 16 · 24 · 32 px). */
   --spacing-inset: 8px;
   --spacing-block: 16px;
   --spacing-section: 24px;
   --spacing-layout: 32px;
-  /* Landing hero: extra vertical space (multiples of the base scale). */
   --spacing-hero: 64px;
   --spacing-hero-wide: 80px;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-playfair), ui-serif, Georgia, 'Times New Roman', serif;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-cta: var(--cta);
-  --color-cta-foreground: var(--cta-foreground);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), ui-monospace, monospace;
+  --font-heading: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-soft: hsl(var(--primary-soft));
+  --color-primary-ink: hsl(var(--primary-ink));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-soft: hsl(var(--accent-soft));
+  --color-highlight: hsl(var(--highlight));
+  --color-highlight-foreground: hsl(var(--highlight-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-cta: hsl(var(--cta));
+  --color-cta-foreground: hsl(var(--cta-foreground));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --color-sidebar-item-active: hsl(var(--sidebar-item-active));
+  --color-app-shell-canvas: hsl(var(--app-shell-canvas));
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -61,113 +73,187 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ─── MarketWeave / Lovable — editorial calm (HSL channels, no hsl() wrapper) ─── */
 :root {
-  /* MarketWeave palette — light */
-  --background: #fbf9f4;
-  --foreground: #0b1220;
-  --card: #f4f6f8;
-  --card-foreground: #0b1220;
-  --popover: #f4f6f8;
-  --popover-foreground: #0b1220;
-  --primary: #0f9d8e;
-  --primary-foreground: #fbfdff;
-  --secondary: #e8eef2;
-  --secondary-foreground: #0b1220;
-  --muted: #f0f4f7;
-  --muted-foreground: #4a5568;
-  --accent: #f2c94c;
-  --accent-foreground: #0b1220;
-  --destructive: #ef4444;
-  --border: #d8e0e8;
-  --input: #d8e0e8;
-  --ring: #0f9d8e;
-  --cta: #ff6b35;
-  --cta-foreground: #fbfdff;
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --chart-1: #0f9d8e;
-  --chart-2: #4a5568;
-  --chart-3: #0b1220;
-  --chart-4: #f2c94c;
-  --chart-5: #ff6b35;
-  --radius: 0.625rem;
-  --sidebar: #f4f6f8;
-  --sidebar-foreground: #0b1220;
-  --sidebar-primary: #0f9d8e;
-  --sidebar-primary-foreground: #fbfdff;
-  --sidebar-accent: #f0f4f7;
-  --sidebar-accent-foreground: #0b1220;
-  --sidebar-border: #d8e0e8;
-  --sidebar-ring: #0f9d8e;
-  /* Shell chrome — sidebar / floating surfaces */
-  --shadow-shell: 0 1px 0 rgb(11 18 32 / 0.06), 0 12px 40px rgb(11 18 32 / 0.06);
+  --background: 40 33% 97%;
+  --foreground: 200 30% 10%;
 
-  /* Marketing landing (cream grid aesthetic) */
-  --marketing-page-bg: #f9f9f8;
-  --marketing-card: #ffffff;
-  --marketing-teal-deep: #1b4332;
-  --marketing-teal-accent: #2d5a54;
-  --marketing-yellow-underline: #fee440;
-  --marketing-grid-line: rgb(11 18 32 / 0.055);
+  --card: 0 0% 100%;
+  --card-foreground: 200 30% 10%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 200 30% 10%;
+
+  --primary: 172 60% 32%;
+  --primary-foreground: 40 33% 97%;
+  --primary-soft: 172 45% 92%;
+  --primary-ink: 172 70% 18%;
+
+  --accent: 18 92% 58%;
+  --accent-foreground: 0 0% 100%;
+  --accent-soft: 28 95% 94%;
+
+  --secondary: 40 25% 93%;
+  --secondary-foreground: 200 30% 12%;
+
+  --muted: 40 20% 94%;
+  --muted-foreground: 200 12% 38%;
+
+  --highlight: 45 95% 65%;
+  --highlight-foreground: 200 40% 12%;
+
+  --destructive: 0 75% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 200 15% 88%;
+  --input: 200 15% 88%;
+  --ring: 172 60% 32%;
+
+  --radius: 0.85rem;
+
+  --cta: 18 92% 58%;
+  --cta-foreground: 0 0% 100%;
+
+  --success: 142 71% 36%;
+  --warning: 38 92% 50%;
+
+  --chart-1: 172 60% 32%;
+  --chart-2: 200 12% 38%;
+  --chart-3: 200 30% 10%;
+  --chart-4: 45 95% 65%;
+  --chart-5: 18 92% 58%;
+
+  --gradient-paper:
+    radial-gradient(1200px 600px at 80% -10%, hsl(var(--primary-soft) / 0.7), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, hsl(var(--accent-soft) / 0.6), transparent 55%),
+    linear-gradient(180deg, hsl(var(--background)), hsl(40 30% 95%));
+
+  --gradient-ink: linear-gradient(135deg, hsl(var(--primary-ink)), hsl(var(--primary)));
+  --gradient-accent: linear-gradient(135deg, hsl(18 95% 62%), hsl(12 90% 52%));
+
+  --shadow-soft: 0 1px 0 hsl(var(--foreground) / 0.04), 0 12px 40px -18px hsl(200 50% 20% / 0.18);
+  --shadow-card: 0 1px 0 hsl(var(--foreground) / 0.04), 0 24px 60px -32px hsl(172 60% 20% / 0.35);
+  --shadow-accent: 0 14px 30px -12px hsl(18 92% 50% / 0.55);
+
+  --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* App shell — ink rail + cream canvas (aligned with landing mock) */
+  --app-shell-canvas: 40 28% 96%;
+  --sidebar: 200 28% 8%;
+  --sidebar-foreground: 210 25% 96%;
+  --sidebar-primary: 172 55% 48%;
+  --sidebar-primary-foreground: 200 35% 7%;
+  --sidebar-accent: 200 22% 14%;
+  --sidebar-accent-foreground: 40 28% 97%;
+  --sidebar-border: 200 18% 18%;
+  --sidebar-ring: 172 55% 48%;
+  --sidebar-item-active: 200 16% 17%;
+
+  --shadow-shell: 4px 0 32px hsl(var(--foreground) / 0.12);
+
+  /* Marketing (references semantic tokens where possible) */
+  --marketing-page-bg: hsl(var(--background));
+  --marketing-card: hsl(var(--card));
+  --marketing-teal-deep: hsl(var(--primary-ink));
+  --marketing-teal-accent: hsl(172 50% 28%);
+  --marketing-yellow-underline: hsl(var(--highlight));
+  --marketing-grid-line: hsl(var(--foreground) / 0.055);
   --marketing-grid-line-dark: rgb(255 255 255 / 0.06);
-  --marketing-row-hover: color-mix(in oklab, var(--primary) 14%, white);
-  --marketing-row-hover-border: color-mix(in oklab, var(--primary) 22%, transparent);
-  --shadow-elevated: 0 10px 30px rgb(0 0 0 / 0.05);
-  --marketing-flow-dark: #0b0e11;
-  --marketing-mint-panel: #ebf5f3;
-  --marketing-welcome-title: #1b4332;
-  --font-marketing-serif: var(--font-playfair), 'Georgia', 'Times New Roman', serif;
+  --marketing-row-hover: color-mix(in oklab, hsl(var(--primary)) 14%, white);
+  --marketing-row-hover-border: color-mix(in oklab, hsl(var(--primary)) 22%, transparent);
+  --shadow-elevated: var(--shadow-soft);
+  --marketing-flow-dark: 200 30% 7%;
+  --marketing-mint-panel: hsl(var(--primary-soft));
+  --marketing-welcome-title: hsl(var(--primary-ink));
+  --font-marketing-serif: var(--font-fraunces), 'Georgia', 'Times New Roman', serif;
   --marketing-nav-h: 60px;
 }
 
 .dark {
-  --background: #07121a;
-  --foreground: #e8eef4;
-  --card: #101c26;
-  --card-foreground: #e8eef4;
-  --popover: #101c26;
-  --popover-foreground: #e8eef4;
-  --primary: #4fd1c5;
-  --primary-foreground: #07121a;
-  --secondary: #1a2832;
-  --secondary-foreground: #e8eef4;
-  --muted: #1a2832;
-  --muted-foreground: #9ca8b8;
-  --accent: #f2c94c;
-  --accent-foreground: #0b1220;
-  --destructive: #ef4444;
-  --border: #2a3d4d;
-  --input: #2a3d4d;
-  --ring: #4fd1c5;
-  --cta: #ff8a5b;
-  --cta-foreground: #07121a;
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --chart-1: #4fd1c5;
-  --chart-2: #9ca8b8;
-  --chart-3: #e8eef4;
-  --chart-4: #f2c94c;
-  --chart-5: #ff8a5b;
-  --sidebar: #101c26;
-  --sidebar-foreground: #e8eef4;
-  --sidebar-primary: #4fd1c5;
-  --sidebar-primary-foreground: #07121a;
-  --sidebar-accent: #1a2832;
-  --sidebar-accent-foreground: #e8eef4;
-  --sidebar-border: #2a3d4d;
-  --sidebar-ring: #4fd1c5;
-  --shadow-shell: 0 1px 0 rgb(0 0 0 / 0.35), 0 16px 48px rgb(0 0 0 / 0.35);
+  --background: 200 35% 7%;
+  --foreground: 40 30% 96%;
+
+  --card: 200 30% 9%;
+  --card-foreground: 40 30% 96%;
+
+  --popover: 200 30% 9%;
+  --popover-foreground: 40 30% 96%;
+
+  --primary: 172 60% 45%;
+  --primary-foreground: 200 35% 7%;
+  --primary-soft: 172 40% 18%;
+  --primary-ink: 172 70% 75%;
+
+  --accent: 18 92% 60%;
+  --accent-foreground: 0 0% 100%;
+  --accent-soft: 18 50% 18%;
+
+  --secondary: 200 25% 14%;
+  --secondary-foreground: 40 30% 96%;
+
+  --muted: 200 25% 14%;
+  --muted-foreground: 200 10% 65%;
+
+  --highlight: 45 90% 60%;
+  --highlight-foreground: 200 40% 8%;
+
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 200 25% 18%;
+  --input: 200 25% 18%;
+  --ring: 172 60% 45%;
+
+  --cta: 18 92% 60%;
+  --cta-foreground: 0 0% 100%;
+
+  --chart-1: 172 60% 45%;
+  --chart-2: 200 10% 65%;
+  --chart-3: 40 30% 96%;
+  --chart-4: 45 90% 60%;
+  --chart-5: 18 92% 60%;
+
+  --sidebar: 200 30% 9%;
+  --sidebar-foreground: 40 30% 96%;
+  --sidebar-primary: 172 55% 52%;
+  --sidebar-primary-foreground: 200 35% 7%;
+  --sidebar-accent: 200 22% 14%;
+  --sidebar-accent-foreground: 40 28% 97%;
+  --sidebar-border: 200 25% 18%;
+  --sidebar-ring: 172 55% 52%;
+  --sidebar-item-active: 200 20% 13%;
+
+  --app-shell-canvas: 200 32% 9%;
+
+  --shadow-shell: 0 1px 0 hsl(0 0% 0% / 0.35), 0 16px 48px hsl(0 0% 0% / 0.35);
+
+  --marketing-page-bg: hsl(var(--background));
+  --marketing-card: hsl(var(--card));
+  --marketing-teal-deep: hsl(var(--primary));
+  --marketing-grid-line: rgb(255 255 255 / 0.06);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
-    @apply font-sans;
+    @apply font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply text-foreground;
+    background-color: hsl(var(--background));
+    background-image: var(--gradient-paper);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.85);
+    color: hsl(var(--accent-foreground));
   }
 }
 
@@ -177,6 +263,28 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
   }
 }
 
@@ -216,8 +324,8 @@
     box-decoration-break: clone;
     background: linear-gradient(
       transparent 62%,
-      color-mix(in oklab, var(--marketing-yellow-underline) 92%, transparent) 62%,
-      color-mix(in oklab, var(--marketing-yellow-underline) 92%, transparent) 88%,
+      color-mix(in oklab, hsl(var(--highlight)) 92%, transparent) 62%,
+      color-mix(in oklab, hsl(var(--highlight)) 92%, transparent) 88%,
       transparent 88%
     );
   }
@@ -258,10 +366,63 @@
   }
 
   .font-display {
-    font-family: var(--font-marketing-serif);
+    font-family: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
   }
 
-  /** One viewport below sticky marketing nav ([SiteNavbar] uses h-[60px]) */
+  .font-mono-ui {
+    font-family: var(--font-roboto-mono), ui-monospace, monospace;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .bg-gradient-ink {
+    background-image: var(--gradient-ink);
+  }
+
+  .bg-gradient-accent {
+    background-image: var(--gradient-accent);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-accent {
+    box-shadow: var(--shadow-accent);
+  }
+
+  .grid-paper {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+  }
+
+  .marquee-track {
+    animation: marketing-marquee 38s linear infinite;
+  }
+
+  .animate-float {
+    animation: float-y 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-dot {
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+
   .marketing-section-screen {
     box-sizing: border-box;
     min-height: calc(100svh - var(--marketing-nav-h));

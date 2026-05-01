@@ -11,6 +11,8 @@ type SiteBrandLinkProps = {
   hideLogo?: boolean
   /** Applied to the [`Logo`] root (e.g. sidebar token overrides). */
   logoClassName?: string
+  /** Icon-only logo (collapsed sidebar). */
+  logoCompact?: boolean
 }
 
 /** Home link with full logo or text-only wordmark. */
@@ -19,6 +21,7 @@ export function SiteBrandLink({
   className,
   hideLogo = false,
   logoClassName,
+  logoCompact = false,
 }: SiteBrandLinkProps) {
   return (
     <Link
@@ -30,7 +33,7 @@ export function SiteBrandLink({
           {SITE_NAME}
         </span>
       ) : (
-        <Logo className={logoClassName} />
+        <Logo className={logoClassName} compact={logoCompact} />
       )}
     </Link>
   )

@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reset password</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 24px;
+      background-color: #fbf9f4;
+      font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+      color: #0b1220;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      style="max-width: 520px; margin: 0 auto"
+    >
+      <tr>
+        <td
+          style="padding: 24px; background: #ffffff; border-radius: 12px; border: 1px solid #d8e0e8"
+        >
+          <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #1b4332">
+            MarketWeave
+          </p>
+          <h1
+            style="
+              margin: 0 0 16px;
+              font-size: 22px;
+              line-height: 1.25;
+              font-family: Georgia, 'Times New Roman', serif;
+            "
+          >
+            Reset your password
+          </h1>
+          <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.55; color: #4a5568">
+            We received a request to reset the password for this account. If you did not request
+            this, you can ignore this email.
+          </p>
+          <p style="margin: 0 0 24px">
+            <a
+              href="{{ .ConfirmationURL }}"
+              style="
+                display: inline-block;
+                padding: 12px 28px;
+                background-color: #ff6b35;
+                color: #fbfdff;
+                text-decoration: none;
+                border-radius: 999px;
+                font-weight: 600;
+                font-size: 15px;
+              "
+              >Set new password</a
+            >
+          </p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #4a5568">
+            If the button does not work, paste this URL into your browser:<br />
+            <span style="word-break: break-all; color: #0b1220">{{ .ConfirmationURL }}</span>
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 8px 0; font-size: 12px; color: #4a5568; text-align: center">
+          Sent from {{ .SiteURL }} · Do not share this email.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

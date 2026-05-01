@@ -7,6 +7,10 @@ import { createClientOrNull } from '@/lib/supabase/server'
 // Auth + cookies — must not be statically prerendered at build time (CI may omit Supabase env).
 export const dynamic = 'force-dynamic'
 
+/** Never cache authenticated shell HTML; logged-out users must not reuse stale RSC payloads. */
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+
 export default async function AppGroupLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClientOrNull()
   if (!supabase) {
@@ -32,6 +36,16 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
 
   if (!user) {
     redirect('/auth/login')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('require_password_change')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile?.require_password_change) {
+    redirect('/auth/first-login-password')
   }
 
   return <AppShell userEmail={user.email ?? ''}>{children}</AppShell>

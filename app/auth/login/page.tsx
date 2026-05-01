@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 import { LoginForm } from '@/components/login-form'
 import { buttonVariants } from '@/components/ui/button'
@@ -6,7 +7,7 @@ import { SITE_NAME } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 
 export const metadata = {
-  title: 'Log in',
+  title: 'Sign in',
 }
 
 type LoginPageProps = {
@@ -18,12 +19,20 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-md">
-      <h1 className="text-foreground text-2xl font-semibold tracking-tight">Log in</h1>
+      <h1 className="marketing-heading text-foreground text-2xl font-semibold tracking-tight">
+        Sign in
+      </h1>
       <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-        {SITE_NAME} — sign in with your work email to open the ops dashboard.
+        Welcome back to {SITE_NAME}
       </p>
       <div className="border-border bg-card ring-foreground/10 mt-layout p-section rounded-xl border shadow-sm ring-1">
-        <LoginForm redirectTo={next} />
+        <Suspense
+          fallback={
+            <p className="text-muted-foreground text-center text-sm leading-relaxed">Loading…</p>
+          }
+        >
+          <LoginForm redirectTo={next} />
+        </Suspense>
       </div>
       <Link
         href="/"

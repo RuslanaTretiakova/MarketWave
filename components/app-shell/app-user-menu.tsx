@@ -1,7 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +13,14 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 export function AppUserMenu({ email }: { email: string }) {
-  const router = useRouter()
-
   async function signOut() {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.refresh()
-    router.push('/')
+    try {
+      await supabase.auth.signOut()
+    } finally {
+      // Full navigation clears client state and avoids serving cached dashboard after cookies are gone.
+      window.location.assign('/auth/login')
+    }
   }
 
   return (

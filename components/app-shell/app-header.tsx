@@ -23,7 +23,7 @@ export function AppHeader({ userEmail }: { userEmail: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="border-border bg-background/95 gap-block px-block md:px-layout sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b backdrop-blur-md">
+    <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b backdrop-blur-md">
       <div className="gap-block flex min-w-0 flex-1 items-center">
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger
@@ -36,7 +36,7 @@ export function AppHeader({ userEmail }: { userEmail: string }) {
           <SheetContent
             side="left"
             showCloseButton
-            className="border-sidebar-border bg-sidebar text-sidebar-foreground w-72 gap-0 border-r p-0"
+            className="border-sidebar-border bg-sidebar text-sidebar-foreground w-72 gap-0 border-r p-0 shadow-(--shadow-shell)"
           >
             <SheetHeader className="border-sidebar-border px-block py-block border-b text-left">
               <SheetTitle className="text-sidebar-foreground font-heading text-base font-semibold">
