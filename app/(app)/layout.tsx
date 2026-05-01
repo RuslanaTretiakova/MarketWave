@@ -5,9 +5,7 @@ import { agentDebugLog } from '@/lib/agent-debug-log.server'
 import { createClientOrNull } from '@/lib/supabase/server'
 
 // Auth + cookies — must not be statically prerendered at build time (CI may omit Supabase env).
-export const dynamic = 'force-dynamic'
-
-/** Never cache authenticated shell HTML; logged-out users must not reuse stale RSC payloads. */
+// Never cache authenticated shell HTML; logged-out users must not reuse stale RSC payloads.
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
