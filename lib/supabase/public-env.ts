@@ -8,7 +8,7 @@ export function getPublicSupabaseEnv(): { supabaseUrl: string; supabaseAnonKey: 
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both to your environment (e.g. .env.local) and restart the dev server.'
+      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both for every environment (e.g. .env.local locally, Vercel → Project → Settings → Environment Variables for production) and rebuild.'
     )
   }
 

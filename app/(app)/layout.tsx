@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { createClient } from '@/lib/supabase/server'
 
+// Auth + cookies — must not be statically prerendered at build time (CI may omit Supabase env).
+export const dynamic = 'force-dynamic'
+
 export default async function AppGroupLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const {
