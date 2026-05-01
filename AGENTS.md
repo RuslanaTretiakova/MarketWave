@@ -9,6 +9,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Pinned versions from `package.json` (keep in sync when upgrading):
 
 - **Next.js** 16.2.4 (App Router) · **React** 19.2.4 · **TypeScript** 5.x strict
+- **Routing proxy:** root [`proxy.ts`](proxy.ts) (Next 16 file convention); Supabase session + auth gates live in [`lib/supabase/proxy-session.ts`](lib/supabase/proxy-session.ts) — do not add root `middleware.ts`
 - **Supabase** — `@supabase/ssr` ^0.10.2 · `@supabase/supabase-js` ^2.105.1 — Postgres + Auth + RLS (no backend framework)
 - **Tailwind CSS** ^4 · **shadcn** ^4.6.0 (base-nova style via `components.json`)
 - **Path alias:** `@/` → project root
