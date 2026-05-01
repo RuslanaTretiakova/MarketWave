@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Excluded until database.types.ts is unlocked and replaced — see database.types.new.ts
+    'lib/supabase/types/database.types.ts',
   ]),
 ])
 

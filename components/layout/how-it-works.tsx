@@ -1,0 +1,80 @@
+import { Crown, Mail } from 'lucide-react'
+
+const steps = ['Step 01 — Sign up', 'Step 02 — Configure', 'Step 03 — Invite'] as const
+
+export function HowItWorks() {
+  return (
+    <section
+      id="access"
+      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-[var(--marketing-nav-h)]"
+    >
+      <div className="gap-layout mx-auto grid max-w-6xl lg:grid-cols-2">
+        {/* Light card */}
+        <div
+          className="border-border/70 p-section lg:p-layout flex flex-col rounded-[28px] border bg-[var(--marketing-card)]"
+          style={{ boxShadow: 'var(--shadow-elevated)' }}
+        >
+          <div className="bg-primary/15 mb-layout gap-inset px-block py-inset inline-flex w-fit items-center rounded-full font-sans text-xs font-semibold text-[var(--marketing-teal-deep)]">
+            <Crown className="size-4 shrink-0" aria-hidden />
+            First admin
+          </div>
+          <h2 className="marketing-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
+            Bootstrap your organization once.
+          </h2>
+          <p className="text-muted-foreground mt-layout font-sans text-sm leading-relaxed">
+            The first user to sign up — when there are no profiles yet — becomes the admin and
+            configures the workspace.
+          </p>
+          <div className="mt-layout gap-inset flex flex-wrap">
+            {steps.map((s) => (
+              <span
+                key={s}
+                className="border-border text-muted-foreground px-block py-inset rounded-full border font-sans text-[10px] font-semibold tracking-wide uppercase"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Dark card */}
+        <div className="marketing-grid-dark p-section lg:p-layout relative flex flex-col overflow-hidden rounded-[28px] bg-[#121417] text-white">
+          <div className="mb-layout gap-inset px-block py-inset inline-flex w-fit items-center rounded-full bg-[var(--cta)]/25 font-sans text-xs font-semibold text-[#ffb899]">
+            <Mail className="size-4 shrink-0" aria-hidden />
+            Everyone else
+          </div>
+          <h2 className="marketing-heading text-2xl font-semibold tracking-tight sm:text-3xl">
+            Invitation only.
+          </h2>
+          <p className="mt-layout font-sans text-sm leading-relaxed text-[#b8c0c9]">
+            After bootstrap, new users are created through email invitations with the right role —
+            no open self-serve signup on the marketing site.
+          </p>
+          <div className="mt-layout p-block rounded-2xl border border-[#2a3138] bg-[#1a2028] font-sans">
+            <div className="gap-block flex flex-wrap items-center justify-between">
+              <div className="gap-block flex items-center">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--cta)] text-sm font-bold text-[var(--cta-foreground)]">
+                  M
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">
+                    Maria, you&apos;ve been invited to MarketWeave
+                  </p>
+                  <p className="mt-inset text-xs text-[#9ca8b8]">
+                    Role: Copywriter · Expires in 7 days
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="marketing-lift-hover px-block py-inset rounded-xl bg-[var(--cta)] text-xs font-semibold text-[var(--cta-foreground)] shadow-md"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
