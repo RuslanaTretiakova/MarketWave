@@ -87,3 +87,4 @@ Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.)
 
 - Prettier + ESLint run on commit (lint-staged) and on push (pre-push hook)
 - Run `npm run format` to format, `npm run lint` to check
+- **Agent workflow:** During a multi-step task or plan, **do not** run `npm run lint` after every change. Run **`npm run lint` once** when **all** planned edits for that task are finished (unless you must run it mid-task to unblock on a specific error).

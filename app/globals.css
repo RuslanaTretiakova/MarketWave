@@ -289,8 +289,24 @@
   100% {
     transform: translateY(0);
   }
+  25% {
+    transform: translateY(-10px);
+  }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(10px);
+  }
+}
+
+@keyframes hero-order-float-top {
+  0%,
+  100% {
+    top: -100px;
+  }
+  50% {
+    top: -60px;
   }
 }
 
@@ -448,8 +464,12 @@
     animation: marketing-marquee 38s linear infinite;
   }
 
+  .animate-hero-order-float-top {
+    animation: hero-order-float-top 4.5s ease-in-out infinite;
+  }
+
   .animate-float {
-    animation: float-y 6s ease-in-out infinite;
+    animation: float-y 5s ease-in-out infinite;
   }
 
   .animate-pulse-dot {

@@ -19,8 +19,8 @@ export async function LandingHero() {
       id="hero"
       className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h) bg-(--marketing-page-bg)"
     >
-      <div className="gap-layout lg:gap-layout max-w-marketing mx-auto grid items-center lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-        <div className="max-w-xl lg:max-w-none">
+      <div className="gap-layout lg:gap-layout max-w-marketing mx-auto grid items-center overflow-visible lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+        <div className="max-w-xl lg:col-start-1 lg:row-start-1 lg:max-w-none">
           <div className="border-primary/30 bg-primary/8 mb-layout gap-inset px-block py-inset inline-flex items-center rounded-full border font-sans text-xs font-semibold tracking-wide text-(--accent-teal-strong)">
             <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
             Operations OS for link-building teams
