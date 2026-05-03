@@ -37,6 +37,17 @@ export function mapAuthError(error: AuthError | Error | null | undefined): Mappe
   const msg = 'message' in error && error.message ? error.message : String(error)
 
   if (
+    includes(msg, 'banned') ||
+    includes(msg, 'user is disabled') ||
+    includes(msg, 'account is disabled')
+  ) {
+    return {
+      code: 'forbidden',
+      message: 'This account is disabled. Contact your administrator.',
+    }
+  }
+
+  if (
     includes(msg, 'rate limit') ||
     includes(msg, 'too many') ||
     includes(msg, 'email rate') ||

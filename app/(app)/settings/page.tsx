@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 
 import { InviteTeamCard } from '@/components/invite-team-card'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,7 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) {
-    redirect('/auth/login')
+    notFound()
   }
 
   const { data: profile } = await supabase

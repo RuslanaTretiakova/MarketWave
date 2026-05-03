@@ -5,13 +5,13 @@ const steps = ['Step 01 — Admin', 'Step 02 — Configure', 'Step 03 — Invite
 export function HowItWorks() {
   return (
     <section
-      id="access"
-      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h)"
+      id="invites"
+      className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h) bg-(--marketing-page-bg)"
     >
-      <div className="gap-layout mx-auto grid max-w-6xl lg:grid-cols-2">
+      <div className="gap-layout max-w-marketing mx-auto grid lg:grid-cols-2">
         {/* Light card */}
         <div className="border-border/70 p-section lg:p-layout shadow-soft flex flex-col rounded-[28px] border bg-(--marketing-card)">
-          <div className="bg-primary/15 mb-layout gap-inset px-block py-inset inline-flex w-fit items-center rounded-full font-sans text-xs font-semibold text-(--marketing-teal-deep)">
+          <div className="bg-primary/15 mb-layout gap-inset px-block py-inset inline-flex w-fit items-center rounded-full font-sans text-xs font-semibold text-(--accent-teal-strong)">
             <Crown className="size-4 shrink-0" aria-hidden />
             First admin
           </div>

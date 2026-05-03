@@ -32,7 +32,7 @@ export function LandingRoles() {
       id="roles"
       className="marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h) bg-(--marketing-page-bg)"
     >
-      <div className="mx-auto max-w-6xl text-center">
+      <div className="max-w-marketing mx-auto text-center">
         <p className="mb-block font-mono text-xs font-semibold tracking-wide text-(--marketing-teal-accent) uppercase">
           / 03 — ROLES
         </p>
@@ -49,7 +49,7 @@ export function LandingRoles() {
           {roles.map((r) => (
             <div
               key={r.num}
-              className="border-border/60 marketing-lift-hover gap-inset px-section py-layout sm:gap-layout flex cursor-default flex-col border-b last:border-b-0 hover:bg-(--marketing-row-hover) sm:flex-row sm:items-start"
+              className="border-border/60 gap-inset px-section py-layout sm:gap-layout flex cursor-default flex-col border-b transition-colors duration-200 last:border-b-0 hover:bg-(--marketing-row-hover) sm:flex-row sm:items-start"
             >
               <span className="text-muted-foreground/80 w-8 shrink-0 pt-1 font-mono text-xs tabular-nums">
                 {r.num}

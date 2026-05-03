@@ -7,14 +7,14 @@ import { cn } from '@/lib/utils'
 const links = [
   { label: 'Workflow', href: '#workflow' },
   { label: 'Features', href: '#built-for-ops' },
-  { label: 'Access', href: '#access' },
+  { label: 'Invites', href: '#invites' },
 ] as const
 
 export function SiteFooter() {
   const y = new Date().getFullYear()
   return (
     <footer className="border-border/70 py-layout mt-auto border-t bg-(--marketing-page-bg)">
-      <div className="gap-layout px-block sm:px-section mx-auto flex max-w-6xl flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="gap-layout px-block sm:px-section max-w-marketing mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="gap-block flex flex-col">
           <Link href="/" className="inline-flex w-fit transition-opacity hover:opacity-90">
             <Logo serifWordmark />
@@ -32,7 +32,7 @@ export function SiteFooter() {
           <Link
             href="/auth/login"
             className={cn(
-              'marketing-lift-hover inline-flex font-semibold text-(--marketing-teal-deep)'
+              'marketing-lift-hover inline-flex font-semibold text-(--accent-teal-strong)'
             )}
           >
             Log in →

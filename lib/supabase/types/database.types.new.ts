@@ -517,6 +517,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auth_user_email_exists: { Args: { p_email: string }; Returns: boolean }
       bootstrap_signup_allowed: { Args: never; Returns: boolean }
       get_my_role: {
         Args: never

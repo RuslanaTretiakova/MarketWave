@@ -2,9 +2,13 @@ import { type NextRequest } from 'next/server'
 
 import { updateSession } from '@/lib/supabase/proxy-session'
 
-export async function proxy(request: NextRequest) {
+/** Single handler — default export fixes Node middleware interop (`default || module` must be a function). */
+async function proxy(request: NextRequest) {
   return updateSession(request)
 }
+
+export default proxy
+export { proxy }
 
 export const config = {
   matcher: [

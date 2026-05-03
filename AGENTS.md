@@ -81,9 +81,10 @@ Do **not** reintroduce patterns the linter flags in favor of built-in scale or v
 - **Theme colors:** prefer utilities such as `bg-cta`, `text-cta-foreground`, `bg-foreground`, `text-background`, `ring-offset-sidebar`, `shadow-soft` instead of arbitrary `[var(...)]` / `[hsl(var(...))]` when equivalent.
 - **Spacing / size:** prefer scale classes (`size-4.5`, `p-6`, etc.) — **not** arbitrary rem equivalents like `size-[1.125rem]` when a named step exists.
 
-Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above.
+Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above. Prefer `--accent-teal-strong` with `bg-(--accent-teal-strong)` / `text-(--accent-teal-strong)` for the deep teal headline and logo tint (do not use `--marketing-teal-deep` in utilities — Tailwind’s CSS emitter can mishandle it on Windows).
 
 ## Code style
 
 - Prettier + ESLint run on commit (lint-staged) and on push (pre-push hook)
 - Run `npm run format` to format, `npm run lint` to check
+- **Agent workflow:** During a multi-step task or plan, **do not** run `npm run lint` after every change. Run **`npm run lint` once** when **all** planned edits for that task are finished (unless you must run it mid-task to unblock on a specific error).

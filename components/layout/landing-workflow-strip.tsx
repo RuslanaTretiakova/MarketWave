@@ -57,7 +57,7 @@ function StripInner() {
 
 export function LandingWorkflowStrip() {
   return (
-    <div id="workflow" className="border-border/40 border-y bg-(--marketing-page-bg)">
+    <div className="border-border/40 border-y bg-(--marketing-page-bg)">
       <div className="marketing-marquee-static-row">
         <WorkflowStageCluster />
       </div>

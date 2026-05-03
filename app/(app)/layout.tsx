@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/app-shell/app-shell'
 import { agentDebugLog } from '@/lib/agent-debug-log.server'
@@ -33,12 +33,12 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   })
 
   if (!user) {
-    redirect('/auth/login')
+    notFound()
   }
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('require_password_change')
+    .select('require_password_change, full_name, role, avatar_url')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -46,5 +46,16 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
     redirect('/auth/first-login-password')
   }
 
-  return <AppShell userEmail={user.email ?? ''}>{children}</AppShell>
+  return (
+    <AppShell
+      user={{
+        email: user.email ?? '',
+        fullName: profile?.full_name ?? null,
+        role: profile?.role ?? 'client',
+        avatarUrl: profile?.avatar_url ?? null,
+      }}
+    >
+      {children}
+    </AppShell>
+  )
 }
