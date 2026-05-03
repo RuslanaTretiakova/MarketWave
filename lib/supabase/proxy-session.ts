@@ -10,8 +10,8 @@ function failureResponse(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   if (isAppProtectedPath(pathname)) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('next', pathname)
+    url.pathname = '/404'
+    url.search = ''
     return NextResponse.redirect(url)
   }
   return NextResponse.next({ request })
@@ -76,13 +76,6 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     url.search = ''
-    return NextResponse.redirect(url)
-  }
-
-  if (!user && isAppProtectedPath(pathname)) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
 

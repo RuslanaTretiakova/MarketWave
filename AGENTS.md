@@ -81,7 +81,7 @@ Do **not** reintroduce patterns the linter flags in favor of built-in scale or v
 - **Theme colors:** prefer utilities such as `bg-cta`, `text-cta-foreground`, `bg-foreground`, `text-background`, `ring-offset-sidebar`, `shadow-soft` instead of arbitrary `[var(...)]` / `[hsl(var(...))]` when equivalent.
 - **Spacing / size:** prefer scale classes (`size-4.5`, `p-6`, etc.) — **not** arbitrary rem equivalents like `size-[1.125rem]` when a named step exists.
 
-Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above.
+Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above. Prefer `--accent-teal-strong` with `bg-(--accent-teal-strong)` / `text-(--accent-teal-strong)` for the deep teal headline and logo tint (do not use `--marketing-teal-deep` in utilities — Tailwind’s CSS emitter can mishandle it on Windows).
 
 ## Code style
 

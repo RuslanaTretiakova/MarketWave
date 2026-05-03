@@ -4,11 +4,12 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
 import { AppHeader } from '@/components/app-shell/app-header'
+import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
 
 const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
 
-export function AppShell({ userEmail, children }: { userEmail: string; children: ReactNode }) {
+export function AppShell({ user, children }: { user: AppShellUser; children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export function AppShell({ userEmail, children }: { userEmail: string; children:
         onToggleCollapsed={toggleSidebarCollapsed}
       />
       <div className="bg-app-shell-canvas flex min-w-0 flex-1 flex-col">
-        <AppHeader userEmail={userEmail} />
+        <AppHeader user={user} />
         <main className="text-foreground px-block py-layout md:px-layout flex-1">{children}</main>
       </div>
     </div>

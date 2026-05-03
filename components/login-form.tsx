@@ -4,9 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { AuthPrimaryButton, AuthTextField } from '@/components/auth'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { safeReturnPath } from '@/lib/auth-redirect'
 import { createClient } from '@/lib/supabase/client'
@@ -34,7 +32,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     setEmailError(null)
     setPasswordError(null)
 
-    if (!isValidEmail(email)) {
+    const emailTrimmed = email.trim().toLowerCase()
+    if (!isValidEmail(emailTrimmed)) {
       setEmailError('Enter a valid email address.')
       return
     }
@@ -46,7 +45,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     setLoading(true)
     const supabase = createClient()
     const { error: signError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+      email: emailTrimmed,
       password,
     })
     setLoading(false)
@@ -54,6 +53,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       setError(mapAuthError(signError).message)
       return
     }
+    // Dashboard reads `profiles.role` server-side and renders the right experience for that role.
     router.refresh()
     router.push(safeReturnPath(redirectTo))
   }
@@ -88,63 +88,49 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           </Link>
         </div>
       ) : null}
-      <div className="space-y-inset">
-        <Label htmlFor="login-email">Email</Label>
-        <Input
-          id="login-email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            setEmailError(null)
-          }}
-          aria-invalid={emailError ? true : undefined}
-          aria-describedby={emailError ? 'login-email-error' : undefined}
-        />
-        {emailError ? (
-          <p id="login-email-error" className="text-destructive text-sm" role="alert">
-            {emailError}
-          </p>
-        ) : null}
-      </div>
-      <div className="space-y-inset">
-        <div className="gap-inset flex items-center justify-between">
-          <Label htmlFor="login-password">Password</Label>
+      <AuthTextField
+        label="Email"
+        labelId="login-email"
+        type="email"
+        autoComplete="email"
+        value={email}
+        onChange={(e) => {
+          setEmail(e.target.value)
+          setEmailError(null)
+        }}
+        error={emailError}
+        errorId="login-email-error"
+      />
+      <AuthTextField
+        label="Password"
+        labelId="login-password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => {
+          setPassword(e.target.value)
+          setPasswordError(null)
+        }}
+        error={passwordError}
+        errorId="login-password-error"
+        labelAccessory={
           <Link
             href="/auth/forgot-password"
             className="text-muted-foreground text-xs font-medium hover:underline"
           >
             Forgot password?
           </Link>
-        </div>
-        <Input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value)
-            setPasswordError(null)
-          }}
-          aria-invalid={passwordError ? true : undefined}
-          aria-describedby={passwordError ? 'login-password-error' : undefined}
-        />
-        {passwordError ? (
-          <p id="login-password-error" className="text-destructive text-sm" role="alert">
-            {passwordError}
-          </p>
-        ) : null}
-      </div>
+        }
+      />
       {error ? (
         <p className="text-destructive text-sm" role="alert">
           {error}
         </p>
       ) : null}
-      <Button type="submit" variant="cta" disabled={loading}>
+      <AuthPrimaryButton type="submit" disabled={loading}>
         {loading ? 'Signing in…' : 'Sign in'}
-      </Button>
-      <p className="text-muted-foreground text-center text-sm leading-relaxed">
+      </AuthPrimaryButton>
+      <p className="text-muted-foreground pt-inset text-center text-sm leading-relaxed">
         Access is by invitation. Your admin invites teammates by email.
       </p>
     </form>

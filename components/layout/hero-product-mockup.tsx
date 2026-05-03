@@ -18,8 +18,8 @@ export function HeroProductMockup() {
   return (
     <div className="relative mx-auto min-h-[440px] w-full max-w-xl lg:min-h-[500px]">
       {/* Floating detail */}
-      <div className="border-border/80 p-block shadow-soft absolute top-[6%] left-[4%] z-20 max-w-[200px] rounded-2xl border bg-(--marketing-card) md:left-[8%]">
-        <div className="gap-inset mb-inset flex items-start justify-between">
+      <div className="border-border/80 shadow-soft motion-safe:animate-float absolute top-[6%] left-[4%] z-20 max-w-[200px] rounded-2xl border bg-(--marketing-card) motion-reduce:animate-none md:left-[8%]">
+        <div className="gap-inset mb-inset px-block pb-block flex items-start justify-between pt-10">
           <div>
             <p className="text-foreground font-sans text-[11px] font-semibold">ORDER #1042</p>
             <p className="text-muted-foreground mt-inset font-sans text-[10px]">
@@ -32,7 +32,7 @@ export function HeroProductMockup() {
               outreachhq.com
             </p>
           </div>
-          <span className="px-inset rounded-md bg-(--marketing-yellow-underline) py-0.5 font-sans text-[9px] font-bold text-(--marketing-teal-deep)">
+          <span className="px-inset rounded-md bg-(--marketing-yellow-underline) py-0.5 font-sans text-[9px] font-bold text-(--accent-teal-strong)">
             NEW
           </span>
         </div>
@@ -71,7 +71,7 @@ export function HeroProductMockup() {
               <p className="text-foreground text-xs font-semibold">ORDER #1839</p>
               <p className="text-muted-foreground text-[11px]">Resource page · DA 71</p>
             </div>
-            <span className="px-block py-inset rounded-full bg-(--marketing-teal-deep) text-[10px] font-semibold text-white">
+            <span className="px-block py-inset rounded-full bg-(--accent-teal-strong) text-[10px] font-semibold text-white">
               IN PROGRESS
             </span>
           </div>
@@ -80,7 +80,7 @@ export function HeroProductMockup() {
               <p className="text-foreground text-xs font-semibold">ORDER #1837</p>
               <p className="text-muted-foreground text-[11px]">Niche edit · DA 54</p>
             </div>
-            <span className="px-block py-inset rounded-full bg-(--marketing-yellow-underline) text-[10px] font-semibold text-(--marketing-teal-deep)">
+            <span className="px-block py-inset rounded-full bg-(--marketing-yellow-underline) text-[10px] font-semibold text-(--accent-teal-strong)">
               REVIEW
             </span>
           </div>

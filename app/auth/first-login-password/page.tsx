@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { AuthFormCard } from '@/components/auth'
 import { SetPasswordForm } from '@/components/set-password-form'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,21 +11,18 @@ export const metadata = {
 
 export default function FirstLoginPasswordPage() {
   return (
-    <div className="mx-auto w-full max-w-md">
-      <h1 className="marketing-heading text-foreground text-2xl font-semibold tracking-tight">
-        Set your password
-      </h1>
-      <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-        Choose a password before continuing to the dashboard.
-      </p>
-      <div className="border-border bg-card ring-foreground/10 mt-layout p-section rounded-xl border shadow-sm ring-1">
+    <div className="gap-layout mx-auto flex w-full max-w-md flex-col">
+      <AuthFormCard
+        title="Set your password"
+        description="Choose a password before continuing to the dashboard."
+      >
         <SetPasswordForm mode="first-login" />
-      </div>
+      </AuthFormCard>
       <Link
         href="/"
         className={cn(
           buttonVariants({ variant: 'ghost', size: 'default' }),
-          'mt-layout inline-flex'
+          'inline-flex self-start'
         )}
       >
         ← Back to home

@@ -1,12 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { AuthPrimaryButton, AuthTextField } from '@/components/auth'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { completePasswordChange } from '@/lib/auth/password-actions'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +23,7 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [recoveryComplete, setRecoveryComplete] = useState(false)
 
   function validate(): boolean {
     setPasswordError(null)
@@ -65,76 +64,72 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
     router.refresh()
     if (mode === 'recovery') {
       await supabase.auth.signOut()
-      router.replace('/auth/login?reset=success')
+      setRecoveryComplete(true)
       return
     }
     router.push('/dashboard')
   }
 
   const subtitle =
-    mode === 'first-login'
-      ? 'For security, pick a password you have not used elsewhere.'
-      : 'Enter a new password for your account.'
+    mode === 'first-login' ? 'For security, pick a password you have not used elsewhere.' : null
+
+  if (recoveryComplete) {
+    return (
+      <div className="gap-block flex flex-col text-center">
+        <p className="text-foreground text-sm leading-relaxed" role="status">
+          Your password was updated successfully. Sign in with your new password.
+        </p>
+        <div className="pt-inset">
+          <Link
+            href="/auth/login"
+            className="text-primary text-sm font-semibold underline-offset-4 hover:underline"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <form onSubmit={onSubmit} className="gap-block flex flex-col" noValidate>
-      <div className="space-y-inset">
-        <Label htmlFor="new-password">New password</Label>
-        <Input
-          id="new-password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value)
-            setPasswordError(null)
-          }}
-          aria-invalid={passwordError ? true : undefined}
-          minLength={MIN_LEN}
-        />
-        {passwordError ? (
-          <p className="text-destructive text-sm" role="alert">
-            {passwordError}
-          </p>
-        ) : null}
-      </div>
-      <div className="space-y-inset">
-        <Label htmlFor="confirm-password">Confirm password</Label>
-        <Input
-          id="confirm-password"
-          type="password"
-          autoComplete="new-password"
-          value={confirm}
-          onChange={(e) => {
-            setConfirm(e.target.value)
-            setConfirmError(null)
-          }}
-          aria-invalid={confirmError ? true : undefined}
-        />
-        {confirmError ? (
-          <p className="text-destructive text-sm" role="alert">
-            {confirmError}
-          </p>
-        ) : null}
-      </div>
+      <AuthTextField
+        label="New password"
+        labelId="new-password"
+        type="password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(e) => {
+          setPassword(e.target.value)
+          setPasswordError(null)
+        }}
+        error={passwordError}
+        errorId="new-password-error"
+        minLength={MIN_LEN}
+      />
+      <AuthTextField
+        label="Confirm password"
+        labelId="confirm-password"
+        type="password"
+        autoComplete="new-password"
+        value={confirm}
+        onChange={(e) => {
+          setConfirm(e.target.value)
+          setConfirmError(null)
+        }}
+        error={confirmError}
+        errorId="confirm-password-error"
+      />
       {error ? (
         <p className="text-destructive text-sm" role="alert">
           {error}
         </p>
       ) : null}
-      <Button type="submit" variant="cta" disabled={loading}>
+      <AuthPrimaryButton type="submit" disabled={loading}>
         {loading ? 'Saving…' : mode === 'first-login' ? 'Continue' : 'Update password'}
-      </Button>
-      <p className="text-muted-foreground text-sm leading-relaxed">{subtitle}</p>
-      {mode === 'recovery' ? (
-        <div className="border-border mt-layout pt-layout border-t">
-          <Link
-            href="/auth/login"
-            className="text-muted-foreground text-sm font-medium hover:underline"
-          >
-            Back to sign in
-          </Link>
-        </div>
+      </AuthPrimaryButton>
+      {subtitle ? (
+        <p className="text-muted-foreground pt-inset text-sm leading-relaxed">{subtitle}</p>
       ) : null}
     </form>
   )

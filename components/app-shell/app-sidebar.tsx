@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, LogOut } from 'lucide-react'
 
 import { SiteBrandLink } from '@/components/layout/site-brand-link'
 import { Button } from '@/components/ui/button'
+import { signOutAndRedirectToLogin } from '@/lib/auth/client-sign-out'
 import { APP_NAV_ITEMS } from '@/lib/app-nav'
 import { cn } from '@/lib/utils'
 
@@ -68,36 +69,73 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          'border-sidebar-border gap-block border-b p-3',
-          isCollapsed ? 'flex flex-col items-center' : 'flex items-center justify-between gap-2'
+          'border-sidebar-border border-b p-3',
+          isCollapsed ? 'flex justify-center' : 'flex justify-start'
         )}
       >
         <SiteBrandLink
-          href="/dashboard"
           logoCompact={isCollapsed}
-          className={cn('min-w-0', isCollapsed ? 'justify-center' : 'flex-1')}
+          className="min-w-0"
           logoClassName="[&_.logo-wordmark]:text-sidebar-foreground [&_span.text-primary]:text-sidebar-primary"
         />
-        {onToggleCollapsed ? (
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto',
+            isCollapsed ? 'py-block px-2' : 'p-block'
+          )}
+        >
+          <AppNavLinks collapsed={isCollapsed} />
+        </div>
+        <div
+          className={cn(
+            'border-sidebar-border gap-block p-block flex flex-col border-t',
+            isCollapsed && 'items-stretch px-2'
+          )}
+        >
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
-            aria-expanded={!isCollapsed}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            onClick={onToggleCollapsed}
-            className="text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0"
-          >
-            {isCollapsed ? (
-              <ChevronsRight className="size-5" aria-hidden />
-            ) : (
-              <ChevronsLeft className="size-5" aria-hidden />
+            size={isCollapsed ? 'icon-sm' : 'default'}
+            className={cn(
+              'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              !isCollapsed && 'h-9 w-full justify-start gap-2 px-3',
+              'text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20'
             )}
+            title={isCollapsed ? 'Log out' : undefined}
+            onClick={() => void signOutAndRedirectToLogin()}
+          >
+            <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
+            {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
           </Button>
-        ) : null}
-      </div>
-      <div className={cn('flex-1', isCollapsed ? 'py-block px-2' : 'p-block')}>
-        <AppNavLinks collapsed={isCollapsed} />
+          {onToggleCollapsed ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size={isCollapsed ? 'icon-sm' : 'default'}
+              aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Narrow sidebar'}
+              title={isCollapsed ? 'Expand sidebar' : undefined}
+              onClick={onToggleCollapsed}
+              className={cn(
+                'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                !isCollapsed && 'h-9 w-full justify-start gap-2 px-3'
+              )}
+            >
+              {isCollapsed ? (
+                <ChevronsRight className="size-4 shrink-0" aria-hidden />
+              ) : (
+                <>
+                  <ChevronsLeft className="size-4 shrink-0 opacity-90" aria-hidden />
+                  <span className="text-sidebar-foreground/90 text-sm font-medium">
+                    Narrow sidebar
+                  </span>
+                </>
+              )}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </aside>
   )

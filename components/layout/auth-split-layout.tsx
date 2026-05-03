@@ -14,7 +14,7 @@ type AuthSplitLayoutProps = {
 export function AuthSplitLayout({ children, variant = 'card' }: AuthSplitLayoutProps) {
   if (variant === 'card') {
     return (
-      <div className="bg-muted/35 px-block py-layout flex min-h-screen flex-col items-center">
+      <div className="bg-background px-block py-layout flex min-h-screen flex-col items-center">
         <div className="mb-layout w-full max-w-md shrink-0 text-center">
           <Link href="/" className="inline-flex justify-center transition-opacity hover:opacity-90">
             <Logo serifWordmark className="justify-center" />

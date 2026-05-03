@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { MarketingUserMenu } from '@/components/layout/marketing-user-menu'
 import { SiteBrandLink } from '@/components/layout/site-brand-link'
 import { buttonVariants } from '@/components/ui/button'
 import { createClientOrNull } from '@/lib/supabase/server'
@@ -9,7 +10,7 @@ const nav = [
   { label: 'Workflow', href: '#workflow' },
   { label: 'Built for ops', href: '#built-for-ops' },
   { label: 'Roles', href: '#roles' },
-  { label: 'Access', href: '#access' },
+  { label: 'Invites', href: '#invites' },
 ] as const
 
 export async function SiteNavbar() {
@@ -18,41 +19,34 @@ export async function SiteNavbar() {
     data: { user },
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
 
+  const { data: profile } =
+    user && supabase
+      ? await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+      : { data: null }
+
   return (
     <header className="border-border/60 sticky top-0 z-50 border-b bg-(--marketing-page-bg)/90 backdrop-blur-md">
-      <div className="gap-block px-block sm:px-section mx-auto flex h-[60px] max-w-6xl items-center justify-between">
-        <SiteBrandLink />
+      <div className="gap-block px-block sm:px-section max-w-marketing mx-auto flex h-[60px] w-full items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr] md:justify-center">
+        <div className="flex min-w-0 items-center justify-start">
+          <SiteBrandLink />
+        </div>
         <nav
-          className="text-muted-foreground gap-layout absolute left-1/2 hidden -translate-x-1/2 text-sm font-medium md:flex"
+          className="text-muted-foreground gap-layout hidden min-w-0 items-center justify-center text-sm font-medium md:flex"
           aria-label="Sections"
         >
           {nav.map((item) => (
-            <Link
+            <a
               key={item.href}
               href={item.href}
-              className="hover:text-foreground transition-colors"
+              className="hover:text-foreground shrink-0 transition-colors"
             >
               {item.label}
-            </Link>
+            </a>
           ))}
         </nav>
-        <div className="gap-block flex shrink-0 items-center">
-          <Link
-            href="#access"
-            className="text-muted-foreground hover:text-foreground marketing-lift-hover hidden text-sm font-medium transition-colors sm:inline"
-          >
-            Request access
-          </Link>
+        <div className="gap-block flex w-max max-w-full shrink-0 items-center justify-end md:justify-self-end">
           {user ? (
-            <Link
-              href="/dashboard"
-              className={cn(
-                buttonVariants({ variant: 'cta', size: 'default' }),
-                'marketing-lift-hover rounded-xl px-5 shadow-sm'
-              )}
-            >
-              Dashboard
-            </Link>
+            <MarketingUserMenu email={user.email ?? ''} fullName={profile?.full_name ?? null} />
           ) : (
             <Link
               href="/auth/login"

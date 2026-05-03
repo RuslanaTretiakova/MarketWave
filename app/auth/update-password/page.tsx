@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { AuthFormCard, AuthFormFooterLink } from '@/components/auth'
 import { SetPasswordForm } from '@/components/set-password-form'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,21 +11,20 @@ export const metadata = {
 
 export default function UpdatePasswordPage() {
   return (
-    <div className="mx-auto w-full max-w-md">
-      <h1 className="marketing-heading text-foreground text-2xl font-semibold tracking-tight">
-        Set new password
-      </h1>
-      <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-        Enter and confirm your new password.
-      </p>
-      <div className="border-border bg-card ring-foreground/10 mt-layout p-section rounded-xl border shadow-sm ring-1">
+    <div className="gap-layout mx-auto flex w-full max-w-md flex-col">
+      <AuthFormCard
+        title="Set new password"
+        description="Choose a new password for your account."
+        extraDescription="Open this page from the password reset link in your email to continue."
+        footer={<AuthFormFooterLink href="/auth/login">Back to sign in</AuthFormFooterLink>}
+      >
         <SetPasswordForm mode="recovery" />
-      </div>
+      </AuthFormCard>
       <Link
         href="/"
         className={cn(
           buttonVariants({ variant: 'ghost', size: 'default' }),
-          'mt-layout inline-flex'
+          'inline-flex self-start'
         )}
       >
         ← Back to home

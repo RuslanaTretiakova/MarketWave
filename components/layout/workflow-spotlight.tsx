@@ -10,91 +10,115 @@ const steps = [
 const boardColumns = [
   {
     title: 'New',
-    badgeClass: 'bg-foreground text-background',
+    badgeClass: 'bg-[#0b0e11] text-white ring-1 ring-white/12',
     items: ['Order #1042', 'Order #1043'],
   },
   {
     title: 'In progress',
-    badgeClass: 'bg-(--marketing-teal-deep) text-white',
+    badgeClass: 'bg-[#0f766e] text-white',
     items: ['Order #1039'],
   },
   {
     title: 'Review',
-    badgeClass: 'bg-(--marketing-yellow-underline) text-(--marketing-teal-deep)',
+    badgeClass: 'bg-[#f4d03f] text-[#1a1a12]',
     items: ['Order #1037'],
   },
   {
     title: 'Published',
-    badgeClass: 'bg-[#6b7280] text-white',
+    badgeClass: 'bg-[#ff5722] text-white',
     items: ['Order #1034', 'Order #1035'],
   },
-  {
-    title: 'Paid',
-    badgeClass: 'bg-cta text-cta-foreground',
-    items: ['Order #1030'],
-  },
 ] as const
+
+const workflowAccent = '#ff6b43'
 
 export function WorkflowSpotlight() {
   return (
     <section
       id="workflow"
-      className="marketing-section-screen marketing-grid-dark px-block py-layout sm:px-section bg-hsl-(--marketing-flow-dark) scroll-mt-(--marketing-nav-h) text-[#e8eef4]"
+      className="workflow-showcase-bg marketing-section-screen px-block py-layout sm:px-section scroll-mt-(--marketing-nav-h) text-[#e8eef4]"
     >
-      <div className="mx-auto max-w-6xl">
-        <div className="gap-layout lg:grid lg:grid-cols-[1fr_1fr] lg:items-end">
+      <div className="max-w-marketing mx-auto">
+        <div className="gap-layout lg:gap-x-layout lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-end">
           <div>
-            <p className="marketing-heading mb-block text-sm font-semibold tracking-wide text-[#ff8a5b] uppercase">
+            <p
+              className="mb-block font-mono text-[11px] font-semibold tracking-[0.18em] uppercase"
+              style={{ color: workflowAccent }}
+            >
               / 02 — Flow
             </p>
-            <h2 className="marketing-heading text-3xl leading-tight font-semibold tracking-tight text-white sm:text-4xl md:text-[2.5rem]">
-              One linear workflow. Nothing falls through the cracks.
+            <h2 className="font-display text-3xl leading-[1.12] font-semibold tracking-tight sm:text-4xl md:text-[2.5rem] md:leading-[1.1]">
+              <span className="block text-white">One linear workflow.</span>
+              <span className="mt-1 block text-white/38">Nothing falls through the cracks.</span>
             </h2>
           </div>
-          <p className="font-sans text-base leading-relaxed text-[#9ca8b8] lg:pb-1">
+          <p className="font-sans text-base leading-relaxed text-[#b8c2ce] lg:pb-0.5">
             Every placement moves through the same six stages — visible to the team and the client.
           </p>
         </div>
 
-        {/* Timeline */}
-        <div className="mt-layout lg:mt-section relative">
-          <div
-            className="absolute top-[22px] right-[8%] left-[8%] hidden h-px bg-[#2a3138] lg:block"
-            aria-hidden
-          />
-          <ol className="gap-block grid sm:grid-cols-2 lg:grid-cols-6">
-            {steps.map((s, i) => (
-              <li key={s.label} className="relative flex flex-col items-center text-center">
-                <div className="mb-block relative z-1 flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#2a3138] bg-white shadow-sm">
-                  <span className="text-foreground font-sans text-lg font-bold">{i + 1}</span>
-                  <span
-                    className="bg-cta absolute -right-1 -bottom-1 size-2 rounded-full"
-                    aria-hidden
-                  />
-                </div>
-                <p className="marketing-heading text-base font-semibold text-white">{s.label}</p>
-                <p className="mt-inset font-sans text-xs leading-snug text-[#9ca8b8]">{s.detail}</p>
-              </li>
-            ))}
-          </ol>
+        {/* Horizontal timeline — line + numbered tiles + accent dots (desktop) */}
+        <div className="mt-layout lg:mt-section">
+          <div className="relative">
+            <div
+              className="pointer-events-none absolute top-7 right-[5%] left-[5%] z-0 hidden h-px bg-[#2e353d] lg:block"
+              aria-hidden
+            />
+            <ol className="gap-y-layout gap-x-block relative z-10 grid sm:grid-cols-2 lg:grid-cols-6">
+              {steps.map((s, i) => (
+                <li
+                  key={s.label}
+                  className="flex flex-col items-center text-center lg:items-start lg:text-left"
+                >
+                  <div className="mb-block lg:mb-layout flex min-h-14 w-full justify-center lg:justify-start">
+                    <div className="relative inline-flex items-center">
+                      <div className="flex size-14 shrink-0 items-center justify-center rounded-[10px] border border-white/12 bg-white shadow-[0_1px_0_rgb(255_255_255/0.06)]">
+                        <span className="font-display text-[1.35rem] leading-none font-semibold tracking-tight text-[#0f1419] tabular-nums">
+                          {i + 1}
+                        </span>
+                      </div>
+                      <span
+                        className="absolute top-1/2 left-full ml-2.5 size-[7px] -translate-y-1/2 rounded-full ring-[3px] ring-[#0b0e11] lg:ml-3.5"
+                        style={{ backgroundColor: workflowAccent }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <p className="font-display text-base font-semibold tracking-tight text-white">
+                    {s.label}
+                  </p>
+                  <p className="mt-inset max-w-[16rem] font-sans text-xs leading-snug text-[#8b98a8] lg:max-w-none">
+                    {s.detail}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
 
-        {/* Kanban */}
-        <div className="mt-layout p-block sm:p-section rounded-[24px] border border-[#2a3138] bg-[#12161c]">
+        {/* Status board */}
+        <div className="mt-layout lg:mt-section p-block sm:p-section rounded-[28px] border border-white/8 bg-[#11151b] shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
           <div className="mb-layout gap-block flex flex-wrap items-center justify-between font-sans">
-            <p className="text-[11px] font-semibold tracking-wider text-[#9ca8b8] uppercase">
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-[#8b98a8] uppercase">
               Status board · live
             </p>
-            <p className="gap-inset flex items-center text-[11px] font-medium text-[#9ca8b8]">
-              <span className="bg-cta size-2 shrink-0 rounded-full" aria-hidden />
+            <p className="gap-inset flex items-center text-[11px] font-medium text-[#8b98a8]">
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: workflowAccent }}
+                aria-hidden
+              />
               synced
             </p>
           </div>
-          <div className="gap-block grid sm:grid-cols-2 lg:grid-cols-5">
+          <div className="gap-layout grid sm:grid-cols-2 lg:grid-cols-4">
             {boardColumns.map((col) => (
-              <div key={col.title} className="gap-inset flex flex-col">
+              <div
+                key={col.title}
+                className="gap-inset p-block flex flex-col rounded-2xl bg-[#161b23]/90 ring-1 ring-white/5"
+              >
                 <span
-                  className={`px-block py-inset inline-flex w-fit rounded-full font-sans text-[10px] font-bold tracking-wide uppercase ${col.badgeClass}`}
+                  className={`px-block py-inset inline-flex w-fit shrink-0 rounded-md font-sans text-[10px] font-bold tracking-wide uppercase ${col.badgeClass}`}
                 >
                   {col.title}
                 </span>
@@ -102,7 +126,7 @@ export function WorkflowSpotlight() {
                   {col.items.map((item) => (
                     <li
                       key={item}
-                      className="px-block py-block rounded-xl border border-[#2a3138] bg-[#1a2028] font-sans text-xs font-medium text-[#e8eef4]"
+                      className="px-block py-block rounded-xl border border-white/6 bg-[#0f131a] font-sans text-xs font-medium text-[#dde4ec]"
                     >
                       {item}
                     </li>
