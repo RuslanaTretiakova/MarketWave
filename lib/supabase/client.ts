@@ -32,6 +32,6 @@ export function createClient() {
   }
 
   throw new Error(
-    'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both to your environment (e.g. .env.local) and restart the dev server.'
+    'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both in `.env.local` locally, or under Vercel → Project → Settings → Environment Variables (Production / Preview). Redeploy after changing `NEXT_PUBLIC_*` so they are inlined in the browser bundle.'
   )
 }
