@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { Eye, EyeOff, Lock, Mail, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -72,7 +73,7 @@ function ProfileAvatarCircle({ src, initials }: { src: string; initials: string 
     )
   }
   return (
-    <img
+    <Image
       src={src}
       alt=""
       width={96}

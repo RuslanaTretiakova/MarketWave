@@ -11,7 +11,7 @@ export type AppNavItem = {
 
 export type AppNavRole = Database['public']['Enums']['user_role']
 
-/** Authenticated app shell navigation — mirrors typical MarketWeave / ops flows. Settings live under the header avatar menu. */
+/** Authenticated app shell navigation — mirrors typical MarketWeave / ops flows. */
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/sites', label: 'Site catalog', Icon: Globe },

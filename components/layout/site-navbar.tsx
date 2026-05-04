@@ -21,7 +21,11 @@ export async function SiteNavbar() {
 
   const { data: profile } =
     user && supabase
-      ? await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+      ? await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle()
       : { data: null }
 
   return (
@@ -46,7 +50,11 @@ export async function SiteNavbar() {
         </nav>
         <div className="gap-block flex w-max max-w-full shrink-0 items-center justify-end md:justify-self-end">
           {user ? (
-            <MarketingUserMenu email={user.email ?? ''} fullName={profile?.full_name ?? null} />
+            <MarketingUserMenu
+              email={user.email ?? ''}
+              fullName={profile?.full_name ?? null}
+              avatarUrl={profile?.avatar_url ?? null}
+            />
           ) : (
             <Link
               href="/auth/login"

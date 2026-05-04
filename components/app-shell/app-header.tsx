@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import type { AppNavItem } from '@/lib/app-nav'
 import { navTitleForPath } from '@/lib/app-nav'
+import { SITE_NAME } from '@/lib/brand'
 import { splitDisplayName } from '@/lib/user-display-name'
 import { cn } from '@/lib/utils'
 
@@ -37,10 +38,13 @@ export function AppHeader({
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger
             type="button"
-            className={cn(buttonVariants({ variant: 'outline', size: 'icon-sm' }), 'md:hidden')}
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+              'text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-lg md:hidden'
+            )}
             aria-label="Open navigation"
           >
-            <Menu className="size-4" />
+            <Menu className="size-4" aria-hidden />
           </SheetTrigger>
           <SheetContent
             side="left"
@@ -49,7 +53,7 @@ export function AppHeader({
           >
             <SheetHeader className="border-sidebar-border px-block py-block border-b text-left">
               <SheetTitle className="text-sidebar-foreground font-heading text-base font-semibold">
-                Navigate
+                {SITE_NAME}
               </SheetTitle>
             </SheetHeader>
             <div className="p-block">

@@ -12,6 +12,10 @@ import {
   previewDisableUser,
 } from '@/lib/auth/user-admin-actions'
 import type { OrgUserRowJson } from '@/lib/org-users/types'
+import {
+  orgUserCanResendInvite,
+  orgUserResendInviteEmail,
+} from '@/lib/org-users/admin-resend-invite'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
 import { cn } from '@/lib/utils'
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
@@ -71,6 +75,7 @@ export function UserDetailClient({
 
   const st = rowStatus(row)
   const email = row.email ?? ''
+  const resendEmail = orgUserResendInviteEmail(row)
   const name = adminUserDisplayName(row)
   const memberSince = row.created_at
     ? new Date(row.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -81,8 +86,7 @@ export function UserDetailClient({
     return orgRows.filter((r) => r.role === 'copywriter' && r.id !== rowId && !isUserBanned(r))
   }, [orgRows, disableDialog?.row.id, row.id])
 
-  const canResend =
-    row.require_password_change && !!email && row.role !== 'admin' && !isUserBanned(row)
+  const canResend = orgUserCanResendInvite(row)
 
   const canToggleAccess = row.id !== currentUserId && row.role !== 'admin'
 
@@ -168,19 +172,30 @@ export function UserDetailClient({
   }
 
   async function confirmResend() {
-    if (!email) return
+    if (!resendEmail) return
     setResendBusy(true)
     setFormError(null)
-    const res = await resendTeamInvite({ email })
-    setResendBusy(false)
-    if (!res.ok) {
-      setFormError(res.message)
+    try {
+      const res = await resendTeamInvite({ email: resendEmail })
+      if (!res.ok) {
+        setFormError(res.message)
+        setResendOpen(false)
+        return
+      }
+      setFormMessage(res.message ?? 'Invitation resent.')
       setResendOpen(false)
-      return
+      router.refresh()
+    } catch (err) {
+      console.error('[confirmResend]', err)
+      setFormError(
+        err instanceof Error && /failed to fetch/i.test(err.message)
+          ? 'Could not reach the server. Try again.'
+          : 'Something went wrong. Try again.'
+      )
+      setResendOpen(false)
+    } finally {
+      setResendBusy(false)
     }
-    setFormMessage(res.message ?? 'Invitation resent.')
-    setResendOpen(false)
-    router.refresh()
   }
 
   return (
@@ -399,7 +414,7 @@ export function UserDetailClient({
       <AdminUserResendInviteDialog
         open={resendOpen}
         busy={resendBusy}
-        email={email}
+        email={resendEmail || email}
         onOpenChange={setResendOpen}
         onConfirm={() => void confirmResend()}
       />
