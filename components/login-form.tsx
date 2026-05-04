@@ -18,6 +18,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const authLinkFailed = searchParams.get('error') === 'auth'
+  const sessionRecovery = searchParams.get('error') === 'session'
   const passwordJustReset = searchParams.get('reset') === 'success'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,17 +44,20 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     }
 
     setLoading(true)
-    const supabase = createClient()
-    const { error: signError } = await supabase.auth.signInWithPassword({
-      email: emailTrimmed,
-      password,
-    })
-    if (signError) {
+    try {
+      const supabase = createClient()
+      const { error: signError } = await supabase.auth.signInWithPassword({
+        email: emailTrimmed,
+        password,
+      })
+      if (signError) {
+        setError(mapAuthError(signError).message)
+        return
+      }
+      router.push(safeReturnPath(redirectTo))
+    } finally {
       setLoading(false)
-      setError(mapAuthError(signError).message)
-      return
     }
-    router.push(safeReturnPath(redirectTo))
   }
 
   return (
@@ -65,6 +69,19 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         >
           Password updated. Sign in below with your new password.
         </p>
+      ) : null}
+      {sessionRecovery ? (
+        <div
+          className="bg-muted text-foreground space-y-inset rounded-lg border border-amber-500/30 px-3 py-3 text-sm leading-relaxed"
+          role="alert"
+        >
+          <p className="text-foreground font-medium">Your saved session could not be restored.</p>
+          <p className="text-muted-foreground">
+            This often happens after a deploy, project switch, or expired refresh token. Sign in
+            again. If it keeps failing, check the browser Network tab (auth request) and cookies for
+            this site, and confirm production uses the same Supabase project as your user account.
+          </p>
+        </div>
       ) : null}
       {authLinkFailed ? (
         <div
