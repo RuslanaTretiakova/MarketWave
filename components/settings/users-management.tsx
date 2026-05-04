@@ -22,6 +22,10 @@ import {
   disableTeamMemberAfterConfirmation,
   previewDisableUser,
 } from '@/lib/auth/user-admin-actions'
+import {
+  orgUserCanResendInvite,
+  orgUserResendInviteEmail,
+} from '@/lib/org-users/admin-resend-invite'
 import type { OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 import type { OrgUserRole, OrgUserRowJson } from '@/lib/org-users/types'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
@@ -162,21 +166,31 @@ export function UsersManagement({
       return
     }
     setInviteBusy(true)
-    const res = await inviteTeamMember({
-      email: normalizeEmail(inviteEmail),
-      role: inviteRole,
-      fullName: inviteName.trim() || undefined,
-    })
-    setInviteBusy(false)
-    if (!res.ok) {
-      toast.error(res.message)
-      return
+    try {
+      const res = await inviteTeamMember({
+        email: normalizeEmail(inviteEmail),
+        role: inviteRole,
+        fullName: inviteName.trim() || undefined,
+      })
+      if (!res.ok) {
+        toast.error(res.message)
+        return
+      }
+      setFormMessage(res.message ?? 'Invitation sent.')
+      setInviteEmail('')
+      setInviteName('')
+      setInviteOpen(false)
+      router.refresh()
+    } catch (err) {
+      console.error('[onInviteSubmit]', err)
+      const msg =
+        err instanceof Error && /failed to fetch/i.test(err.message)
+          ? 'Could not reach the server. Check your connection and try again.'
+          : 'Something went wrong. Try again.'
+      toast.error(msg)
+    } finally {
+      setInviteBusy(false)
     }
-    setFormMessage(res.message ?? 'Invitation sent.')
-    setInviteEmail('')
-    setInviteName('')
-    setInviteOpen(false)
-    router.refresh()
   }
 
   function openEdit(row: OrgUserRowJson) {
@@ -190,16 +204,27 @@ export function UsersManagement({
     if (!email) return
     setFormMessage(null)
     setResendBusy(true)
-    const res = await resendTeamInvite({ email })
-    setResendBusy(false)
-    if (!res.ok) {
-      toast.error(res.message)
+    try {
+      const res = await resendTeamInvite({ email })
+      if (!res.ok) {
+        toast.error(res.message)
+        setResendTargetEmail(null)
+        return
+      }
+      setFormMessage(res.message ?? 'Invitation resent.')
       setResendTargetEmail(null)
-      return
+      router.refresh()
+    } catch (err) {
+      console.error('[onResendConfirmed]', err)
+      const msg =
+        err instanceof Error && /failed to fetch/i.test(err.message)
+          ? 'Could not reach the server. Check your connection and try again.'
+          : 'Something went wrong. Try again.'
+      toast.error(msg)
+      setResendTargetEmail(null)
+    } finally {
+      setResendBusy(false)
     }
-    setFormMessage(res.message ?? 'Invitation resent.')
-    setResendTargetEmail(null)
-    router.refresh()
   }
 
   async function beginDisable(row: OrgUserRowJson) {
@@ -462,14 +487,11 @@ export function UsersManagement({
                   <TableBody>
                     {filtered.map((row) => {
                       const email = row.email ?? ''
+                      const resendEmail = orgUserResendInviteEmail(row)
                       const name = adminUserDisplayName(row)
                       const st = rowStatus(row)
                       const disabledRow = rowBusyId === row.id
-                      const canResend =
-                        row.require_password_change &&
-                        !!email &&
-                        row.role !== 'admin' &&
-                        !isUserBanned(row)
+                      const canResend = orgUserCanResendInvite(row)
 
                       return (
                         <TableRow
@@ -534,7 +556,7 @@ export function UsersManagement({
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     disabled={disabledRow || !canResend}
-                                    onClick={() => setResendTargetEmail(email)}
+                                    onClick={() => setResendTargetEmail(resendEmail)}
                                     className="gap-2"
                                   >
                                     <Mail className="size-4" aria-hidden />
@@ -583,14 +605,11 @@ export function UsersManagement({
                 <ul className="divide-border divide-y rounded-xl border">
                   {filtered.map((row) => {
                     const email = row.email ?? ''
+                    const resendEmail = orgUserResendInviteEmail(row)
                     const name = adminUserDisplayName(row)
                     const st = rowStatus(row)
                     const disabledRow = rowBusyId === row.id
-                    const canResend =
-                      row.require_password_change &&
-                      !!email &&
-                      row.role !== 'admin' &&
-                      !isUserBanned(row)
+                    const canResend = orgUserCanResendInvite(row)
 
                     return (
                       <li key={row.id}>
@@ -639,7 +658,7 @@ export function UsersManagement({
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       disabled={disabledRow || !canResend}
-                                      onClick={() => setResendTargetEmail(email)}
+                                      onClick={() => setResendTargetEmail(resendEmail)}
                                       className="gap-2"
                                     >
                                       <Mail className="size-4" aria-hidden />

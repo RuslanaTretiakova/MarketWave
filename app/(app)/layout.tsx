@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/app-shell/app-shell'
 import { agentDebugLog } from '@/lib/agent-debug-log.server'
-import { createClientOrNull } from '@/lib/supabase/server'
+import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
 
 // Auth + cookies — must not be statically prerendered at build time (CI may omit Supabase env).
 // Never cache authenticated shell HTML; logged-out users must not reuse stale RSC payloads.
@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
 export default async function AppGroupLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClientOrNull()
+  const { supabase, user, profile, authError } = await getCachedAppUserContext()
+
   if (!supabase) {
     agentDebugLog({
       hypothesisId: 'H1',
@@ -19,11 +20,6 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
     })
     redirect('/maintenance')
   }
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
 
   agentDebugLog({
     hypothesisId: 'H3',
@@ -35,12 +31,6 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   if (!user) {
     notFound()
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('require_password_change, full_name, role, avatar_url')
-    .eq('id', user.id)
-    .maybeSingle()
 
   if (profile?.require_password_change) {
     redirect('/auth/first-login-password')

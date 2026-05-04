@@ -48,13 +48,11 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       email: emailTrimmed,
       password,
     })
-    setLoading(false)
     if (signError) {
+      setLoading(false)
       setError(mapAuthError(signError).message)
       return
     }
-    // Dashboard reads `profiles.role` server-side and renders the right experience for that role.
-    router.refresh()
     router.push(safeReturnPath(redirectTo))
   }
 

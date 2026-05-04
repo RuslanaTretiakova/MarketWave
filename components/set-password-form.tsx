@@ -54,7 +54,22 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
       return
     }
 
-    const cleared = await completePasswordChange()
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (!sessionData.session) {
+      setLoading(false)
+      setError(
+        mode === 'recovery'
+          ? 'Session expired. Open the reset link from your email again.'
+          : 'Session expired. Sign in again from your invitation link.'
+      )
+      return
+    }
+
+    let cleared = await completePasswordChange()
+    if (!cleared.ok && cleared.message === 'Not signed in.') {
+      await new Promise((r) => setTimeout(r, 80))
+      cleared = await completePasswordChange()
+    }
     setLoading(false)
     if (!cleared.ok) {
       setError(cleared.message)
@@ -62,14 +77,13 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
     }
 
     if (mode === 'recovery') {
-      router.refresh()
       await supabase.auth.signOut()
       setRecoveryComplete(true)
       return
     }
 
     await supabase.auth.signOut()
-    router.replace('/auth/login?reset=success')
+    router.replace(`/auth/login?reset=success&next=${encodeURIComponent('/settings/profile')}`)
   }
 
   const subtitle =

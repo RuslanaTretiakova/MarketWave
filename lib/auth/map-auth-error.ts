@@ -74,6 +74,18 @@ export function mapAuthError(error: AuthError | Error | null | undefined): Mappe
   if (includes(msg, 'already registered') || includes(msg, 'already been registered')) {
     return { code: 'user_already_exists', message: 'This email is already registered.' }
   }
+  if (
+    includes(msg, 'redirect_to') ||
+    includes(msg, 'redirect url') ||
+    includes(msg, 'invalid redirect') ||
+    (includes(msg, 'redirect') && includes(msg, 'not allowed'))
+  ) {
+    return {
+      code: 'invite_failed',
+      message:
+        'Supabase rejected the invite link URL. In the Supabase dashboard, add your public origin with /auth/callback under Authentication → URL configuration → Redirect URLs. Set NEXT_PUBLIC_SITE_URL in your deployment to that same origin (no trailing slash).',
+    }
+  }
   if (includes(msg, 'user not found') || includes(msg, 'not found')) {
     return { code: 'user_not_found', message: 'No account found for this email.' }
   }

@@ -31,7 +31,7 @@ Triggers create a profile (and related cart) when a new auth user is created—s
 
 ## Environment
 
-- **`NEXT_PUBLIC_SITE_URL`** — canonical public origin (no trailing slash) used in invite and password-reset links. Must be listed in Supabase **Redirect URLs** for production. Custom HTML for transactional mail lives in `supabase/templates/` (`invite`, `recovery`, `magic_link`); mirror those templates in the hosted project under **Authentication → Email templates**. For production deliverability, configure **SMTP** in the Supabase dashboard (not committed in this repo).
+- **`NEXT_PUBLIC_SITE_URL`** — canonical public origin (no trailing slash) used in invite and password-reset links. Must be listed in Supabase **Redirect URLs** for production (add the full callback path, e.g. `https://your-domain/auth/callback`, so invite and recovery links are accepted). Custom HTML for transactional mail lives in `supabase/templates/` (`invite`, `recovery`, `magic_link`); mirror those templates in the hosted project under **Authentication → Email templates**. For production deliverability, configure **SMTP** in the Supabase dashboard (not committed in this repo).
 
 ## Development notes
 

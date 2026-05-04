@@ -28,7 +28,7 @@ export async function requestPasswordResetAction(
     return { ok: false, message: 'Enter a valid email address.' }
   }
 
-  const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`
+  const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/update-password')}&flow=${encodeURIComponent('recovery')}`
   const { error: resetError } = await adminClient.auth.resetPasswordForEmail(normalized, {
     redirectTo,
   })

@@ -23,20 +23,20 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
+        pathname: '/storage/v1/object/**',
       },
       /** Local Supabase (`supabase start`) — avoids blocking optimized assets if any use `next/image`. */
       {
         protocol: 'http',
         hostname: '127.0.0.1',
         port: '54321',
-        pathname: '/storage/v1/object/public/**',
+        pathname: '/storage/v1/object/**',
       },
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '54321',
-        pathname: '/storage/v1/object/public/**',
+        pathname: '/storage/v1/object/**',
       },
     ],
   },

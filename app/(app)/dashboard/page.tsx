@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
-import { createClient } from '@/lib/supabase/server'
+import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -54,19 +54,10 @@ const snapshots = [
 ] as const
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, profile } = await getCachedAppUserContext()
   if (!user) {
     notFound()
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name, require_password_change')
-    .eq('id', user.id)
-    .maybeSingle()
 
   if (profile?.require_password_change) {
     redirect('/auth/first-login-password')
