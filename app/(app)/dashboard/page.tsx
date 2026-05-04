@@ -20,7 +20,7 @@ function roleHeadline(role: Role, name: string | null) {
     case 'admin':
       return {
         title: `Welcome, ${who}`,
-        hint: 'You are the organization admin — invite teammates from Settings.',
+        hint: 'You are the organization admin — invite teammates from Users.',
       }
     case 'client':
       return { title: `Welcome back, ${who}`, hint: 'Your hub for orders, cart, and approvals.' }
@@ -101,16 +101,16 @@ export default async function DashboardPage() {
         <h3 className="text-foreground text-base font-semibold">Next steps</h3>
         <p className="text-muted-foreground mt-inset max-w-xl text-sm leading-relaxed">
           {role === 'admin'
-            ? 'Open Settings to invite users by email and assign roles.'
+            ? 'Open Users to invite teammates by email and assign roles.'
             : 'Explore the site catalog and cart from the sidebar — data layers connect when you wire queries.'}
         </p>
         <div className="mt-layout gap-inset flex flex-wrap">
           {role === 'admin' ? (
             <Link
-              href="/settings"
+              href="/settings/users"
               className={cn(buttonVariants({ variant: 'cta', size: 'default' }))}
             >
-              Team invitations
+              User management
             </Link>
           ) : null}
           <Link

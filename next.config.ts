@@ -7,6 +7,39 @@ import type { NextConfig } from 'next'
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      /** Canonical profile settings live under Settings — fixes bookmarks / old links to `/profile`. */
+      { source: '/profile', destination: '/settings/profile', permanent: false },
+      {
+        source: '/profile/:path*',
+        destination: '/settings/profile',
+        permanent: false,
+      },
+    ]
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      /** Local Supabase (`supabase start`) — avoids blocking optimized assets if any use `next/image`. */
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '54321',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '54321',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   turbopack: {
     root: projectRoot,
     resolveAlias: {

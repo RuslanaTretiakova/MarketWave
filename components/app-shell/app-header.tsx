@@ -2,28 +2,32 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import { ChevronsRight, Menu, PanelLeft } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppNavLinks } from '@/components/app-shell/app-sidebar'
 import { AppUserMenu } from '@/components/app-shell/app-user-menu'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { APP_NAV_ITEMS } from '@/lib/app-nav'
+import type { AppNavItem } from '@/lib/app-nav'
+import { navTitleForPath } from '@/lib/app-nav'
 import { splitDisplayName } from '@/lib/user-display-name'
 import { cn } from '@/lib/utils'
 
-function titleForPath(pathname: string): string {
-  const hit = APP_NAV_ITEMS.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
-  )
-  return hit?.label ?? 'Dashboard'
-}
-
-export function AppHeader({ user }: { user: AppShellUser }) {
+export function AppHeader({
+  user,
+  navItems,
+  sidebarCollapsed,
+  onToggleSidebarCollapsed,
+}: {
+  user: AppShellUser
+  navItems: AppNavItem[]
+  sidebarCollapsed: boolean
+  onToggleSidebarCollapsed: () => void
+}) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-  const pageTitle = titleForPath(pathname)
+  const pageTitle = navTitleForPath(pathname, navItems)
   const { first } = splitDisplayName(user.fullName, user.email)
   const firstName = first.trim() || 'there'
 
@@ -49,10 +53,27 @@ export function AppHeader({ user }: { user: AppShellUser }) {
               </SheetTitle>
             </SheetHeader>
             <div className="p-block">
-              <AppNavLinks onNavigate={() => setMenuOpen(false)} />
+              <AppNavLinks items={navItems} onNavigate={() => setMenuOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className={cn(
+            'text-muted-foreground hover:bg-muted hover:text-foreground hidden shrink-0 rounded-lg md:inline-flex'
+          )}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!sidebarCollapsed}
+          onClick={onToggleSidebarCollapsed}
+        >
+          {sidebarCollapsed ? (
+            <ChevronsRight className="size-4" aria-hidden />
+          ) : (
+            <PanelLeft className="size-4" aria-hidden />
+          )}
+        </Button>
         <h1 className="text-foreground min-w-0 flex-1 leading-snug font-semibold tracking-tight">
           <span className="block truncate text-base md:text-lg">Welcome back, {firstName}</span>
           <span className="text-muted-foreground block truncate text-xs font-medium md:text-sm">

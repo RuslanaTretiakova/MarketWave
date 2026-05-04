@@ -61,13 +61,15 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
       return
     }
 
-    router.refresh()
     if (mode === 'recovery') {
+      router.refresh()
       await supabase.auth.signOut()
       setRecoveryComplete(true)
       return
     }
-    router.push('/dashboard')
+
+    await supabase.auth.signOut()
+    router.replace('/auth/login?reset=success')
   }
 
   const subtitle =

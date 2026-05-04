@@ -2,29 +2,32 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronsLeft, ChevronsRight, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 import { SiteBrandLink } from '@/components/layout/site-brand-link'
 import { Button } from '@/components/ui/button'
 import { signOutAndRedirectToLogin } from '@/lib/auth/client-sign-out'
-import { APP_NAV_ITEMS } from '@/lib/app-nav'
+import type { AppNavItem } from '@/lib/app-nav'
+import { isAppNavItemActive } from '@/lib/app-nav'
 import { cn } from '@/lib/utils'
 
 export function AppNavLinks({
   className,
   collapsed,
+  items,
   onNavigate,
 }: {
   className?: string
   collapsed?: boolean
+  items: AppNavItem[]
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
 
   return (
     <nav className={cn('gap-block flex flex-col', className)}>
-      {APP_NAV_ITEMS.map(({ href, label, Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`)
+      {items.map(({ href, label, Icon }) => {
+        const active = isAppNavItemActive(pathname, href, items)
         return (
           <Link
             key={href}
@@ -32,8 +35,8 @@ export function AppNavLinks({
             title={collapsed ? label : undefined}
             onClick={onNavigate}
             className={cn(
-              'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar flex items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-              collapsed ? 'justify-center px-0 py-3' : 'px-3 py-2.5',
+              'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar flex h-10 w-full items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              collapsed ? 'px-inset justify-center' : 'px-block',
               active
                 ? 'border-sidebar-border bg-sidebar-item-active text-sidebar-accent-foreground shadow-sm'
                 : 'text-sidebar-foreground/85 hover:border-sidebar-border/55 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-transparent'
@@ -51,11 +54,11 @@ export function AppNavLinks({
 export function AppSidebar({
   className,
   collapsed,
-  onToggleCollapsed,
+  navItems,
 }: {
   className?: string
   collapsed?: boolean
-  onToggleCollapsed?: () => void
+  navItems: AppNavItem[]
 }) {
   const isCollapsed = collapsed === true
 
@@ -69,8 +72,8 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          'border-sidebar-border border-b p-3',
-          isCollapsed ? 'flex justify-center' : 'flex justify-start'
+          'border-sidebar-border flex h-14 shrink-0 items-center border-b',
+          isCollapsed ? 'justify-center px-2' : 'px-block md:px-layout justify-start'
         )}
       >
         <SiteBrandLink
@@ -83,15 +86,15 @@ export function AppSidebar({
         <div
           className={cn(
             'min-h-0 flex-1 overflow-y-auto',
-            isCollapsed ? 'py-block px-2' : 'p-block'
+            isCollapsed ? 'py-inset px-2' : 'px-block py-inset md:px-layout'
           )}
         >
-          <AppNavLinks collapsed={isCollapsed} />
+          <AppNavLinks collapsed={isCollapsed} items={navItems} />
         </div>
         <div
           className={cn(
-            'border-sidebar-border gap-block p-block flex flex-col border-t',
-            isCollapsed && 'items-stretch px-2'
+            'border-sidebar-border gap-block py-inset flex flex-col border-t',
+            isCollapsed ? 'px-2' : 'px-block md:px-layout'
           )}
         >
           <Button
@@ -100,7 +103,7 @@ export function AppSidebar({
             size={isCollapsed ? 'icon-sm' : 'default'}
             className={cn(
               'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              !isCollapsed && 'h-9 w-full justify-start gap-2 px-3',
+              !isCollapsed && 'h-9 w-full justify-start gap-2 px-0',
               'text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20'
             )}
             title={isCollapsed ? 'Log out' : undefined}
@@ -109,32 +112,6 @@ export function AppSidebar({
             <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
             {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
           </Button>
-          {onToggleCollapsed ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size={isCollapsed ? 'icon-sm' : 'default'}
-              aria-expanded={!isCollapsed}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Narrow sidebar'}
-              title={isCollapsed ? 'Expand sidebar' : undefined}
-              onClick={onToggleCollapsed}
-              className={cn(
-                'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                !isCollapsed && 'h-9 w-full justify-start gap-2 px-3'
-              )}
-            >
-              {isCollapsed ? (
-                <ChevronsRight className="size-4 shrink-0" aria-hidden />
-              ) : (
-                <>
-                  <ChevronsLeft className="size-4 shrink-0 opacity-90" aria-hidden />
-                  <span className="text-sidebar-foreground/90 text-sm font-medium">
-                    Narrow sidebar
-                  </span>
-                </>
-              )}
-            </Button>
-          ) : null}
         </div>
       </div>
     </aside>

@@ -3,13 +3,10 @@
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import type { Database, Json } from '@/lib/supabase/types'
+import type { Json } from '@/lib/supabase/types'
 import { getSiteOrigin } from '@/lib/site-url'
 import { normalizeEmail } from '@/lib/validation/email'
-
-type InviteRole = Exclude<Database['public']['Enums']['user_role'], 'admin'>
-
-const INVITABLE_ROLES: InviteRole[] = ['client', 'sourcer', 'manager', 'copywriter']
+import { ORG_INVITABLE_ROLES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 
 export type InviteActionResult = { ok: true; message?: string } | { ok: false; message: string }
 
@@ -78,8 +75,8 @@ export async function inviteTeamMember(input: {
     return { ok: false, message: 'Enter a valid email address.' }
   }
 
-  const role = input.role as InviteRole
-  if (!INVITABLE_ROLES.includes(role)) {
+  const role = input.role as OrgInviteRole
+  if (!ORG_INVITABLE_ROLES.includes(role)) {
     return { ok: false, message: 'Invalid role for invitation.' }
   }
 
@@ -148,7 +145,9 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
   }
 
   const roleRaw = (match.user_metadata?.role as string | undefined) ?? 'client'
-  const role = INVITABLE_ROLES.includes(roleRaw as InviteRole) ? (roleRaw as InviteRole) : 'client'
+  const role = ORG_INVITABLE_ROLES.includes(roleRaw as OrgInviteRole)
+    ? (roleRaw as OrgInviteRole)
+    : 'client'
 
   const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/first-login-password')}`
 

@@ -1,16 +1,18 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { AppHeader } from '@/components/app-shell/app-header'
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
+import { getAppNavItems } from '@/lib/app-nav'
 
 const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
 
 export function AppShell({ user, children }: { user: AppShellUser; children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const navItems = useMemo(() => getAppNavItems(user.role), [user.role])
 
   useEffect(() => {
     let cancelled = false
@@ -43,13 +45,14 @@ export function AppShell({ user, children }: { user: AppShellUser; children: Rea
 
   return (
     <div className="bg-app-shell-canvas flex min-h-screen">
-      <AppSidebar
-        className="hidden md:flex"
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={toggleSidebarCollapsed}
-      />
+      <AppSidebar className="hidden md:flex" collapsed={sidebarCollapsed} navItems={navItems} />
       <div className="bg-app-shell-canvas flex min-w-0 flex-1 flex-col">
-        <AppHeader user={user} />
+        <AppHeader
+          user={user}
+          navItems={navItems}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebarCollapsed={toggleSidebarCollapsed}
+        />
         <main className="text-foreground px-block py-layout md:px-layout flex-1">{children}</main>
       </div>
     </div>

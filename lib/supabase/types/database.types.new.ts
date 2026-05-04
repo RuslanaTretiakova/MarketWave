@@ -286,6 +286,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          copywriter_id: string | null
           created_at: string
           id: string
           price: number
@@ -308,6 +309,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          copywriter_id?: string | null
           created_at?: string
           id?: string
           price: number
@@ -330,6 +332,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          copywriter_id?: string | null
           created_at?: string
           id?: string
           price?: number
@@ -353,6 +356,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: 'orders_copywriter_id_fkey'
+            columns: ['copywriter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'orders_site_id_fkey'
             columns: ['site_id']
             isOneToOne: false
@@ -371,8 +381,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           company_name: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -382,8 +394,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           company_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
           phone?: string | null
@@ -393,8 +407,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           company_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -465,6 +481,7 @@ export type Database = {
           organic_traffic_count: number | null
           price: number
           requirements: string | null
+          sourcer_id: string | null
           status: Database['public']['Enums']['site_status']
           updated_at: string
         }
@@ -482,6 +499,7 @@ export type Database = {
           organic_traffic_count?: number | null
           price: number
           requirements?: string | null
+          sourcer_id?: string | null
           status?: Database['public']['Enums']['site_status']
           updated_at?: string
         }
@@ -499,6 +517,7 @@ export type Database = {
           organic_traffic_count?: number | null
           price?: number
           requirements?: string | null
+          sourcer_id?: string | null
           status?: Database['public']['Enums']['site_status']
           updated_at?: string
         }
@@ -508,6 +527,13 @@ export type Database = {
             columns: ['category_id']
             isOneToOne: false
             referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sites_sourcer_id_fkey'
+            columns: ['sourcer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
