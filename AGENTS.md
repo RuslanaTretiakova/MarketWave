@@ -33,7 +33,7 @@ Use the **Supabase CLI** (install globally or run via `npx supabase …`). Local
 
 ## DB Schema (quick ref)
 
-Tables: `profiles` · `auth_audit_log` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs` — there is **no** `public.users` table; identities are `auth.users` (Supabase) + `public.profiles` (app).
+Tables: `profiles` · `admin_invite_rate_events` · `auth_audit_log` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs` — there is **no** `public.users` table; identities are `auth.users` (Supabase) + `public.profiles` (app).
 
 Key rules baked into the DB (do not re-implement in app code):
 
@@ -57,6 +57,7 @@ Roles (stored in `profiles.role`, read via `public.get_my_role()`): `admin` · `
 ## Security
 
 - RLS is on every table — security is enforced at the DB level, not the app level
+- **`profiles` SELECT:** Each user may read their own row; **only `admin`** may read **other** users' `profiles` rows (cross-team PII). Operational roles still use their own row and non-profile tables per existing policies.
 - **Single admin:** One `profiles.role = 'admin'` row (partial unique index). Create that user in **Supabase Dashboard** with **User metadata** JSON: `{ "is_bootstrap_admin": true, "role": "admin", "full_name": "Your Name" }` so `handle_new_user` assigns admin and `require_password_change = false`. Everyone else is invited (`inviteUserByEmail`) from **Settings** in the app. `public.bootstrap_signup_allowed()` always returns `false` (RPC kept for compatibility); disable public sign-up in the Supabase Auth dashboard for defense in depth.
 - **First sign-in:** Invited users have `profiles.require_password_change = true` until they set a password; cleared only via **service role** (Server Action + `adminClient`), enforced by a DB trigger.
 - **Email links:** Set **`NEXT_PUBLIC_SITE_URL`** to your deployed origin so invite/reset `redirectTo` URLs match the Supabase redirect allow-list (see `.env.example`).

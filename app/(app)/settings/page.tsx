@@ -1,8 +1,11 @@
 import { notFound } from 'next/navigation'
 
-import { InviteTeamCard } from '@/components/invite-team-card'
+import Link from 'next/link'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { buttonVariants } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
+import { cn } from '@/lib/utils'
 
 export const metadata = {
   title: 'Settings',
@@ -23,15 +26,6 @@ export default async function SettingsPage() {
     .eq('id', user.id)
     .maybeSingle()
 
-  const { data: auditRows } =
-    profile?.role === 'admin'
-      ? await supabase
-          .from('auth_audit_log')
-          .select('id, action, target_email, created_at')
-          .order('created_at', { ascending: false })
-          .limit(30)
-      : { data: null }
-
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
       <div>
@@ -44,34 +38,34 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            Account details come from Supabase Auth and{' '}
-            <code className="text-foreground bg-muted rounded px-1 py-0.5 text-xs">profiles</code>;
-            role-aware UI branches on{' '}
-            <code className="text-foreground bg-muted rounded px-1 py-0.5 text-xs">
-              get_my_role()
-            </code>
-            .
+            View and edit your display name, photo, email, and password.
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <Link
+            href="/settings/profile"
+            className={cn(buttonVariants({ variant: 'cta', size: 'default' }))}
+          >
+            Open profile settings
+          </Link>
+        </CardContent>
       </Card>
 
       {profile?.role === 'admin' ? (
         <Card>
           <CardHeader>
-            <CardTitle>Team invitations</CardTitle>
+            <CardTitle>Team & users</CardTitle>
             <CardDescription>
-              Invite users by email. Only one organization admin is supported.
+              Invite teammates, assign roles, and manage access from the Users workspace.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <InviteTeamCard
-              initialAudit={(auditRows ?? []).map((r) => ({
-                id: r.id,
-                action: r.action,
-                target_email: r.target_email,
-                created_at: r.created_at,
-              }))}
-            />
+            <Link
+              href="/settings/users"
+              className={cn(buttonVariants({ variant: 'cta', size: 'default' }))}
+            >
+              Open user management
+            </Link>
           </CardContent>
         </Card>
       ) : null}

@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+/**
+ * Static checks aligned with security hardening verification (no live DB or browser).
+ * Run: node scripts/verify-security-hardening-checklist.mjs
+ */
+
+import { readFileSync, existsSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const root = join(__dirname, '..')
+
+function read(p) {
+  return readFileSync(join(root, p), 'utf8')
+}
+
+function must(cond, msg) {
+  if (!cond) throw new Error(msg)
+}
+
+const checks = []
+
+try {
+  must(
+    existsSync(join(root, 'supabase/migrations/20260509120000_profiles_select_admin_only.sql')),
+    'Missing migration 20260509120000_profiles_select_admin_only.sql'
+  )
+  const pol = read('supabase/migrations/20260509120000_profiles_select_admin_only.sql')
+  must(pol.includes("get_my_role() = 'admin'"), 'Admin-only profiles SELECT policy not found')
+
+  must(
+    existsSync(join(root, 'supabase/migrations/20260509120001_admin_invite_rate_events.sql')),
+    'Missing migration 20260509120001_admin_invite_rate_events.sql'
+  )
+  const rt = read('supabase/migrations/20260509120001_admin_invite_rate_events.sql')
+  must(rt.includes('admin_invite_rate_events'), 'Rate limit table name not in migration')
+
+  const invite = read('lib/auth/invite-actions.ts')
+  must(invite.includes('findAuthUserByEmailLower'), 'Resend should use paginated Auth lookup')
+  must(invite.includes('checkAndRecordAdminInviteRateLimit'), 'Invite should use DB rate limit')
+  must(
+    invite.includes('/auth/first-login-password'),
+    'Invite redirectTo should target first-login-password'
+  )
+
+  const reset = read('lib/auth/password-reset-actions.ts')
+  must(
+    reset.includes('return { ok: true }'),
+    'Password reset should return ok: true for anti-enumeration'
+  )
+  must(
+    !reset.includes('auth_user_email_exists'),
+    'auth_user_email_exists should not be used in reset action'
+  )
+
+  const forgot = read('components/forgot-password-form.tsx')
+  must(forgot.includes('If an account exists'), 'Forgot-password success copy should be neutral')
+
+  const usersPage = read('app/(app)/settings/users/page.tsx')
+  must(usersPage.includes("profile?.role !== 'admin'"), 'Users page must gate on admin')
+  must(usersPage.includes('notFound()'), 'Users page must notFound for non-admin')
+
+  const nav = read('lib/app-nav.ts')
+  must(nav.includes("role !== 'admin'"), 'Nav should hide Users for non-admin')
+  must(nav.includes('/settings/users'), 'Nav should include Users href for admin')
+
+  const setPw = read('components/set-password-form.tsx')
+  must(
+    setPw.includes('/auth/login'),
+    'First-login flow should redirect to login after password set'
+  )
+
+  const profileLayout = read('app/(app)/layout.tsx')
+  must(profileLayout.includes(".eq('id', user.id)"), 'App layout loads own profile only')
+
+  const updateOwn = read('lib/profile/update-own-profile.ts')
+  must(updateOwn.includes('isOwnAvatarsPublicObjectUrl'), 'Own profile should validate avatar URL')
+
+  checks.push('All static security-hardening checks passed.')
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e)
+  process.exit(1)
+}
+
+for (const c of checks) console.log(c)
+console.log(
+  '\nDB: Run `npx supabase migration list` and confirm the Remote column includes 20260509120000 and 20260509120001.' +
+    '\nIf `db push` fails on storage.buckets ownership, apply pending SQL from the Dashboard (SQL editor) or fix migration privileges per Supabase docs.'
+)

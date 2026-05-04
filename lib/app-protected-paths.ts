@@ -1,4 +1,4 @@
-/** Paths that require a Supabase session (aligned with `APP_NAV_ITEMS`). */
+/** Paths that require a Supabase session (`/settings` included; not every prefix appears in the sidebar). */
 export const APP_PROTECTED_PREFIXES = [
   '/dashboard',
   '/sites',

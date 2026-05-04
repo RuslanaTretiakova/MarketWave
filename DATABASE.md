@@ -12,14 +12,14 @@ Do not rely on this file for column-level detail when migrations disagree—**mi
 
 Same list as [AGENTS.md](AGENTS.md) DB quick ref:
 
-`profiles` · `auth_audit_log` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs`
+`profiles` · `admin_invite_rate_events` · `auth_audit_log` · `categories` · `sites` · `site_countries` · `site_languages` · `carts` · `cart_items` · `orders` · `invoices` · `change_requests` · `error_logs`
 
 ## Authentication (managed by Supabase)
 
 There is **no `public.users` table** in this project. Application-owned identity and roles live in **`public.profiles`** only.
 
 - **`auth.users`** — Supabase Auth’s internal identity store (email, password hash, session primitives). You do not create migrations for it; `profiles.id` is a foreign key to `auth.users(id)`.
-- **`public.profiles`** — one row per person (`id` = same UUID as `auth.users.id`). Columns like `role`, `full_name`, and `require_password_change` live here. **Email is not duplicated on `profiles`**; it stays on `auth.users`, which is why server-only **Auth Admin** APIs (for example `listUsers`) are used when the flow needs to look someone up by email (e.g. resend invite).
+- **`public.profiles`** — one row per person (`id` = same UUID as `auth.users.id`). Columns like `role`, `full_name`, and `require_password_change` live here. **Email is not duplicated on `profiles`**; it stays on `auth.users`, which is why server-only **Auth Admin** APIs (for example `listUsers`) are used when the flow needs to look someone up by email (e.g. resend invite). **RLS:** users can read their own row; **only `admin`** can read other users' rows.
 
 Triggers create a profile (and related cart) when a new auth user is created—see migration `20260430000012_create_functions_triggers.sql` and `20260501120001_marketweave_bootstrap_and_rls.sql` / `20260502120000_single_admin_invite_auth.sql`.
 

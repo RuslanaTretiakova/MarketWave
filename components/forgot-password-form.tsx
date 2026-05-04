@@ -37,8 +37,9 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <p className="text-foreground text-sm leading-relaxed" role="status">
-        We sent a password reset link to <span className="font-medium">{sentTo}</span>. Check your
-        inbox and spam folder. The link expires after a short time.
+        If an account exists for <span className="font-medium">{sentTo}</span>, you will receive an
+        email with a reset link. Check your inbox and spam folder. The link expires after a short
+        time.
       </p>
     )
   }
