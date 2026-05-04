@@ -1,5 +1,9 @@
 'use server'
 
+import type { User } from '@supabase/supabase-js'
+
+import { findAuthUserByEmailLower } from '@/lib/auth/admin-auth-user-list'
+import { checkAndRecordAdminInviteRateLimit } from '@/lib/auth/admin-invite-rate-limit'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -9,19 +13,6 @@ import { normalizeEmail } from '@/lib/validation/email'
 import { ORG_INVITABLE_ROLES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 
 export type InviteActionResult = { ok: true; message?: string } | { ok: false; message: string }
-
-const RATE_WINDOW_MS = 60_000
-const RATE_MAX = 20
-const rateStamps = new Map<string, number[]>()
-
-function allowRate(actorId: string): boolean {
-  const now = Date.now()
-  const stamps = (rateStamps.get(actorId) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (stamps.length >= RATE_MAX) return false
-  stamps.push(now)
-  rateStamps.set(actorId, stamps)
-  return true
-}
 
 async function assertAdmin(): Promise<{ userId: string } | { error: string }> {
   const supabase = await createClient()
@@ -66,7 +57,7 @@ export async function inviteTeamMember(input: {
   if ('error' in gate) {
     return { ok: false, message: gate.error }
   }
-  if (!allowRate(gate.userId)) {
+  if (!(await checkAndRecordAdminInviteRateLimit(gate.userId))) {
     return { ok: false, message: 'Too many invites. Try again in a minute.' }
   }
 
@@ -111,7 +102,7 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
   if ('error' in gate) {
     return { ok: false, message: gate.error }
   }
-  if (!allowRate(gate.userId)) {
+  if (!(await checkAndRecordAdminInviteRateLimit(gate.userId))) {
     return { ok: false, message: 'Too many requests. Try again in a minute.' }
   }
 
@@ -120,18 +111,14 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
     return { ok: false, message: 'Enter a valid email address.' }
   }
 
-  // Email lives on Supabase Auth (`auth.users`), not on `public.profiles`, so we use the Admin API
-  // (returns in-memory User DTOs — not a `public.users` table).
-  const { data, error: listErr } = await adminClient.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  })
-  if (listErr) {
-    return { ok: false, message: mapAuthError(listErr).message }
+  let match: User | null
+  try {
+    match = await findAuthUserByEmailLower(email)
+  } catch (err) {
+    console.error('[resendTeamInvite] list users:', err)
+    return { ok: false, message: 'Could not look up that user. Try again.' }
   }
 
-  const authUsers = data?.users ?? []
-  const match = authUsers.find((u) => u.email?.toLowerCase() === email)
   if (!match) {
     return { ok: false, message: 'No user found with that email. Send a new invite instead.' }
   }

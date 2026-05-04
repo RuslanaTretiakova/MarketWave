@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 
+import { listAllAuthUsers } from '@/lib/auth/admin-auth-user-list'
 import { ACTIVE_ORDER_STATUSES } from '@/lib/org-users/active-order-statuses'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -40,31 +41,6 @@ function mergeAuthProfile(u: User, p?: ProfileRow | null): OrgUserRowJson {
     phone: p?.phone ?? null,
     created_at: p?.created_at ?? null,
   }
-}
-
-async function listAllAuthUsers(): Promise<User[]> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
-    throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY is not set on the server. Admin user management needs the Supabase service role key to list Auth users.'
-    )
-  }
-
-  const perPage = 200
-  let page = 1
-  const out: User[] = []
-
-  for (;;) {
-    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage })
-    if (error) {
-      throw error
-    }
-    const batch = data.users
-    out.push(...batch)
-    if (batch.length < perPage) break
-    page += 1
-  }
-
-  return out
 }
 
 export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { forbidden: true }> {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { isOwnAvatarsPublicObjectUrl } from '@/lib/profile/avatar-storage-path'
 import { createClient } from '@/lib/supabase/server'
 
 export type UpdateOwnProfileResult = { ok: true } | { ok: false; message: string }
@@ -31,6 +32,12 @@ export async function updateOwnProfile(patch: OwnProfilePatch): Promise<UpdateOw
 
   if (authErr || !user) {
     return { ok: false, message: 'You must be signed in.' }
+  }
+
+  if (patch.avatar_url !== undefined && patch.avatar_url !== null) {
+    if (!isOwnAvatarsPublicObjectUrl(user.id, patch.avatar_url)) {
+      return { ok: false, message: 'Avatar must use an image from your account storage.' }
+    }
   }
 
   const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)

@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
+    "verify:security": "node scripts/verify-security-hardening-checklist.mjs",
     "db:types": "node scripts/gen-db-types.mjs",
     "prepare": "node scripts/prepare.mjs"
   },

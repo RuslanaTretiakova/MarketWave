@@ -33,6 +33,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_invite_rate_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'admin_invite_rate_events_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       auth_audit_log: {
         Row: {
           action: string

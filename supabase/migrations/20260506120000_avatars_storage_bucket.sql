@@ -13,8 +13,7 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-COMMENT ON COLUMN storage.buckets.public IS
-  'Avatar URLs are embedded in profiles.avatar_url; bucket is readable without signed URLs.';
+-- No COMMENT ON storage.buckets: hosted Postgres roles are not owner of that table (db push fails with 42501).
 
 DROP POLICY IF EXISTS "avatars_select_public" ON storage.objects;
 CREATE POLICY "avatars_select_public"
