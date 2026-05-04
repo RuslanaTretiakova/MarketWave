@@ -6,6 +6,56 @@ import { isAppProtectedPath } from '@/lib/app-protected-paths'
 import { safeReturnPath } from '@/lib/auth-redirect'
 import { tryGetPublicSupabaseEnv } from '@/lib/supabase/public-env'
 
+/** Matches @supabase/ssr default session cookie names (`sb-<ref>-auth-token`, chunked `.n`, `-code-verifier`). */
+function supabaseAuthCookieNames(request: NextRequest): string[] {
+  return request.cookies
+    .getAll()
+    .map(({ name }) => name)
+    .filter((name) => name.startsWith('sb-') && name.includes('-auth-token'))
+}
+
+function clearStaleSessionCookies(request: NextRequest, response: NextResponse) {
+  const secure = request.nextUrl.protocol === 'https:'
+  const expires = supabaseAuthCookieNames(request)
+  for (const name of expires) {
+    response.cookies.set(name, '', {
+      path: '/',
+      maxAge: 0,
+      sameSite: 'lax',
+      httpOnly: false,
+      ...(secure ? { secure: true } : {}),
+    })
+  }
+}
+
+function isRefreshTokenMissingError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false
+  }
+  const rec = err as { code?: unknown; message?: unknown }
+  return (
+    rec.code === 'refresh_token_not_found' ||
+    (typeof rec.message === 'string' && rec.message.includes('Refresh Token Not Found'))
+  )
+}
+
+/** Stale or cross-project cookies: strip them and recover without sending app users to a generic `/404`. */
+function refreshTokenMissingRecovery(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  if (isAppProtectedPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.search = ''
+    url.searchParams.set('error', 'session')
+    const redirect = NextResponse.redirect(url)
+    clearStaleSessionCookies(request, redirect)
+    return redirect
+  }
+  const next = NextResponse.next({ request })
+  clearStaleSessionCookies(request, next)
+  return next
+}
+
 function failureResponse(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   if (isAppProtectedPath(pathname)) {
@@ -117,6 +167,9 @@ export async function updateSession(request: NextRequest) {
     return await refreshSession(request, supabaseUrl, supabaseAnonKey)
   } catch (err) {
     console.error('[supabase/middleware] Session refresh failed:', err)
+    if (isRefreshTokenMissingError(err)) {
+      return refreshTokenMissingRecovery(request)
+    }
     return failureResponse(request)
   }
 }
