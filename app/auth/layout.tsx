@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { AuthSplitLayout } from '@/components/layout/auth-split-layout'
+import { AuthSplitLayout } from '@/components/auth'
 
 export const dynamic = 'force-dynamic'
 

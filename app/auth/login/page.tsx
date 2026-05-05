@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 
-import { AuthFormCard } from '@/components/auth'
-import { LoginForm } from '@/components/login-form'
+import { AuthFormCard, LoginForm } from '@/components/auth'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
 import { cn } from '@/lib/utils'

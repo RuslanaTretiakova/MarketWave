@@ -7,7 +7,7 @@ import { LayoutDashboard, LogOut, User } from 'lucide-react'
 import {
   AccountMenuAvatar,
   normalizeAccountAvatarUrl,
-} from '@/components/layout/account-menu-avatar'
+} from '@/components/user-menu/account-menu-avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,

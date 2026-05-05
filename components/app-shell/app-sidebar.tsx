@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 
-import { SiteBrandLink } from '@/components/layout/site-brand-link'
+import { SiteBrandLink } from '@/components/brand/site-brand-link'
 import { Button } from '@/components/ui/button'
 import { signOutAndRedirectToLogin } from '@/lib/auth/client-sign-out'
 import type { AppNavItem } from '@/lib/app-nav'

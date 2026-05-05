@@ -8,7 +8,7 @@ import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import {
   AccountMenuAvatar,
   normalizeAccountAvatarUrl,
-} from '@/components/layout/account-menu-avatar'
+} from '@/components/user-menu/account-menu-avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,

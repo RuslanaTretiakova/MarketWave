@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import Link from 'next/link'
 
-import { Logo } from '@/components/layout/logo'
+import { Logo } from '@/components/brand/logo'
 import { SITE_TAGLINE } from '@/lib/brand'
 
 type AuthSplitLayoutProps = {

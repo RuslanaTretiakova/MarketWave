@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { MarketingUserMenu } from '@/components/layout/marketing-user-menu'
-import { SiteBrandLink } from '@/components/layout/site-brand-link'
+import { MarketingUserMenu } from '@/components/site/marketing-user-menu'
+import { SiteBrandLink } from '@/components/brand/site-brand-link'
 import { buttonVariants } from '@/components/ui/button'
 import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'

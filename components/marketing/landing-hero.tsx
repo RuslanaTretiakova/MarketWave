@@ -1,6 +1,6 @@
 import { ArrowRight, Check } from 'lucide-react'
 
-import { HeroProductMockup } from '@/components/layout/hero-product-mockup'
+import { HeroProductMockup } from '@/components/marketing/hero-product-mockup'
 import { buttonVariants } from '@/components/ui/button'
 import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
