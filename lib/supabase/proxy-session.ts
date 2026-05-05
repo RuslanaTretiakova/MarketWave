@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 
-import { isAuthPasswordCompletionPath, isAuthPublicPath } from '@/lib/auth/auth-paths'
+import { isAuthPasswordCompletionPath } from '@/lib/auth/auth-paths'
 import { isAppProtectedPath } from '@/lib/app-protected-paths'
 import { safeReturnPath } from '@/lib/auth-redirect'
 import { tryGetPublicSupabaseEnv } from '@/lib/supabase/public-env'
@@ -125,20 +125,6 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
   if (user && !requirePasswordChange && pathname === '/auth/first-login-password') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    url.search = ''
-    return NextResponse.redirect(url)
-  }
-
-  if (
-    !user &&
-    !isAuthPublicPath(pathname) &&
-    (pathname === '/auth/first-login-password' ||
-      pathname.startsWith('/auth/first-login-password/') ||
-      pathname === '/auth/update-password' ||
-      pathname.startsWith('/auth/update-password/'))
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
     url.search = ''
     return NextResponse.redirect(url)
   }
