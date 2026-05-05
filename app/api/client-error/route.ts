@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server'
 
+import {
+  CLIENT_ERROR_MAX_PER_KEY,
+  CLIENT_ERROR_WINDOW_MS,
+  checkAndRecordPublicRateLimit,
+  readClientIpKey,
+} from '@/lib/auth/public-rate-limit'
 import { adminClient } from '@/lib/supabase/admin'
 import { clientErrorPostOriginAllowed } from '@/lib/errors/client-error-post-origin'
 
@@ -12,6 +18,17 @@ const LEVELS = new Set(['info', 'warn', 'error', 'critical'])
 export async function POST(request: Request) {
   if (!clientErrorPostOriginAllowed(request.headers.get('origin'))) {
     return new NextResponse(null, { status: 403 })
+  }
+
+  const ipKey = readClientIpKey((name) => request.headers.get(name))
+  const rate = await checkAndRecordPublicRateLimit({
+    kind: 'client_error',
+    key: ipKey,
+    windowMs: CLIENT_ERROR_WINDOW_MS,
+    max: CLIENT_ERROR_MAX_PER_KEY,
+  })
+  if (!rate.ok) {
+    return new NextResponse(null, { status: 429 })
   }
 
   let parsed: Record<string, unknown>

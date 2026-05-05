@@ -446,6 +446,27 @@ export type Database = {
         }
         Relationships: []
       }
+      public_rate_limit_events: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          kind: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          kind?: string
+        }
+        Relationships: []
+      }
       site_countries: {
         Row: {
           country: string
