@@ -4,6 +4,7 @@ import { Fraunces, Inter, Roboto_Mono } from 'next/font/google'
 
 import { metadataKeywords, SITE_NAME, SITE_TAGLINE } from '@/lib/brand'
 
+import { AuthSessionHashHandler } from '@/components/auth/auth-session-hash-handler'
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
@@ -52,6 +53,7 @@ export default function RootLayout({
           src="/strip-extension-dom-markers.js"
           strategy="beforeInteractive"
         />
+        <AuthSessionHashHandler />
         {children}
         <Toaster />
       </body>
