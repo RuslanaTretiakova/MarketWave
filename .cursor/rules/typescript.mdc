@@ -1,0 +1,7 @@
+---
+description: TypeScript — types, narrowing, public APIs
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/clean-typescript/SKILL.md](docs/ai/claude/skills/clean-typescript/SKILL.md)** (no `any`, prefer `type` / unions over `enum`, explicit public return types).

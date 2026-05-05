@@ -13,6 +13,11 @@ import { cn } from '@/lib/utils'
 
 function SidebarLogoutFooter({ collapsed }: { collapsed: boolean }) {
   const isCollapsed = collapsed === true
+
+  function handleLogoutClick() {
+    void signOutAndRedirectToLogin()
+  }
+
   return (
     <div
       className={cn(
@@ -30,7 +35,7 @@ function SidebarLogoutFooter({ collapsed }: { collapsed: boolean }) {
           'text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20'
         )}
         title={isCollapsed ? 'Log out' : undefined}
-        onClick={() => void signOutAndRedirectToLogin()}
+        onClick={handleLogoutClick}
       >
         <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
         {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
@@ -121,7 +126,7 @@ export function AppSidebar({
       className={cn(
         'border-sidebar-border bg-sidebar text-sidebar-foreground flex shrink-0 flex-col overflow-hidden border-r shadow-(--shadow-shell) transition-[width] duration-200 ease-out',
         /* Viewport-high sticky rail: logout stays at bottom of visible panel while main scrolls. */
-        'md:sticky md:top-0 md:h-[100dvh] md:max-h-[100dvh] md:self-start',
+        'md:sticky md:top-0 md:h-dvh md:max-h-dvh md:self-start',
         isCollapsed ? 'md:w-19' : 'md:w-60',
         className
       )}

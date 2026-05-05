@@ -22,7 +22,7 @@ function StripSegment({ label, variant }: { label: string; variant: 'caps' | 'sa
         variant === 'caps' &&
           'text-muted-foreground font-sans text-[11px] font-semibold tracking-[0.2em] uppercase',
         variant === 'sans' &&
-          'marketing-heading text-muted-foreground/80 text-sm md:text-[0.9375rem]',
+          'marketing-heading text-muted-foreground/80 text-sm md:text-(--marketing-button-text)',
         variant === 'serif' &&
           'font-display text-foreground text-base font-semibold tracking-tight md:text-lg'
       )}

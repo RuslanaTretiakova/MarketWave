@@ -17,9 +17,12 @@ Internal link-building / ops workflow app (**MarketWeave** branding in UI): Next
 
 ## Project docs
 
-- **[AGENTS.md](AGENTS.md)** — stack versions, Supabase clients, type generation, migrations, RLS expectations (read this before changing code).
-- **[STACK.md](STACK.md)** — dependency-oriented stack summary.
-- **[DATABASE.md](DATABASE.md)** — schema pointers; migrations are authoritative.
+- **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** — stack pins, Supabase clients, type generation, migrations, RLS expectations (canonical; read before changing code). Root [AGENTS.md](AGENTS.md) is a compatibility stub.
+- **[docs/ai/README.md](docs/ai/README.md)** — where Cursor rules vs Claude context are documented (indexes; `.mdc` rules stay in `.cursor/rules/`).
+- **[docs/README.md](docs/README.md)** — index of deeper docs, skills mapping, and planning checklist.
+- **[docs/skills.md](docs/skills.md)** — index for **`docs/ai/claude/skills/`** (Claude-oriented `SKILL.md` library; Cursor rules reference the same files) and repo overrides (RSC-first, `proxy.ts`, Tailwind v4).
+
+Thin stubs at repo root still link into `docs/`: [STACK.md](STACK.md), [DATABASE.md](DATABASE.md), [UI.md](UI.md).
 
 ## Scripts
 
@@ -32,4 +35,4 @@ Internal link-building / ops workflow app (**MarketWeave** branding in UI): Next
 
 ## Supabase local
 
-Use the Supabase CLI (`npx supabase …`). Local DB settings live in [supabase/config.toml](supabase/config.toml). See **AGENTS.md** for `db reset`, `db push`, and type generation.
+Use the Supabase CLI (`npx supabase …`). Local DB settings live in [supabase/config.toml](supabase/config.toml). See **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** for `db reset`, `db push`, and type generation.

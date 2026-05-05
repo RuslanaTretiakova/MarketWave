@@ -1,0 +1,14 @@
+---
+description: Root project context — AGENTS, skills index, planning checklist
+alwaysApply: true
+---
+
+# linkbuilding / MarketWeave
+
+1. Read **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** first (Supabase clients, RLS, migrations, Tailwind v4, workflow).
+2. For implementation standards, follow **[docs/skills.md](docs/skills.md)** and open the relevant file under **[docs/ai/claude/skills/](docs/ai/claude/skills/)** (see index table there; repo defaults to **RSC + Server Actions**, **proxy.ts** for edge session, **@theme** in `app/globals.css`).
+3. Before sizeable features or refactors, use **[docs/planning-checklist.md](docs/planning-checklist.md)**.
+
+Do **not** add TanStack Query unless a feature explicitly needs client-side caching or subscriptions; prefer Server Components for data reads.
+
+Maintainers: human map of these rules → **[docs/ai/cursor/README.md](docs/ai/cursor/README.md)**.

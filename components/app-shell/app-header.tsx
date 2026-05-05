@@ -88,7 +88,7 @@ export function AppHeader({
           </span>
         </h1>
       </div>
-      <AppUserMenu user={user} />
+      <AppUserMenu key={`${user.id}:${user.avatarUrl ?? ''}`} user={user} />
     </header>
   )
 }

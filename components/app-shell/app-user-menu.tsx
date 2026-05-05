@@ -23,7 +23,6 @@ import {
   MW_PROFILE_AVATAR_UPDATED_EVENT,
   type MwProfileAvatarUpdatedDetail,
 } from '@/lib/profile/profile-avatar-sync'
-import { createClient } from '@/lib/supabase/client'
 import { avatarInitialsFromProfile, splitDisplayName } from '@/lib/user-display-name'
 import { cn } from '@/lib/utils'
 
@@ -38,13 +37,6 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
   const initials = avatarInitialsFromProfile(user.fullName, user.email)
 
   useEffect(() => {
-    const next = normalizeAccountAvatarUrl(user.avatarUrl)
-    queueMicrotask(() => {
-      setAvatarUrl(next)
-    })
-  }, [user.avatarUrl])
-
-  useEffect(() => {
     function onAvatarUpdated(e: Event) {
       const ce = e as CustomEvent<MwProfileAvatarUpdatedDetail>
       if (ce.detail && 'avatarUrl' in ce.detail) {
@@ -55,36 +47,17 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
     return () => window.removeEventListener(MW_PROFILE_AVATAR_UPDATED_EVENT, onAvatarUpdated)
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
+  function handleNavigateProfile() {
+    router.push('/settings/profile')
+  }
 
-    async function syncAvatarFromProfile() {
-      if (!user.id) return
-      try {
-        const { data: row, error: profileErr } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', user.id)
-          .maybeSingle()
-        if (profileErr || cancelled) return
-        setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
-      } catch (e) {
-        console.warn('[AppUserMenu] avatar sync failed', e)
-      }
-    }
+  function handleNavigateDashboard() {
+    router.push('/dashboard')
+  }
 
-    void syncAvatarFromProfile()
-
-    function onVisible() {
-      if (document.visibilityState === 'visible') void syncAvatarFromProfile()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      cancelled = true
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [user.id, user.avatarUrl])
+  function handleSignOut() {
+    void signOutAndRedirectToLogin()
+  }
 
   return (
     <DropdownMenu>
@@ -112,18 +85,18 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push('/settings/profile')}>
+          <DropdownMenuItem onClick={handleNavigateProfile}>
             <User aria-hidden />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+          <DropdownMenuItem onClick={handleNavigateDashboard}>
             <LayoutDashboard aria-hidden />
             Dashboard
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem variant="destructive" onClick={() => void signOutAndRedirectToLogin()}>
+          <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
             <LogOut aria-hidden />
             Log out
           </DropdownMenuItem>

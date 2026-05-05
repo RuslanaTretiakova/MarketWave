@@ -190,12 +190,6 @@ function ProfileSettingsForm({
   const [pwError, setPwError] = useState<string | null>(null)
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setPersistedAvatarUrl(normalizeAvatarUrl(profile.avatar_url))
-    })
-  }, [profile.avatar_url])
-
-  useEffect(() => {
     function onAvatarUpdated(e: Event) {
       const ce = e as CustomEvent<MwProfileAvatarUpdatedDetail>
       if (ce.detail && 'avatarUrl' in ce.detail) {
@@ -205,37 +199,6 @@ function ProfileSettingsForm({
     window.addEventListener(MW_PROFILE_AVATAR_UPDATED_EVENT, onAvatarUpdated)
     return () => window.removeEventListener(MW_PROFILE_AVATAR_UPDATED_EVENT, onAvatarUpdated)
   }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
-
-    async function syncAvatarFromProfile() {
-      if (!profile.id) return
-      try {
-        const { data: row, error: profileErr } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', profile.id)
-          .maybeSingle()
-        if (profileErr || cancelled) return
-        setPersistedAvatarUrl(normalizeAvatarUrl(row?.avatar_url ?? null))
-      } catch (e) {
-        console.warn('[ProfileSettingsForm] avatar sync failed', e)
-      }
-    }
-
-    void syncAvatarFromProfile()
-
-    function onVisible() {
-      if (document.visibilityState === 'visible') void syncAvatarFromProfile()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      cancelled = true
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [profile.id, profile.avatar_url])
 
   const displayPreview = previewUrl ?? persistedAvatarUrl ?? null
 
