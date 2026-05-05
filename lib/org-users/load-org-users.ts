@@ -5,41 +5,33 @@ import { ACTIVE_ORDER_STATUSES } from '@/lib/org-users/active-order-statuses'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
-import type { OrgUserRole, OrgUserRowJson } from '@/lib/org-users/types'
+import type { OrgUserRowJson } from '@/lib/org-users/types'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 
-function mergeAuthProfile(u: User, p?: ProfileRow | null): OrgUserRowJson {
-  const meta = u.user_metadata as Record<string, unknown> | undefined
+/** `profiles` is the directory; Auth enriches sign-in and ban state when present. */
+function mergeOrgUserRow(profile: ProfileRow, authUser: User | undefined): OrgUserRowJson {
+  const meta = authUser?.user_metadata as Record<string, unknown> | undefined
   const metaName = typeof meta?.full_name === 'string' ? meta.full_name : null
-  const metaRole = typeof meta?.role === 'string' ? meta.role : null
-  const resolvedRole = (p?.role ??
-    (metaRole === 'admin' ||
-    metaRole === 'client' ||
-    metaRole === 'sourcer' ||
-    metaRole === 'manager' ||
-    metaRole === 'copywriter'
-      ? metaRole
-      : 'client')) as OrgUserRole
 
-  const profileEmail = p?.email ?? null
+  const profileEmail = profile.email ?? null
   const trimmedProfileEmail = profileEmail?.trim() ? profileEmail.trim() : null
-  const displayEmail = trimmedProfileEmail ?? u.email ?? null
+  const displayEmail = trimmedProfileEmail ?? authUser?.email ?? null
 
   return {
-    id: u.id,
+    id: profile.id,
     email: displayEmail,
     profile_email: profileEmail,
-    full_name: p?.full_name ?? metaName,
-    role: resolvedRole,
-    require_password_change: p?.require_password_change ?? false,
-    last_sign_in_at: u.last_sign_in_at ?? null,
-    banned_until: u.banned_until ?? null,
-    avatar_url: p?.avatar_url ?? null,
-    bio: p?.bio ?? null,
-    company_name: p?.company_name ?? null,
-    phone: p?.phone ?? null,
-    created_at: p?.created_at ?? null,
+    full_name: profile.full_name ?? metaName,
+    role: profile.role,
+    require_password_change: profile.require_password_change ?? false,
+    last_sign_in_at: authUser?.last_sign_in_at ?? null,
+    banned_until: authUser?.banned_until ?? null,
+    avatar_url: profile.avatar_url ?? null,
+    bio: profile.bio ?? null,
+    company_name: profile.company_name ?? null,
+    phone: profile.phone ?? null,
+    created_at: profile.created_at ?? null,
   }
 }
 
@@ -70,9 +62,17 @@ export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { f
   }
 
   const authUsers = await listAllAuthUsers()
-  const pmap = new Map(profiles.map((p) => [p.id, p]))
+  const authById = new Map(authUsers.map((u) => [u.id, u]))
 
-  const rows: OrgUserRowJson[] = authUsers.map((u) => mergeAuthProfile(u, pmap.get(u.id)))
+  const profileIds = new Set(profiles.map((p) => p.id))
+  const orphanAuthCount = authUsers.reduce((n, u) => n + (profileIds.has(u.id) ? 0 : 1), 0)
+  if (orphanAuthCount > 0) {
+    console.warn(
+      `[loadOrgUsersForAdminPage] ${orphanAuthCount} auth user(s) have no matching public.profiles row`
+    )
+  }
+
+  const rows: OrgUserRowJson[] = profiles.map((p) => mergeOrgUserRow(p, authById.get(p.id)))
 
   rows.sort((a, b) => {
     const ae = (a.email ?? a.full_name ?? '').toLowerCase()
@@ -104,18 +104,20 @@ export async function loadOrgUserRowForAdmin(
     return { forbidden: true }
   }
 
-  const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(userId)
-  if (authErr || !authData?.user) {
-    return null
-  }
-
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .maybeSingle()
 
-  return mergeAuthProfile(authData.user, profile)
+  if (!profile) {
+    return null
+  }
+
+  const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(userId)
+  const authUser = !authErr && authData?.user ? authData.user : undefined
+
+  return mergeOrgUserRow(profile, authUser)
 }
 
 export async function loadOrgUserAssignmentCountsForAdmin(userId: string): Promise<

@@ -4,6 +4,8 @@ import { UsersManagement } from '@/components/settings/users-management'
 import { loadOrgUsersForAdminPage } from '@/lib/org-users/load-org-users'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Users',
 }
