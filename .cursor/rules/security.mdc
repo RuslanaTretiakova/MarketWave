@@ -1,0 +1,7 @@
+---
+description: Server Actions and auth mutations — security baseline
+globs: "lib/**/*action*.ts"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/web-security/SKILL.md](docs/ai/claude/skills/web-security/SKILL.md)**. **RLS** and **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** Security / Supabase sections are authoritative: enforce authorization on the server, never expose service role keys client-side, validate at boundaries.

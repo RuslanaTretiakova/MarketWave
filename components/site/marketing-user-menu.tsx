@@ -7,7 +7,7 @@ import { LayoutDashboard, LogOut, User } from 'lucide-react'
 import {
   AccountMenuAvatar,
   normalizeAccountAvatarUrl,
-} from '@/components/layout/account-menu-avatar'
+} from '@/components/user-menu/account-menu-avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,19 +22,16 @@ import {
   MW_PROFILE_AVATAR_UPDATED_EVENT,
   type MwProfileAvatarUpdatedDetail,
 } from '@/lib/profile/profile-avatar-sync'
-import { createClient } from '@/lib/supabase/client'
 import { avatarInitialsFromProfile, splitDisplayName } from '@/lib/user-display-name'
 import { cn } from '@/lib/utils'
 
 type MarketingUserMenuProps = {
-  userId: string
   email: string
   fullName: string | null
   avatarUrl: string | null
 }
 
 export function MarketingUserMenu({
-  userId,
   email,
   fullName,
   avatarUrl: initialAvatarUrl,
@@ -49,11 +46,6 @@ export function MarketingUserMenu({
   const initials = avatarInitialsFromProfile(fullName, email)
 
   useEffect(() => {
-    const next = normalizeAccountAvatarUrl(initialAvatarUrl)
-    queueMicrotask(() => setAvatarUrl(next))
-  }, [initialAvatarUrl])
-
-  useEffect(() => {
     function onAvatarUpdated(e: Event) {
       const ce = e as CustomEvent<MwProfileAvatarUpdatedDetail>
       if (ce.detail && 'avatarUrl' in ce.detail) {
@@ -64,36 +56,17 @@ export function MarketingUserMenu({
     return () => window.removeEventListener(MW_PROFILE_AVATAR_UPDATED_EVENT, onAvatarUpdated)
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
+  function handleNavigateProfile() {
+    router.push('/settings/profile')
+  }
 
-    async function syncAvatarFromProfile() {
-      if (!userId) return
-      try {
-        const { data: row, error: profileErr } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', userId)
-          .maybeSingle()
-        if (profileErr || cancelled) return
-        setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
-      } catch (e) {
-        console.warn('[MarketingUserMenu] avatar sync failed', e)
-      }
-    }
+  function handleNavigateDashboard() {
+    router.push('/dashboard')
+  }
 
-    void syncAvatarFromProfile()
-
-    function onVisible() {
-      if (document.visibilityState === 'visible') void syncAvatarFromProfile()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      cancelled = true
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [userId, initialAvatarUrl])
+  function handleSignOut() {
+    void signOutAndRedirectToLogin()
+  }
 
   return (
     <DropdownMenu>
@@ -121,18 +94,18 @@ export function MarketingUserMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push('/settings/profile')}>
+          <DropdownMenuItem onClick={handleNavigateProfile}>
             <User aria-hidden />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+          <DropdownMenuItem onClick={handleNavigateDashboard}>
             <LayoutDashboard aria-hidden />
             Dashboard
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem variant="destructive" onClick={() => void signOutAndRedirectToLogin()}>
+          <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
             <LogOut aria-hidden />
             Log out
           </DropdownMenuItem>

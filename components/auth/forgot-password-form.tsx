@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 
-import { AuthPrimaryButton, AuthTextField } from '@/components/auth'
+import { AuthPrimaryButton } from './auth-primary-button'
+import { AuthTextField } from './auth-text-field'
 import { requestPasswordResetAction } from '@/lib/auth/password-reset-actions'
 import { isValidEmail } from '@/lib/validation/email'
 

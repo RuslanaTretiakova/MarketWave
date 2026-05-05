@@ -36,7 +36,7 @@ export function LandingRoles() {
         <p className="mb-block font-mono text-xs font-semibold tracking-wide text-(--marketing-teal-accent) uppercase">
           / 03 — ROLES
         </p>
-        <h2 className="marketing-heading text-foreground mx-auto max-w-3xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl md:text-[2.75rem]">
+        <h2 className="marketing-heading text-foreground mx-auto max-w-3xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl md:text-(--marketing-section-title-md)">
           Five roles. <span className="text-(--marketing-teal-accent)">One record.</span>
           <span className="block">Zero confusion.</span>
         </h2>

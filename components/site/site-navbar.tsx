@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { MarketingUserMenu } from '@/components/layout/marketing-user-menu'
-import { SiteBrandLink } from '@/components/layout/site-brand-link'
+import { MarketingUserMenu } from '@/components/site/marketing-user-menu'
+import { SiteBrandLink } from '@/components/brand/site-brand-link'
 import { buttonVariants } from '@/components/ui/button'
 import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
@@ -51,7 +51,7 @@ export async function SiteNavbar() {
         <div className="gap-block flex w-max max-w-full shrink-0 items-center justify-end md:justify-self-end">
           {user ? (
             <MarketingUserMenu
-              userId={user.id}
+              key={`${user.id}:${profile?.avatar_url ?? ''}`}
               email={user.email ?? ''}
               fullName={profile?.full_name ?? null}
               avatarUrl={profile?.avatar_url ?? null}

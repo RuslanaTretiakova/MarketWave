@@ -83,7 +83,7 @@ try {
   const clientErr = read('app/api/client-error/route.ts')
   must(clientErr.includes('checkAndRecordPublicRateLimit'), 'Client error route should rate limit')
 
-  const forgot = read('components/forgot-password-form.tsx')
+  const forgot = read('components/auth/forgot-password-form.tsx')
   must(forgot.includes('If an account exists'), 'Forgot-password success copy should be neutral')
 
   const usersPage = read('app/(app)/settings/users/page.tsx')
@@ -94,7 +94,7 @@ try {
   must(nav.includes("role !== 'admin'"), 'Nav should hide Users for non-admin')
   must(nav.includes('/settings/users'), 'Nav should include Users href for admin')
 
-  const setPw = read('components/set-password-form.tsx')
+  const setPw = read('components/auth/set-password-form.tsx')
   must(
     setPw.includes('/auth/login'),
     'First-login flow should redirect to login after password set'

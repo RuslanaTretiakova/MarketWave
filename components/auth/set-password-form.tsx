@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { AuthPrimaryButton, AuthTextField } from '@/components/auth'
+import { AuthPrimaryButton } from './auth-primary-button'
+import { AuthTextField } from './auth-text-field'
 import { submitSetPasswordAction } from '@/lib/auth/password-actions'
 import { createClient } from '@/lib/supabase/client'
 

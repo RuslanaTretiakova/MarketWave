@@ -1,0 +1,7 @@
+---
+description: API route handlers — web security baseline
+globs: "app/api/**/*.ts"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/web-security/SKILL.md](docs/ai/claude/skills/web-security/SKILL.md)**. Treat inputs as hostile; no secrets in responses; align with **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** (RLS elsewhere; route handlers here are for APIs such as webhooks / client error reporting).

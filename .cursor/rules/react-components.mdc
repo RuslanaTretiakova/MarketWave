@@ -1,0 +1,11 @@
+---
+description: React / JSX — components, state, effects (Claude skills + RSC-first)
+globs: "**/*.{tsx,jsx}"
+alwaysApply: false
+---
+
+Prefer **[docs/ai/claude/skills/modern-best-practice-react-components/SKILL.md](docs/ai/claude/skills/modern-best-practice-react-components/SKILL.md)** and **[docs/ai/claude/skills/modern-accessible-html-jsx/SKILL.md](docs/ai/claude/skills/modern-accessible-html-jsx/SKILL.md)**.
+
+**This repo:** fetch in **Server Components** by default; avoid `useEffect` for data loading. Client components are for interactivity only. Named event handlers over inline `onClick={() => ...}` when non-trivial.
+
+Deep dive: [docs/ai/claude/skills/modern-best-practice-react-components/references/you-dont-need-useeffect.md](docs/ai/claude/skills/modern-best-practice-react-components/references/you-dont-need-useeffect.md).

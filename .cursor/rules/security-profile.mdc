@@ -1,0 +1,7 @@
+---
+description: Profile / server-only mutations — security + RLS
+globs: "lib/profile/**/*.ts"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/web-security/SKILL.md](docs/ai/claude/skills/web-security/SKILL.md)** and **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)**. Server Actions here must use the correct Supabase client; never expose privileged operations to the wrong role.

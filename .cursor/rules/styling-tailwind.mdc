@@ -1,0 +1,9 @@
+---
+description: CSS / Tailwind — theme tokens and v4 conventions
+globs: "**/*.css"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/modern-tailwind/SKILL.md](docs/ai/claude/skills/modern-tailwind/SKILL.md)** and the **Tailwind CSS (v4)** section of **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)**.
+
+**This repo:** theme and spacing aliases live in **`app/globals.css`** (`@theme`, design tokens). Prefer project spacing utilities (`p-inset`, `gap-section`, etc.) per **[docs/ui.md](docs/ui.md)**.

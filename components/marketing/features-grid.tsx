@@ -50,7 +50,7 @@ export function FeaturesGrid() {
           <p className="mb-block font-mono text-xs font-semibold tracking-wide text-(--accent-teal-strong) uppercase">
             / 01 — BUILT FOR OPS
           </p>
-          <h2 className="font-display text-foreground text-3xl leading-[1.12] font-semibold tracking-tight sm:text-4xl md:text-[2.75rem]">
+          <h2 className="font-display text-foreground text-3xl leading-[1.12] font-semibold tracking-tight sm:text-4xl md:text-(--marketing-section-title-md)">
             Built for link-building <span className="text-(--accent-teal-strong)">operations.</span>
           </h2>
           <p className="text-foreground/72 mt-layout font-sans text-base leading-relaxed">

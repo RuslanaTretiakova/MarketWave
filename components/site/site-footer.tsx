@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { Logo } from '@/components/layout/logo'
+import { Logo } from '@/components/brand/logo'
 import { SITE_NAME } from '@/lib/brand'
 import { cn } from '@/lib/utils'
 

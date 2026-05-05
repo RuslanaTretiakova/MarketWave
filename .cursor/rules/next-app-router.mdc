@@ -1,0 +1,9 @@
+---
+description: Next.js App Router — app/* routes, RSC, server actions
+globs: "app/**/*"
+alwaysApply: false
+---
+
+Follow **[docs/ai/claude/skills/modern-best-practice-nextjs/SKILL.md](docs/ai/claude/skills/modern-best-practice-nextjs/SKILL.md)**.
+
+**This repo:** session refresh and auth redirects use root **`proxy.ts`** (Next 16), not `middleware.ts`. Consult `node_modules/next/dist/docs/` for version-specific APIs. Prefer `loading.tsx` / `error.tsx` / `Suspense` where UX benefits.

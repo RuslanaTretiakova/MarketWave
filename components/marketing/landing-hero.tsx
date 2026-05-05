@@ -1,6 +1,6 @@
 import { ArrowRight, Check } from 'lucide-react'
 
-import { HeroProductMockup } from '@/components/layout/hero-product-mockup'
+import { HeroProductMockup } from '@/components/marketing/hero-product-mockup'
 import { buttonVariants } from '@/components/ui/button'
 import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
@@ -26,12 +26,12 @@ export async function LandingHero() {
             Operations OS for link-building teams
           </div>
 
-          <h1 className="font-display text-foreground text-4xl leading-[1.06] font-semibold tracking-tight sm:text-5xl md:text-[3.35rem]">
+          <h1 className="font-display text-foreground text-4xl leading-[1.06] font-semibold tracking-tight sm:text-5xl md:text-(--marketing-hero-title-md)">
             Weave every <span className="text-(--accent-teal-strong)">placement</span> into one{' '}
             <span className="marketing-yellow-underline px-0.5">linear workflow.</span>
           </h1>
 
-          <p className="text-muted-foreground mt-layout max-w-[42ch] font-sans text-lg leading-relaxed md:text-[1.0625rem]">
+          <p className="text-muted-foreground mt-layout max-w-[42ch] font-sans text-lg leading-relaxed md:text-(--marketing-lead-md)">
             From order to invoice — sourcing, writing, approval and publishing live in one record.
             Fewer handoffs, fewer mistakes, and a single source of truth your whole team — and
             clients — can trust.
@@ -43,7 +43,7 @@ export async function LandingHero() {
                 href="/dashboard"
                 className={cn(
                   buttonVariants({ variant: 'cta', size: 'lg' }),
-                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans text-[0.9375rem] font-semibold lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
+                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans font-semibold text-(--marketing-button-text) lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
                 )}
               >
                 Go to dashboard <ArrowRight className="size-4" aria-hidden />
@@ -53,7 +53,7 @@ export async function LandingHero() {
                 href="/auth/login"
                 className={cn(
                   buttonVariants({ variant: 'cta', size: 'lg' }),
-                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans text-[0.9375rem] font-semibold lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
+                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans font-semibold text-(--marketing-button-text) lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
                 )}
               >
                 Log in <ArrowRight className="size-4" aria-hidden />
@@ -63,7 +63,7 @@ export async function LandingHero() {
               href="#workflow"
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'lg' }),
-                'marketing-lift-hover border-border/70 bg-card/90 shadow-soft rounded-2xl px-7 font-sans text-[0.9375rem] backdrop-blur-sm lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg lg:font-semibold'
+                'marketing-lift-hover border-border/70 bg-card/90 shadow-soft rounded-2xl px-7 font-sans text-(--marketing-button-text) backdrop-blur-sm lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg lg:font-semibold'
               )}
             >
               See the workflow

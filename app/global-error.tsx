@@ -30,6 +30,10 @@ export default function GlobalErrorBoundary({
     }).catch(() => {})
   }, [error])
 
+  function handleReset() {
+    reset()
+  }
+
   return (
     <html lang="en">
       <body className="text-foreground flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-8 text-center dark:bg-zinc-950">
@@ -41,7 +45,7 @@ export default function GlobalErrorBoundary({
           <button
             type="button"
             className="ring-offset-background mt-8 inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white ring-zinc-400 transition hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-            onClick={() => reset()}
+            onClick={handleReset}
           >
             Try again
           </button>

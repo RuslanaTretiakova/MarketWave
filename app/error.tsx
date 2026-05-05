@@ -33,6 +33,10 @@ export default function RouteErrorBoundary({
     }).catch(() => {})
   }, [error])
 
+  function handleReset() {
+    reset()
+  }
+
   return (
     <main className="p-inset text-foreground gap-layout flex min-h-[50vh] flex-col items-center justify-center">
       <div className="border-border gap-block px-section py-layout max-w-md rounded-xl border text-center shadow-sm">
@@ -42,7 +46,7 @@ export default function RouteErrorBoundary({
           happening, contact support.
         </p>
         <div className="gap-inset pt-inset flex flex-wrap items-center justify-center">
-          <Button type="button" onClick={() => reset()}>
+          <Button type="button" onClick={handleReset}>
             Try again
           </Button>
           <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'default' }))}>

@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
-import { AuthFormCard } from '@/components/auth'
-import { SetPasswordForm } from '@/components/set-password-form'
+import { AuthFormCard, SetPasswordForm } from '@/components/auth'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 

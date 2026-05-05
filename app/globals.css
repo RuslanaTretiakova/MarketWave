@@ -3,8 +3,8 @@
 @import 'shadcn/tailwind.css';
 
 /**
- * Limit Tailwind class scanning to application source. Root-level docs (e.g. AGENTS.md)
- * contain example snippets like `bg-[var(--my-token)]` that the extractor can mis-parse.
+ * Limit Tailwind class scanning to application source. Root-level / docs markdown
+ * (e.g. AGENTS.md under docs/ai, skills Markdown under docs/ai/claude) may contain example snippets that the extractor can mis-parse.
  */
 @source './**/*.{ts,tsx}';
 @source '../components/**/*.{ts,tsx}';
@@ -178,6 +178,33 @@
   --marketing-nav-h: 60px;
   /** Feature grid “active” cell (e.g. site catalog) — ~#E8F1EF */
   --marketing-features-highlight: 162 32% 93%;
+
+  /* Marketing typography (avoid one-off rem in classnames) */
+  --marketing-hero-title-md: 3.35rem;
+  --marketing-section-title-md: 2.75rem;
+  --marketing-workflow-title-md: 2.5rem;
+  --marketing-lead-md: 1.0625rem;
+  --marketing-button-text: 0.9375rem;
+  --marketing-logo-wordmark: 1.35rem;
+  --marketing-step-num: 1.35rem;
+
+  /* Workflow spotlight (dark section) */
+  --marketing-workflow-accent: #ff6b43;
+  --marketing-spotlight-heading: #e8eef4;
+  --marketing-spotlight-body: #b8c2ce;
+  --marketing-spotlight-line: #2e353d;
+  --marketing-spotlight-tile-text: #0f1419;
+  --marketing-spotlight-muted: #8b98a8;
+  --marketing-spotlight-board-bg: #11151b;
+  --marketing-spotlight-column-surface: rgb(22 27 35 / 0.9);
+  --marketing-spotlight-card: #0f131a;
+  --marketing-spotlight-item-text: #dde4ec;
+  --marketing-spot-badge-new: #0b0e11;
+  --marketing-spot-badge-progress: #0f766e;
+  --marketing-spot-badge-review-bg: #f4d03f;
+  --marketing-spot-badge-review-text: #1a1a12;
+  --marketing-spot-badge-published: #ff5722;
+  --marketing-spot-dot-ring: #0b0e11;
 }
 
 .dark {

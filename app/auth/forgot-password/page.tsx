@@ -1,7 +1,6 @@
 import Link from 'next/link'
 
-import { AuthFormCard, AuthFormFooterLink } from '@/components/auth'
-import { ForgotPasswordForm } from '@/components/forgot-password-form'
+import { AuthFormCard, AuthFormFooterLink, ForgotPasswordForm } from '@/components/auth'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
