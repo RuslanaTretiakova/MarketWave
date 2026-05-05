@@ -49,6 +49,11 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <Script
+          id="supabase-recovery-hash-redirect"
+          src="/supabase-recovery-hash-redirect.js"
+          strategy="beforeInteractive"
+        />
+        <Script
           id="strip-extension-dom-markers"
           src="/strip-extension-dom-markers.js"
           strategy="beforeInteractive"

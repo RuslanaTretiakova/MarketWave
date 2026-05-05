@@ -21,6 +21,11 @@ export function isAuthPublicPath(pathname: string): boolean {
   return (
     pathname === '/auth/login' ||
     pathname === '/auth/forgot-password' ||
-    isAuthCallbackPath(pathname)
+    isAuthCallbackPath(pathname) ||
+    /** Session is often established only in the browser after `/auth/callback` (implicit hash); middleware must not bounce here before cookies sync. */
+    pathname === '/auth/first-login-password' ||
+    pathname.startsWith('/auth/first-login-password/') ||
+    pathname === '/auth/update-password' ||
+    pathname.startsWith('/auth/update-password/')
   )
 }
