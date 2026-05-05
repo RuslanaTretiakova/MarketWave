@@ -157,7 +157,7 @@ export async function updateSession(request: NextRequest) {
   const env = tryGetPublicSupabaseEnv()
   if (!env) {
     console.error(
-      '[supabase/middleware] Missing or invalid NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      '[supabase/middleware] Missing or invalid Supabase URL / anon key (NEXT_PUBLIC_* or SUPABASE_URL / SUPABASE_KEY).'
     )
     return failureResponse(request)
   }

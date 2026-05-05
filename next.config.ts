@@ -6,7 +6,20 @@ import type { NextConfig } from 'next'
 /** Absolute repo root — `process.cwd()` can be wrong for Turbopack on Windows while resolving CSS @imports. */
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
 
+/**
+ * Client bundles only inline `NEXT_PUBLIC_*`. Map CLI/Vercel-style `SUPABASE_URL` + `SUPABASE_KEY`
+ * (anon) into those names at build time when the prefixed vars are unset.
+ */
+const nextPublicSupabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || process.env.SUPABASE_URL?.trim() || ''
+const nextPublicSupabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || process.env.SUPABASE_KEY?.trim() || ''
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: nextPublicSupabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: nextPublicSupabaseAnonKey,
+  },
   async redirects() {
     return [
       /** Canonical profile settings live under Settings — fixes bookmarks / old links to `/profile`. */

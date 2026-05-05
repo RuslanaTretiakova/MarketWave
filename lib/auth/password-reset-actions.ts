@@ -3,6 +3,7 @@
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { isValidEmail } from '@/lib/validation/email'
 import { adminClient } from '@/lib/supabase/admin'
+import { resolveSupabaseProjectUrl } from '@/lib/supabase/supabase-public-env-vars'
 import { getSiteOrigin } from '@/lib/site-url'
 
 export type RequestPasswordResetResult = { ok: true } | { ok: false; message: string }
@@ -13,10 +14,7 @@ export type RequestPasswordResetResult = { ok: true } | { ok: false; message: st
 export async function requestPasswordResetAction(
   email: string
 ): Promise<RequestPasswordResetResult> {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-  ) {
+  if (!resolveSupabaseProjectUrl() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
     return {
       ok: false,
       message: 'Password reset is not configured on this environment. Contact support.',

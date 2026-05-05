@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 
 import {
@@ -27,18 +27,19 @@ import { avatarInitialsFromProfile, splitDisplayName } from '@/lib/user-display-
 import { cn } from '@/lib/utils'
 
 type MarketingUserMenuProps = {
+  userId: string
   email: string
   fullName: string | null
   avatarUrl: string | null
 }
 
 export function MarketingUserMenu({
+  userId,
   email,
   fullName,
   avatarUrl: initialAvatarUrl,
 }: MarketingUserMenuProps) {
   const router = useRouter()
-  const pathname = usePathname()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() =>
     normalizeAccountAvatarUrl(initialAvatarUrl)
   )
@@ -68,17 +69,18 @@ export function MarketingUserMenu({
     const supabase = createClient()
 
     async function syncAvatarFromProfile() {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-      if (!authUser || cancelled) return
-      const { data: row } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', authUser.id)
-        .maybeSingle()
-      if (cancelled) return
-      setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
+      if (!userId) return
+      try {
+        const { data: row, error: profileErr } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', userId)
+          .maybeSingle()
+        if (profileErr || cancelled) return
+        setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
+      } catch (e) {
+        console.warn('[MarketingUserMenu] avatar sync failed', e)
+      }
     }
 
     void syncAvatarFromProfile()
@@ -91,7 +93,7 @@ export function MarketingUserMenu({
       cancelled = true
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [pathname, initialAvatarUrl])
+  }, [userId, initialAvatarUrl])
 
   return (
     <DropdownMenu>

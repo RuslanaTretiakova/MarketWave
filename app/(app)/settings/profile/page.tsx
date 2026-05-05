@@ -32,6 +32,7 @@ export default async function SettingsProfilePage() {
     <ProfileView
       authEmail={user.email ?? ''}
       profile={{
+        id: profile.id,
         full_name: profile.full_name,
         avatar_url: profile.avatar_url,
         bio: profile.bio ?? null,
