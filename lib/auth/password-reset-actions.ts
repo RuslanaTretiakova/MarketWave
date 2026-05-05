@@ -1,6 +1,13 @@
 'use server'
 
+import { headers } from 'next/headers'
+
 import { mapAuthError } from '@/lib/auth/map-auth-error'
+import {
+  fingerprintForPasswordResetEmail,
+  readClientIpKey,
+  tryConsumePasswordResetRateLimit,
+} from '@/lib/auth/public-rate-limit'
 import { isValidEmail } from '@/lib/validation/email'
 import { adminClient } from '@/lib/supabase/admin'
 import { resolveSupabaseProjectUrl } from '@/lib/supabase/supabase-public-env-vars'
@@ -24,6 +31,14 @@ export async function requestPasswordResetAction(
   const normalized = email.trim().toLowerCase()
   if (!isValidEmail(normalized)) {
     return { ok: false, message: 'Enter a valid email address.' }
+  }
+
+  const h = await headers()
+  const ipKey = readClientIpKey((name) => h.get(name))
+  const emFp = fingerprintForPasswordResetEmail(normalized)
+  const gate = await tryConsumePasswordResetRateLimit(ipKey, emFp)
+  if (!gate.allow) {
+    return { ok: true }
   }
 
   const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/update-password')}&flow=${encodeURIComponent('recovery')}`

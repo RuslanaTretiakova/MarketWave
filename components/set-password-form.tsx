@@ -5,8 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { AuthPrimaryButton, AuthTextField } from '@/components/auth'
-import { mapAuthError } from '@/lib/auth/map-auth-error'
-import { completePasswordChange } from '@/lib/auth/password-actions'
+import { submitSetPasswordAction } from '@/lib/auth/password-actions'
 import { createClient } from '@/lib/supabase/client'
 
 const MIN_LEN = 8
@@ -46,35 +45,14 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
     if (!validate()) return
 
     setLoading(true)
-    const supabase = createClient()
-    const { error: updErr } = await supabase.auth.updateUser({ password })
-    if (updErr) {
-      setLoading(false)
-      setError(mapAuthError(updErr).message)
-      return
-    }
-
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (!sessionData.session) {
-      setLoading(false)
-      setError(
-        mode === 'recovery'
-          ? 'Session expired. Open the reset link from your email again.'
-          : 'Session expired. Sign in again from your invitation link.'
-      )
-      return
-    }
-
-    let cleared = await completePasswordChange()
-    if (!cleared.ok && cleared.message === 'Not signed in.') {
-      cleared = await completePasswordChange()
-    }
+    const result = await submitSetPasswordAction({ password })
     setLoading(false)
-    if (!cleared.ok) {
-      setError(cleared.message)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
 
+    const supabase = createClient()
     if (mode === 'recovery') {
       await supabase.auth.signOut()
       setRecoveryComplete(true)

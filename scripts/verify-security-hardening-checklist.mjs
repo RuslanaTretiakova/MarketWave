@@ -36,6 +36,28 @@ try {
   const rt = read('supabase/migrations/20260509120001_admin_invite_rate_events.sql')
   must(rt.includes('admin_invite_rate_events'), 'Rate limit table name not in migration')
 
+  must(
+    existsSync(
+      join(root, 'supabase/migrations/20260510120002_error_logs_insert_own_user_only.sql')
+    ),
+    'Missing migration 20260510120002_error_logs_insert_own_user_only.sql'
+  )
+  const errPol = read('supabase/migrations/20260510120002_error_logs_insert_own_user_only.sql')
+  must(
+    errPol.includes('user_id = auth.uid()'),
+    'error_logs insert policy must tie user_id to auth.uid()'
+  )
+
+  must(
+    existsSync(join(root, 'supabase/migrations/20260510120001_public_rate_limit_events.sql')),
+    'Missing migration 20260510120001_public_rate_limit_events.sql'
+  )
+  const pubRt = read('supabase/migrations/20260510120001_public_rate_limit_events.sql')
+  must(
+    pubRt.includes('public_rate_limit_events'),
+    'public_rate_limit_events table not in migration'
+  )
+
   const invite = read('lib/auth/invite-actions.ts')
   must(invite.includes('findAuthUserByEmailLower'), 'Resend should use paginated Auth lookup')
   must(invite.includes('checkAndRecordAdminInviteRateLimit'), 'Invite should use DB rate limit')
@@ -53,6 +75,13 @@ try {
     !reset.includes('auth_user_email_exists'),
     'auth_user_email_exists should not be used in reset action'
   )
+  must(
+    reset.includes('tryConsumePasswordResetRateLimit'),
+    'Password reset should use public rate limit helper'
+  )
+
+  const clientErr = read('app/api/client-error/route.ts')
+  must(clientErr.includes('checkAndRecordPublicRateLimit'), 'Client error route should rate limit')
 
   const forgot = read('components/forgot-password-form.tsx')
   must(forgot.includes('If an account exists'), 'Forgot-password success copy should be neutral')
@@ -70,9 +99,17 @@ try {
     setPw.includes('/auth/login'),
     'First-login flow should redirect to login after password set'
   )
+  must(setPw.includes('submitSetPasswordAction'), 'Set password should use submitSetPasswordAction')
+  must(
+    !setPw.includes('completePasswordChange'),
+    'Set password form should not use completePasswordChange'
+  )
 
-  const profileLayout = read('app/(app)/layout.tsx')
-  must(profileLayout.includes(".eq('id', user.id)"), 'App layout loads own profile only')
+  const appUser = read('lib/supabase/cached-app-user.server.ts')
+  must(
+    appUser.includes(".eq('id', user.id)"),
+    'cached-app-user must load profile scoped to session user id'
+  )
 
   const updateOwn = read('lib/profile/update-own-profile.ts')
   must(updateOwn.includes('isOwnAvatarsPublicObjectUrl'), 'Own profile should validate avatar URL')
@@ -85,6 +122,6 @@ try {
 
 for (const c of checks) console.log(c)
 console.log(
-  '\nDB: Run `npx supabase migration list` and confirm the Remote column includes 20260509120000 and 20260509120001.' +
+  '\nDB: Run `npx supabase migration list` and confirm the Remote column includes 20260509120000, 20260509120001, 20260510120000 (admin_invite_rate service_role), 20260510120001, and 20260510120002 (error_logs).' +
     '\nIf `db push` fails on storage.buckets ownership, apply pending SQL from the Dashboard (SQL editor) or fix migration privileges per Supabase docs.'
 )
