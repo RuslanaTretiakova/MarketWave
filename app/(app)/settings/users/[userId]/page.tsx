@@ -8,6 +8,8 @@ import {
 } from '@/lib/org-users/load-org-users'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata() {
   return { title: 'User details' }
 }

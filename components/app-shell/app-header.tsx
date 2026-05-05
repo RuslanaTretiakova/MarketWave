@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { ChevronsRight, Menu, PanelLeft } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
-import { AppNavLinks } from '@/components/app-shell/app-sidebar'
+import { AppSidebarNavPanel } from '@/components/app-shell/app-sidebar'
 import { AppUserMenu } from '@/components/app-shell/app-user-menu'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -49,16 +49,19 @@ export function AppHeader({
           <SheetContent
             side="left"
             showCloseButton
-            className="border-sidebar-border bg-sidebar text-sidebar-foreground w-72 gap-0 border-r p-0 shadow-(--shadow-shell)"
+            className="border-sidebar-border bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col gap-0 border-r p-0 shadow-(--shadow-shell)"
           >
-            <SheetHeader className="border-sidebar-border px-block py-block border-b text-left">
+            <SheetHeader className="border-sidebar-border px-block py-block shrink-0 border-b text-left">
               <SheetTitle className="text-sidebar-foreground font-heading text-base font-semibold">
                 {SITE_NAME}
               </SheetTitle>
             </SheetHeader>
-            <div className="p-block">
-              <AppNavLinks items={navItems} onNavigate={() => setMenuOpen(false)} />
-            </div>
+            <AppSidebarNavPanel
+              className="min-h-0"
+              collapsed={false}
+              items={navItems}
+              onNavigate={() => setMenuOpen(false)}
+            />
           </SheetContent>
         </Sheet>
         <Button

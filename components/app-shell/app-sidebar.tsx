@@ -11,6 +11,60 @@ import type { AppNavItem } from '@/lib/app-nav'
 import { isAppNavItemActive } from '@/lib/app-nav'
 import { cn } from '@/lib/utils'
 
+function SidebarLogoutFooter({ collapsed }: { collapsed: boolean }) {
+  const isCollapsed = collapsed === true
+  return (
+    <div
+      className={cn(
+        'border-sidebar-border gap-block pt-inset flex shrink-0 flex-col border-t',
+        isCollapsed ? 'pb-inset px-2' : 'px-block pb-inset md:px-layout'
+      )}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size={isCollapsed ? 'icon-sm' : 'default'}
+        className={cn(
+          'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          !isCollapsed && 'h-9 w-full justify-start gap-2 px-0',
+          'text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20'
+        )}
+        title={isCollapsed ? 'Log out' : undefined}
+        onClick={() => void signOutAndRedirectToLogin()}
+      >
+        <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
+        {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
+      </Button>
+    </div>
+  )
+}
+
+/** Nav + spacer + logout: no inner scroll; spacer fills height so logout sits at the bottom. */
+export function AppSidebarNavPanel({
+  className,
+  collapsed,
+  items,
+  onNavigate,
+}: {
+  className?: string
+  collapsed?: boolean
+  items: AppNavItem[]
+  onNavigate?: () => void
+}) {
+  const isCollapsed = collapsed === true
+  return (
+    <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+      <div
+        className={cn('shrink-0', isCollapsed ? 'py-inset px-2' : 'px-block py-inset md:px-layout')}
+      >
+        <AppNavLinks collapsed={isCollapsed} items={items} onNavigate={onNavigate} />
+      </div>
+      <div className="flex-1" aria-hidden />
+      <SidebarLogoutFooter collapsed={isCollapsed} />
+    </div>
+  )
+}
+
 export function AppNavLinks({
   className,
   collapsed,
@@ -66,6 +120,8 @@ export function AppSidebar({
     <aside
       className={cn(
         'border-sidebar-border bg-sidebar text-sidebar-foreground flex shrink-0 flex-col overflow-hidden border-r shadow-(--shadow-shell) transition-[width] duration-200 ease-out',
+        /* Viewport-high sticky rail: logout stays at bottom of visible panel while main scrolls. */
+        'md:sticky md:top-0 md:h-[100dvh] md:max-h-[100dvh] md:self-start',
         isCollapsed ? 'md:w-19' : 'md:w-60',
         className
       )}
@@ -82,38 +138,7 @@ export function AppSidebar({
           logoClassName="[&_.logo-wordmark]:text-sidebar-foreground [&_span.text-primary]:text-sidebar-primary"
         />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn(
-            'min-h-0 flex-1 overflow-y-auto',
-            isCollapsed ? 'py-inset px-2' : 'px-block py-inset md:px-layout'
-          )}
-        >
-          <AppNavLinks collapsed={isCollapsed} items={navItems} />
-        </div>
-        <div
-          className={cn(
-            'border-sidebar-border gap-block py-inset flex flex-col border-t',
-            isCollapsed ? 'px-2' : 'px-block md:px-layout'
-          )}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size={isCollapsed ? 'icon-sm' : 'default'}
-            className={cn(
-              'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              !isCollapsed && 'h-9 w-full justify-start gap-2 px-0',
-              'text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20'
-            )}
-            title={isCollapsed ? 'Log out' : undefined}
-            onClick={() => void signOutAndRedirectToLogin()}
-          >
-            <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
-            {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
-          </Button>
-        </div>
-      </div>
+      <AppSidebarNavPanel collapsed={isCollapsed} items={navItems} />
     </aside>
   )
 }
