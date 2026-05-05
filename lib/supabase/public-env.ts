@@ -3,13 +3,18 @@
  * Avoids opaque failures from @supabase/ssr when URL/key are missing or invalid.
  */
 
+import {
+  resolveSupabaseAnonKey,
+  resolveSupabaseProjectUrl,
+} from '@/lib/supabase/supabase-public-env-vars'
+
 export type PublicSupabaseEnv = { supabaseUrl: string; supabaseAnonKey: string }
 
 export function getPublicEnvState():
   | { ok: true; env: PublicSupabaseEnv }
   | { ok: false; reason: 'missing' | 'bad_url' } {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  const supabaseUrl = resolveSupabaseProjectUrl()
+  const supabaseAnonKey = resolveSupabaseAnonKey()
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return { ok: false, reason: 'missing' }
@@ -29,10 +34,10 @@ export function getPublicSupabaseEnv(): PublicSupabaseEnv {
   if (!r.ok) {
     if (r.reason === 'missing') {
       throw new Error(
-        'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both for every environment (e.g. .env.local locally, Vercel → Project → Settings → Environment Variables for production) and rebuild.'
+        'Missing Supabase URL or anon key. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_URL and SUPABASE_KEY (anon), then rebuild.'
       )
     }
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not a valid absolute URL.')
+    throw new Error('Supabase project URL is not a valid absolute URL.')
   }
   return r.env
 }

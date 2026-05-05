@@ -1,6 +1,8 @@
+import { resolveSupabaseProjectUrl } from '@/lib/supabase/supabase-public-env-vars'
+
 /** True when `url` is this project's public avatars object for `userId` (path `userId/...`). */
 export function isOwnAvatarsPublicObjectUrl(userId: string, url: string): boolean {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '').trim()
+  const base = resolveSupabaseProjectUrl()?.replace(/\/$/, '').trim()
   if (!base) return false
   const trimmed = url.trim()
   if (!trimmed.startsWith(`${base}/`)) return false

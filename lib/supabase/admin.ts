@@ -1,13 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
+import { resolveSupabaseProjectUrl } from '@/lib/supabase/supabase-public-env-vars'
+
 import type { Database } from './types'
 
 function createServiceRoleClient(): SupabaseClient<Database> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseUrl = resolveSupabaseProjectUrl()
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Add both for environments that use the service role (e.g. .env.local locally, Vercel → Project → Settings → Environment Variables for Production and Preview) and redeploy.'
+      'Missing Supabase project URL or SUPABASE_SERVICE_ROLE_KEY. Add NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL, plus SUPABASE_SERVICE_ROLE_KEY (e.g. Vercel → Environment Variables), then redeploy.'
     )
   }
   return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {

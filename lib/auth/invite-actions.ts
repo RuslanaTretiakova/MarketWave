@@ -19,7 +19,7 @@ function unexpectedInviteErrorMessage(err: unknown): string {
     return 'Could not send the invitation. Try again.'
   }
   const m = err.message
-  if (m.includes('Missing NEXT_PUBLIC_SUPABASE_URL') || m.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+  if (m.includes('Missing Supabase project URL') || m.includes('SUPABASE_SERVICE_ROLE_KEY')) {
     return 'Invites are not configured on this server (missing Supabase URL or service role key). Set environment variables and redeploy.'
   }
   if (m.includes('fetch failed') || m.toLowerCase().includes('failed to fetch')) {

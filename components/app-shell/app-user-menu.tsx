@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils'
 
 export function AppUserMenu({ user }: { user: AppShellUser }) {
   const router = useRouter()
-  const pathname = usePathname()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() =>
     normalizeAccountAvatarUrl(user.avatarUrl)
   )
@@ -61,17 +60,18 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
     const supabase = createClient()
 
     async function syncAvatarFromProfile() {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-      if (!authUser || cancelled) return
-      const { data: row } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', authUser.id)
-        .maybeSingle()
-      if (cancelled) return
-      setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
+      if (!user.id) return
+      try {
+        const { data: row, error: profileErr } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (profileErr || cancelled) return
+        setAvatarUrl(normalizeAccountAvatarUrl(row?.avatar_url ?? null))
+      } catch (e) {
+        console.warn('[AppUserMenu] avatar sync failed', e)
+      }
     }
 
     void syncAvatarFromProfile()
@@ -84,7 +84,7 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
       cancelled = true
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [pathname, user.avatarUrl])
+  }, [user.id, user.avatarUrl])
 
   return (
     <DropdownMenu>

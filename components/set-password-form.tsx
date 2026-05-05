@@ -67,7 +67,6 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
 
     let cleared = await completePasswordChange()
     if (!cleared.ok && cleared.message === 'Not signed in.') {
-      await new Promise((r) => setTimeout(r, 80))
       cleared = await completePasswordChange()
     }
     setLoading(false)

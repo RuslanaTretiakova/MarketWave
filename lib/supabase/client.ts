@@ -6,7 +6,7 @@ import type { Database } from './types'
 
 /**
  * Local Supabase demo URL/key (public). Used only when `createClient()` runs during SSR/build
- * with no `NEXT_PUBLIC_SUPABASE_*` — e.g. CI prerender — so the constructor never throws; real
+ * with no resolved public Supabase env — e.g. CI prerender — so the constructor never throws; real
  * requests still require env at runtime in the browser.
  */
 const PRERENDER_SUPABASE_STUB_URL = 'http://127.0.0.1:54321'
@@ -15,9 +15,28 @@ const PRERENDER_SUPABASE_STUB_ANON_KEY =
 
 let prerenderStubClient: ReturnType<typeof createBrowserClient<Database>> | undefined
 
+/** Survives dev HMR (module `let` resets); still one client per tab runtime. */
+const BROWSER_CLIENT_GLOBAL = '__linkbuilding_supabase_browser_client__'
+
+type BrowserSupabaseClient = ReturnType<typeof createBrowserClient<Database>>
+
+function getOrCreateBrowserSingleton(
+  supabaseUrl: string,
+  supabaseAnonKey: string
+): BrowserSupabaseClient {
+  const record = globalThis as typeof globalThis & {
+    [BROWSER_CLIENT_GLOBAL]?: BrowserSupabaseClient
+  }
+  record[BROWSER_CLIENT_GLOBAL] ??= createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+  return record[BROWSER_CLIENT_GLOBAL]
+}
+
 export function createClient() {
   const env = tryGetPublicSupabaseEnv()
   if (env) {
+    if (typeof window !== 'undefined') {
+      return getOrCreateBrowserSingleton(env.supabaseUrl, env.supabaseAnonKey)
+    }
     return createBrowserClient<Database>(env.supabaseUrl, env.supabaseAnonKey)
   }
 
@@ -32,6 +51,6 @@ export function createClient() {
   }
 
   throw new Error(
-    'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Add both in `.env.local` locally, or under Vercel → Project → Settings → Environment Variables (Production / Preview). Redeploy after changing `NEXT_PUBLIC_*` so they are inlined in the browser bundle.'
+    'Missing Supabase URL or anon key. Set NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_URL + SUPABASE_KEY (anon), in `.env.local` or Vercel → Environment Variables (Production / Preview), then redeploy so the browser bundle picks them up.'
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Lock, Mail, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -31,7 +31,15 @@ import { cn } from '@/lib/utils'
 
 export type ProfileSettingsRow = Pick<
   Database['public']['Tables']['profiles']['Row'],
-  'full_name' | 'avatar_url' | 'bio' | 'email' | 'company_name' | 'phone' | 'role' | 'created_at'
+  | 'id'
+  | 'full_name'
+  | 'avatar_url'
+  | 'bio'
+  | 'email'
+  | 'company_name'
+  | 'phone'
+  | 'role'
+  | 'created_at'
 >
 
 const ROLE_LABEL: Record<Database['public']['Enums']['user_role'], string> = {
@@ -49,6 +57,7 @@ function normalizeAvatarUrl(url: string | null | undefined): string | null {
 
 function profileFormKey(p: ProfileSettingsRow): string {
   return [
+    p.id,
     p.full_name ?? '',
     p.avatar_url ?? '',
     p.bio ?? '',
@@ -157,7 +166,6 @@ function ProfileSettingsForm({
   profile: ProfileSettingsRow
 }) {
   const router = useRouter()
-  const pathname = usePathname()
   const [credOpen, setCredOpen] = useState(false)
 
   const [persistedAvatarUrl, setPersistedAvatarUrl] = useState<string | null>(() =>
@@ -203,17 +211,18 @@ function ProfileSettingsForm({
     const supabase = createClient()
 
     async function syncAvatarFromProfile() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user || cancelled) return
-      const { data: row } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', user.id)
-        .maybeSingle()
-      if (cancelled) return
-      setPersistedAvatarUrl(normalizeAvatarUrl(row?.avatar_url ?? null))
+      if (!profile.id) return
+      try {
+        const { data: row, error: profileErr } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', profile.id)
+          .maybeSingle()
+        if (profileErr || cancelled) return
+        setPersistedAvatarUrl(normalizeAvatarUrl(row?.avatar_url ?? null))
+      } catch (e) {
+        console.warn('[ProfileSettingsForm] avatar sync failed', e)
+      }
     }
 
     void syncAvatarFromProfile()
@@ -226,7 +235,7 @@ function ProfileSettingsForm({
       cancelled = true
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [pathname, profile.avatar_url])
+  }, [profile.id, profile.avatar_url])
 
   const displayPreview = previewUrl ?? persistedAvatarUrl ?? null
 
