@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -26,8 +26,12 @@ import {
   orgUserCanResendInvite,
   orgUserResendInviteEmail,
 } from '@/lib/org-users/admin-resend-invite'
+import type {
+  OrgUsersListRoleFilter,
+  OrgUsersListStatusFilter,
+} from '@/lib/org-users/load-org-users'
 import type { OrgInviteRole } from '@/lib/org-users/org-invite-roles'
-import type { OrgUserRole, OrgUserRowJson } from '@/lib/org-users/types'
+import type { OrgUserRowJson } from '@/lib/org-users/types'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -62,6 +66,7 @@ import { cn } from '@/lib/utils'
 
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
 import { ROLE_LABEL, RoleBadge } from '@/components/settings/role-badge'
+import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { SettingsRoleSelect } from '@/components/settings/settings-role-select'
 import { StatusBadge } from '@/components/settings/status-badge'
 import {
@@ -73,8 +78,8 @@ import {
 } from '@/components/settings/user-admin-dialogs'
 import { UserAvatar } from '@/components/settings/user-avatar'
 
-type RoleFilter = 'all' | OrgUserRole
-type StatusFilter = 'all' | 'active' | 'invited' | 'disabled'
+type RoleFilter = OrgUsersListRoleFilter
+type StatusFilter = OrgUsersListStatusFilter
 
 function isUserBanned(row: OrgUserRowJson): boolean {
   if (!row.banned_until) return false
@@ -108,15 +113,60 @@ const USER_ROW_CELL_ACTIONS =
 
 export function UsersManagement({
   initialRows,
+  totalCount,
+  page,
+  pageSize,
+  q,
+  roleFilter,
+  statusFilter,
+  copywriterCandidates,
   currentUserId,
 }: {
   initialRows: OrgUserRowJson[]
+  totalCount: number
+  page: number
+  pageSize: number
+  q: string
+  roleFilter: OrgUsersListRoleFilter
+  statusFilter: OrgUsersListStatusFilter
+  copywriterCandidates: OrgUserRowJson[]
   currentUserId: string
 }) {
   const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [searchDraft, setSearchDraft] = useState(q)
+  const [prevQ, setPrevQ] = useState(q)
+  if (q !== prevQ) {
+    setPrevQ(q)
+    setSearchDraft(q)
+  }
+
+  const buildListHref = useCallback(
+    (updates: {
+      page?: number
+      q?: string
+      role?: OrgUsersListRoleFilter
+      status?: OrgUsersListStatusFilter
+    }) => {
+      const params = new URLSearchParams()
+      const qUse = updates.q !== undefined ? updates.q : q
+      const roleUse = updates.role !== undefined ? updates.role : roleFilter
+      const statusUse = updates.status !== undefined ? updates.status : statusFilter
+      const pageUse = updates.page !== undefined ? updates.page : page
+
+      if (qUse.trim()) params.set('q', qUse.trim())
+      if (roleUse !== 'all') params.set('role', roleUse)
+      if (statusUse !== 'all') params.set('status', statusUse)
+      if (pageUse > 1) params.set('page', String(pageUse))
+      const s = params.toString()
+      return s ? `/settings/users?${s}` : '/settings/users'
+    },
+    [q, roleFilter, statusFilter, page]
+  )
+
+  function onSearchSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    router.push(buildListHref({ page: 1, q: searchDraft }))
+  }
 
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -140,23 +190,11 @@ export function UsersManagement({
   const [resendTargetEmail, setResendTargetEmail] = useState<string | null>(null)
   const [resendBusy, setResendBusy] = useState(false)
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return initialRows.filter((row) => {
-      if (roleFilter !== 'all' && row.role !== roleFilter) return false
-      const st = rowStatus(row)
-      if (statusFilter !== 'all' && st !== statusFilter) return false
-      if (!q) return true
-      const name = adminUserDisplayName(row).toLowerCase()
-      const email = (row.email ?? '').toLowerCase()
-      return name.includes(q) || email.includes(q)
-    })
-  }, [initialRows, query, roleFilter, statusFilter])
-
   const copywriterReplacementOptions = useMemo(() => {
     const rowId = disableDialog?.row.id
-    return initialRows.filter((r) => r.role === 'copywriter' && r.id !== rowId && !isUserBanned(r))
-  }, [initialRows, disableDialog?.row.id])
+    if (!rowId) return copywriterCandidates
+    return copywriterCandidates.filter((r) => r.id !== rowId)
+  }, [copywriterCandidates, disableDialog?.row.id])
 
   async function onInviteSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -239,9 +277,7 @@ export function UsersManagement({
     }
 
     if (preview.flow === 'reassign_copywriter') {
-      const replacements = initialRows.filter(
-        (r) => r.role === 'copywriter' && r.id !== row.id && !isUserBanned(r)
-      )
+      const replacements = copywriterCandidates.filter((r) => r.id !== row.id)
       setDisableDialog({
         row,
         mode: 'reassign',
@@ -332,6 +368,8 @@ export function UsersManagement({
   const loadingCountLabel =
     rowBusyId !== null || disableBusy || activateBusy || resendBusy ? 'Loading…' : null
 
+  const usersCountLabel = `${totalCount} user${totalCount === 1 ? '' : 's'}`
+
   return (
     <div className="gap-layout flex flex-col">
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
@@ -345,7 +383,10 @@ export function UsersManagement({
             </p>
           </div>
           <div className="gap-block flex shrink-0 flex-wrap items-center sm:justify-end">
-            <div className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none">
+            <form
+              onSubmit={onSearchSubmit}
+              className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none"
+            >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden
@@ -353,12 +394,12 @@ export function UsersManagement({
               <FormControlInput
                 type="search"
                 placeholder="Search name or email…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
                 className="pr-3 pl-10"
                 aria-label="Search users"
               />
-            </div>
+            </form>
             <Button
               type="button"
               variant="cta"
@@ -386,7 +427,9 @@ export function UsersManagement({
                 key={key}
                 type="button"
                 className={chipClasses(roleFilter === key)}
-                onClick={() => setRoleFilter(key)}
+                onClick={() => {
+                  router.push(buildListHref({ page: 1, role: key }))
+                }}
               >
                 {label}
               </button>
@@ -397,16 +440,15 @@ export function UsersManagement({
                 key={key}
                 type="button"
                 className={chipClasses(statusFilter === key)}
-                onClick={() => setStatusFilter(key)}
+                onClick={() => {
+                  router.push(buildListHref({ page: 1, status: key }))
+                }}
               >
                 {label}
               </button>
             ))}
             <span className="text-muted-foreground ml-auto text-xs tabular-nums">
-              {loadingCountLabel ??
-                (filtered.length === initialRows.length
-                  ? `${initialRows.length} users`
-                  : `${filtered.length} of ${initialRows.length} users`)}
+              {loadingCountLabel ?? usersCountLabel}
             </span>
           </div>
         </div>
@@ -420,7 +462,7 @@ export function UsersManagement({
             </div>
           ) : null}
 
-          {filtered.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="px-section py-block">
               <div className="gap-block py-hero flex flex-col items-center text-center">
                 <span className="bg-primary-soft text-primary-ink flex size-14 items-center justify-center rounded-full">
@@ -433,18 +475,15 @@ export function UsersManagement({
                   Try clearing filters or invite someone new to your workspace.
                 </p>
                 <div className="gap-inset mt-block flex flex-wrap justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setQuery('')
-                      setRoleFilter('all')
-                      setStatusFilter('all')
-                    }}
+                  <Link
+                    href="/settings/users"
+                    className={cn(
+                      buttonVariants({ variant: 'outline', size: 'sm' }),
+                      'inline-flex'
+                    )}
                   >
                     Clear filters
-                  </Button>
+                  </Link>
                   <Button
                     type="button"
                     variant="cta"
@@ -485,7 +524,7 @@ export function UsersManagement({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((row) => {
+                    {initialRows.map((row) => {
                       const email = row.email ?? ''
                       const resendEmail = orgUserResendInviteEmail(row)
                       const name = adminUserDisplayName(row)
@@ -603,7 +642,7 @@ export function UsersManagement({
 
               <div className="px-section py-block md:hidden">
                 <ul className="divide-border divide-y rounded-xl border">
-                  {filtered.map((row) => {
+                  {initialRows.map((row) => {
                     const email = row.email ?? ''
                     const resendEmail = orgUserResendInviteEmail(row)
                     const name = adminUserDisplayName(row)
@@ -712,6 +751,13 @@ export function UsersManagement({
                   })}
                 </ul>
               </div>
+
+              <SettingsTablePagination
+                page={page}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                buildHref={(p) => buildListHref({ page: p })}
+              />
             </>
           )}
         </div>

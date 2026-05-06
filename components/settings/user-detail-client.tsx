@@ -48,12 +48,12 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
 export function UserDetailClient({
   row,
   currentUserId,
-  orgRows,
+  copywriterCandidates,
   counts,
 }: {
   row: OrgUserRowJson
   currentUserId: string
-  orgRows: OrgUserRowJson[]
+  copywriterCandidates: OrgUserRowJson[]
   counts: {
     clientActiveOrders: number
     copywriterActiveOrders: number
@@ -83,8 +83,8 @@ export function UserDetailClient({
 
   const copywriterReplacementOptions = useMemo(() => {
     const rowId = disableDialog?.row.id ?? row.id
-    return orgRows.filter((r) => r.role === 'copywriter' && r.id !== rowId && !isUserBanned(r))
-  }, [orgRows, disableDialog?.row.id, row.id])
+    return copywriterCandidates.filter((r) => r.id !== rowId)
+  }, [copywriterCandidates, disableDialog?.row.id, row.id])
 
   const canResend = orgUserCanResendInvite(row)
 
@@ -103,9 +103,7 @@ export function UserDetailClient({
     }
 
     if (preview.flow === 'reassign_copywriter') {
-      const replacements = orgRows.filter(
-        (r) => r.role === 'copywriter' && r.id !== row.id && !isUserBanned(r)
-      )
+      const replacements = copywriterCandidates.filter((r) => r.id !== row.id)
       setDisableDialog({
         row,
         mode: 'reassign',

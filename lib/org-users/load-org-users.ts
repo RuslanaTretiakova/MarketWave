@@ -1,13 +1,44 @@
 import type { User } from '@supabase/supabase-js'
 
+import { splitDisplayName } from '@/lib/user-display-name'
+
 import { listAllAuthUsers } from '@/lib/auth/admin-auth-user-list'
+import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { sanitizeIlikePattern } from '@/lib/pagination/sanitize-ilike'
 import { ACTIVE_ORDER_STATUSES } from '@/lib/org-users/active-order-statuses'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
-import type { OrgUserRowJson } from '@/lib/org-users/types'
+import type { OrgUserRole, OrgUserRowJson } from '@/lib/org-users/types'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
+
+export type OrgUsersListRoleFilter = 'all' | OrgUserRole
+export type OrgUsersListStatusFilter = 'all' | 'active' | 'invited' | 'disabled'
+
+const ORG_USER_ROLES: readonly OrgUserRole[] = [
+  'admin',
+  'client',
+  'sourcer',
+  'manager',
+  'copywriter',
+]
+
+export function parseOrgUsersListRoleFilter(raw: string | undefined): OrgUsersListRoleFilter {
+  if (raw && raw !== 'all' && ORG_USER_ROLES.includes(raw as OrgUserRole)) {
+    return raw as OrgUserRole
+  }
+  return 'all'
+}
+
+export function parseOrgUsersListStatusFilter(raw: string | undefined): OrgUsersListStatusFilter {
+  if (raw === 'active' || raw === 'invited' || raw === 'disabled') return raw
+  return 'all'
+}
+
+export function parseSettingsTablePage(raw: string | undefined): number {
+  return Math.max(1, Math.floor(Number(raw)) || 1)
+}
 
 /** `profiles` is the directory; Auth enriches sign-in and ban state when present. */
 function mergeOrgUserRow(profile: ProfileRow, authUser: User | undefined): OrgUserRowJson {
@@ -35,7 +66,40 @@ function mergeOrgUserRow(profile: ProfileRow, authUser: User | undefined): OrgUs
   }
 }
 
-export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { forbidden: true }> {
+function adminUserDisplayNameServer(row: OrgUserRowJson): string {
+  const email = row.email ?? ''
+  const { first, last } = splitDisplayName(row.full_name, email)
+  const combined = [first, last].filter(Boolean).join(' ')
+  return combined.trim() || email || 'User'
+}
+
+function isUserBannedRow(row: OrgUserRowJson): boolean {
+  if (!row.banned_until) return false
+  return new Date(row.banned_until) > new Date()
+}
+
+function rowStatusFromRow(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
+  if (isUserBannedRow(row)) return 'disabled'
+  if (row.require_password_change) return 'invited'
+  return 'active'
+}
+
+function rowMatchesOrgSearch(row: OrgUserRowJson, q: string): boolean {
+  const needle = q.trim().toLowerCase()
+  if (!needle) return true
+  const name = adminUserDisplayNameServer(row).toLowerCase()
+  const email = (row.email ?? '').toLowerCase()
+  return name.includes(needle) || email.includes(needle)
+}
+
+function rowMatchesStatusFilter(row: OrgUserRowJson, status: OrgUsersListStatusFilter): boolean {
+  if (status === 'all') return true
+  return rowStatusFromRow(row) === status
+}
+
+async function assertAdminOrgList(): Promise<
+  { supabase: Awaited<ReturnType<typeof createClient>> } | { forbidden: true }
+> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -54,7 +118,130 @@ export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { f
     return { forbidden: true }
   }
 
-  // `*` avoids runtime failures when optional columns (e.g. `bio`, mirrored `email`) are not migrated yet.
+  return { supabase }
+}
+
+/**
+ * Paginated user directory for admin UI. When `status !== 'all'`, falls back to a full merge + in-memory filter + slice (Auth-dependent status).
+ */
+export async function loadOrgUsersListForAdmin(input: {
+  page: number
+  pageSize?: number
+  q: string
+  role: OrgUsersListRoleFilter
+  status: OrgUsersListStatusFilter
+}): Promise<{ forbidden: true } | { rows: OrgUserRowJson[]; totalCount: number; page: number }> {
+  const pageSize = input.pageSize ?? SETTINGS_TABLE_PAGE_SIZE
+  const gate = await assertAdminOrgList()
+  if ('forbidden' in gate) {
+    return { forbidden: true }
+  }
+  const { supabase } = gate
+
+  let page = Math.max(1, Math.floor(input.page) || 1)
+
+  if (input.status !== 'all') {
+    const merged = await loadOrgUsersForAdminPageInner(supabase)
+    const trimmedQ = input.q.trim()
+    const filtered = merged.filter((row) => {
+      if (input.role !== 'all' && row.role !== input.role) return false
+      if (!rowMatchesOrgSearch(row, trimmedQ)) return false
+      if (!rowMatchesStatusFilter(row, input.status)) return false
+      return true
+    })
+    const totalCount = filtered.length
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    if (page > totalPages) page = totalPages
+    const from = (page - 1) * pageSize
+    const rows = filtered.slice(from, from + pageSize)
+    return { rows, totalCount, page }
+  }
+
+  function buildProfilesQuery() {
+    let q = supabase.from('profiles').select('*', { count: 'exact' })
+    if (input.role !== 'all') {
+      q = q.eq('role', input.role)
+    }
+    const safeQ = sanitizeIlikePattern(input.q)
+    if (safeQ.length > 0) {
+      const pat = `%${safeQ}%`
+      q = q.or(`email.ilike.${pat},full_name.ilike.${pat}`)
+    }
+    return q
+      .order('email', { ascending: true, nullsFirst: true })
+      .order('full_name', { ascending: true, nullsFirst: true })
+  }
+
+  let profiles: ProfileRow[] | null = null
+  let totalCount = 0
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+    const { data, error, count } = await buildProfilesQuery().range(from, to)
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to load profiles')
+    }
+
+    totalCount = count ?? 0
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    if (page > totalPages) {
+      page = totalPages
+      continue
+    }
+
+    profiles = data as ProfileRow[]
+    break
+  }
+
+  const pageProfiles = profiles ?? []
+  const rows: OrgUserRowJson[] = await Promise.all(
+    pageProfiles.map(async (p) => {
+      const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(p.id)
+      const authUser = !authErr && authData?.user ? authData.user : undefined
+      return mergeOrgUserRow(p, authUser)
+    })
+  )
+
+  return { rows, totalCount, page }
+}
+
+/** All copywriter profiles merged with Auth (excludes banned). Used for reassignment pickers. */
+export async function loadOrgCopywriterCandidatesForAdmin(): Promise<
+  OrgUserRowJson[] | { forbidden: true }
+> {
+  const gate = await assertAdminOrgList()
+  if ('forbidden' in gate) {
+    return { forbidden: true }
+  }
+  const { supabase } = gate
+
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', 'copywriter')
+    .order('email', { ascending: true, nullsFirst: true })
+    .order('full_name', { ascending: true, nullsFirst: true })
+
+  if (error || !profiles) {
+    throw new Error(error?.message ?? 'Failed to load copywriters')
+  }
+
+  const rows: OrgUserRowJson[] = await Promise.all(
+    profiles.map(async (p) => {
+      const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(p.id)
+      const authUser = !authErr && authData?.user ? authData.user : undefined
+      return mergeOrgUserRow(p, authUser)
+    })
+  )
+
+  return rows.filter((r) => !isUserBannedRow(r))
+}
+
+async function loadOrgUsersForAdminPageInner(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<OrgUserRowJson[]> {
   const { data: profiles, error: profErr } = await supabase.from('profiles').select('*')
 
   if (profErr || !profiles) {
@@ -81,6 +268,28 @@ export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { f
   })
 
   return rows
+}
+
+export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { forbidden: true }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { forbidden: true }
+  }
+
+  const { data: actorProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (actorProfile?.role !== 'admin') {
+    return { forbidden: true }
+  }
+
+  return loadOrgUsersForAdminPageInner(supabase)
 }
 
 export async function loadOrgUserRowForAdmin(
