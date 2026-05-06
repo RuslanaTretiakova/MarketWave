@@ -20,7 +20,7 @@ function HeroFloatingOrderCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'border-border/80 shadow-soft motion-safe:animate-hero-order-float-top gap-inset px-block pb-block pointer-events-auto absolute top-[-92px] left-[-8px] z-40 flex w-[min(100%,13.75rem)] max-w-[220px] items-start justify-between rounded-2xl border bg-(--marketing-card) pt-6 motion-reduce:animate-none sm:top-[-100px] sm:left-[-30px]',
+        'border-border/80 shadow-soft motion-safe:animate-hero-order-float-top gap-inset px-block pb-block -left-inset pointer-events-auto absolute top-[-92px] z-40 flex w-[min(100%,13.75rem)] max-w-[220px] items-start justify-between rounded-2xl border bg-(--marketing-card) pt-6 motion-reduce:animate-none sm:top-[-100px] sm:left-[-30px]',
         className
       )}
     >

@@ -1,5 +1,14 @@
 {
-  "cSpell.words": ["INVITABLE", "Sourcer", "supabase", "wordmark"],
+  "cSpell.words": [
+    "INVITABLE",
+    "linkbuilding",
+    "Mcpjson",
+    "outreachhq",
+    "Sourcer",
+    "supabase",
+    "treti",
+    "wordmark"
+  ],
   "mssql.lintingEnabled": false,
   "extensions.ignoreRecommendations": true
 }

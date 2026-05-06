@@ -441,7 +441,7 @@ export function UsersManagement({
           <div className="gap-inset flex flex-col sm:flex-row sm:flex-wrap sm:items-center">
             <div className="gap-inset flex flex-wrap items-center">
               {roleFilters.map(({ key, label }) => (
-                <button
+                <Button
                   key={key}
                   type="button"
                   className={chipClasses(roleFilter === key)}
@@ -450,11 +450,11 @@ export function UsersManagement({
                   }}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
               <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
               {statusFilters.map(({ key, label }) => (
-                <button
+                <Button
                   key={key}
                   type="button"
                   className={chipClasses(statusFilter === key)}
@@ -463,7 +463,7 @@ export function UsersManagement({
                   }}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
             <span className="text-muted-foreground w-full text-end text-xs tabular-nums sm:ml-auto sm:w-auto sm:text-start">
@@ -675,9 +675,10 @@ export function UsersManagement({
                       <li key={row.id}>
                         <div className="gap-block px-inset py-block flex flex-col">
                           <div className="gap-block flex items-start justify-between">
-                            <button
+                            <Button
                               type="button"
-                              className="hover:bg-muted/40 focus-visible:ring-ring gap-block flex min-w-0 flex-1 flex-col rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                              variant="ghost"
+                              className="hover:bg-muted/40 gap-block h-auto min-w-0 flex-1 flex-col items-start rounded-lg px-0 py-0 text-left transition-colors"
                               onClick={() => setMobileDetailUser(row)}
                               aria-label={`${name}, user details`}
                             >
@@ -697,7 +698,7 @@ export function UsersManagement({
                                   {formatRelativeLastActive(row.last_sign_in_at)}
                                 </span>
                               </div>
-                            </button>
+                            </Button>
                             <div data-row-actions onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger

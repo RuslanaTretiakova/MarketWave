@@ -1,0 +1,376 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+
+import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/supabase/types'
+
+type ProfileRole = Database['public']['Enums']['user_role']
+
+async function getSessionContext(): Promise<
+  | {
+      supabase: Awaited<ReturnType<typeof createClient>>
+      userId: string
+      role: ProfileRole
+    }
+  | { error: string }
+> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser()
+  if (authErr || !user) {
+    return { error: 'You must be signed in.' }
+  }
+  const { data: profile, error: profErr } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (profErr || !profile) {
+    return { error: 'Profile not found.' }
+  }
+  return { supabase, userId: user.id, role: profile.role }
+}
+
+function parseCodeList(raw: string): string[] {
+  return raw
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+/** Normalize DR / counts; rejects NaN and negatives. */
+function reqNat(name: string, v: number): string | null {
+  if (!Number.isFinite(v) || v < 0 || !Number.isInteger(v)) {
+    return `${name} must be a non-negative whole number.`
+  }
+  return null
+}
+
+function reqPositiveMoney(name: string, v: number): string | null {
+  if (!Number.isFinite(v) || v < 0) {
+    return `${name} must be a valid non-negative amount.`
+  }
+  return null
+}
+
+/** Shared payload for create / update site listing fields (excluding status audit columns). */
+export type SiteListingPayload = {
+  domain: string
+  dr: number
+  category_id: number
+  price: number
+  link_type: Database['public']['Enums']['link_type']
+  requirements?: string | null
+  description?: string | null
+  sourcer_notes?: string | null
+  contact_info?: string | null
+  keywords_relevance?: string | null
+  organic_keywords_count: number
+  organic_traffic_count: number
+  countriesCsv: string
+  languagesCsv: string
+  sourcer_id?: string | null
+}
+
+export async function createSite(
+  input: SiteListingPayload
+): Promise<{ ok: true; siteId: string } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) {
+    return { ok: false, message: ctx.error }
+  }
+  const { supabase, role } = ctx
+
+  if (role !== 'admin' && role !== 'sourcer') {
+    return { ok: false, message: 'You cannot create sites.' }
+  }
+
+  const domain = input.domain.trim().toLowerCase()
+  if (!domain) {
+    return { ok: false, message: 'Domain is required.' }
+  }
+
+  const countries = parseCodeList(input.countriesCsv).map((c) => c.toUpperCase())
+  const languages = parseCodeList(input.languagesCsv).map((l) => l.toLowerCase())
+  if (countries.length === 0) {
+    return { ok: false, message: 'Add at least one country code.' }
+  }
+  if (languages.length === 0) {
+    return { ok: false, message: 'Add at least one language code.' }
+  }
+
+  const eDr = reqNat('DR', input.dr)
+  if (eDr) return { ok: false, message: eDr }
+  if (input.dr > 100) {
+    return { ok: false, message: 'DR cannot exceed 100.' }
+  }
+
+  const eOk = reqNat('Organic keywords count', input.organic_keywords_count)
+  if (eOk) return { ok: false, message: eOk }
+  const eOt = reqNat('Organic traffic count', input.organic_traffic_count)
+  if (eOt) return { ok: false, message: eOt }
+
+  const ePrice = reqPositiveMoney('Price', input.price)
+  if (ePrice) return { ok: false, message: ePrice }
+
+  if (!Number.isFinite(input.category_id) || input.category_id <= 0) {
+    return { ok: false, message: 'Pick a category.' }
+  }
+
+  const row: Database['public']['Tables']['sites']['Insert'] = {
+    domain,
+    dr: input.dr,
+    category_id: input.category_id,
+    price: input.price,
+    link_type: input.link_type,
+    requirements: input.requirements?.trim() || null,
+    description: input.description?.trim() || null,
+    sourcer_notes: input.sourcer_notes?.trim() || null,
+    contact_info: input.contact_info?.trim() || null,
+    keywords_relevance: input.keywords_relevance?.trim() || null,
+    organic_keywords_count: input.organic_keywords_count,
+    organic_traffic_count: input.organic_traffic_count,
+  }
+
+  if (role === 'admin') {
+    row.sourcer_id = input.sourcer_id?.trim() || null
+    row.status = 'pending_review'
+  }
+
+  const { data: inserted, error: insErr } = await supabase
+    .from('sites')
+    .insert(row)
+    .select('id')
+    .maybeSingle()
+
+  if (insErr || !inserted) {
+    return {
+      ok: false,
+      message: insErr?.message ?? 'Could not create site.',
+    }
+  }
+
+  const siteId = inserted.id
+
+  const { error: rpcErr } = await supabase.rpc('replace_site_countries_and_languages', {
+    p_site_id: siteId,
+    p_countries: countries,
+    p_languages: languages,
+  })
+
+  if (rpcErr) {
+    await supabase.from('sites').delete().eq('id', siteId)
+    return { ok: false, message: rpcErr.message ?? 'Could not save countries/languages.' }
+  }
+
+  revalidatePath('/sites')
+  revalidatePath(`/sites/${siteId}`)
+  return { ok: true, siteId }
+}
+
+export async function updateSite(
+  siteId: string,
+  input: SiteListingPayload
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) {
+    return { ok: false, message: ctx.error }
+  }
+  const { supabase, userId, role } = ctx
+
+  const domain = input.domain.trim().toLowerCase()
+  if (!domain) {
+    return { ok: false, message: 'Domain is required.' }
+  }
+
+  const countries = parseCodeList(input.countriesCsv).map((c) => c.toUpperCase())
+  const languages = parseCodeList(input.languagesCsv).map((l) => l.toLowerCase())
+  if (countries.length === 0) {
+    return { ok: false, message: 'Add at least one country code.' }
+  }
+  if (languages.length === 0) {
+    return { ok: false, message: 'Add at least one language code.' }
+  }
+
+  const eDr = reqNat('DR', input.dr)
+  if (eDr) return { ok: false, message: eDr }
+  if (input.dr > 100) {
+    return { ok: false, message: 'DR cannot exceed 100.' }
+  }
+
+  const eOk = reqNat('Organic keywords count', input.organic_keywords_count)
+  if (eOk) return { ok: false, message: eOk }
+  const eOt = reqNat('Organic traffic count', input.organic_traffic_count)
+  if (eOt) return { ok: false, message: eOt }
+
+  const ePrice = reqPositiveMoney('Price', input.price)
+  if (ePrice) return { ok: false, message: ePrice }
+
+  if (!Number.isFinite(input.category_id) || input.category_id <= 0) {
+    return { ok: false, message: 'Pick a category.' }
+  }
+
+  const { data: existing, error: loadErr } = await supabase
+    .from('sites')
+    .select('id, sourcer_id, status')
+    .eq('id', siteId)
+    .maybeSingle()
+
+  if (loadErr || !existing) {
+    return { ok: false, message: loadErr?.message ?? 'Site not found.' }
+  }
+
+  const canEdit =
+    role === 'admin' ||
+    (role === 'sourcer' && existing.sourcer_id === userId && existing.status !== 'archived')
+
+  if (!canEdit) {
+    return { ok: false, message: 'You cannot edit this site.' }
+  }
+
+  const patch: Database['public']['Tables']['sites']['Update'] = {
+    domain,
+    dr: input.dr,
+    category_id: input.category_id,
+    price: input.price,
+    link_type: input.link_type,
+    requirements: input.requirements?.trim() || null,
+    description: input.description?.trim() || null,
+    sourcer_notes: input.sourcer_notes?.trim() || null,
+    contact_info: input.contact_info?.trim() || null,
+    keywords_relevance: input.keywords_relevance?.trim() || null,
+    organic_keywords_count: input.organic_keywords_count,
+    organic_traffic_count: input.organic_traffic_count,
+  }
+
+  if (role === 'admin') {
+    patch.sourcer_id = input.sourcer_id?.trim() || null
+  }
+
+  const { error: upErr } = await supabase.from('sites').update(patch).eq('id', siteId)
+
+  if (upErr) {
+    return { ok: false, message: upErr.message ?? 'Could not update site.' }
+  }
+
+  const { error: rpcErr } = await supabase.rpc('replace_site_countries_and_languages', {
+    p_site_id: siteId,
+    p_countries: countries,
+    p_languages: languages,
+  })
+
+  if (rpcErr) {
+    return { ok: false, message: rpcErr.message ?? 'Could not update countries/languages.' }
+  }
+
+  revalidatePath('/sites')
+  revalidatePath(`/sites/${siteId}`)
+  revalidatePath(`/sites/${siteId}/edit`)
+  return { ok: true }
+}
+
+export type SiteAdminTransition = 'needs_changes' | 'approve' | 'activate' | 'archive'
+
+export async function changeSiteStatus(params: {
+  siteId: string
+  transition: SiteAdminTransition
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) {
+    return { ok: false, message: ctx.error }
+  }
+  const { supabase, userId, role } = ctx
+
+  if (role !== 'admin') {
+    return { ok: false, message: 'Only an admin can change site status.' }
+  }
+
+  const nowIso = new Date().toISOString()
+
+  let patch: Database['public']['Tables']['sites']['Update']
+
+  switch (params.transition) {
+    case 'needs_changes':
+      patch = {
+        status: 'needs_changes',
+        needs_changes_by: userId,
+        needs_changes_at: nowIso,
+        approved_by: null,
+        approved_at: null,
+      }
+      break
+    case 'approve':
+      patch = {
+        status: 'approved',
+        approved_by: userId,
+        approved_at: nowIso,
+        needs_changes_by: null,
+        needs_changes_at: null,
+      }
+      break
+    case 'activate':
+      patch = {
+        status: 'active',
+      }
+      break
+    case 'archive':
+      patch = {
+        status: 'archived',
+      }
+      break
+    default:
+      return { ok: false, message: 'Unknown transition.' }
+  }
+
+  const { error } = await supabase.from('sites').update(patch).eq('id', params.siteId)
+
+  if (error) {
+    return { ok: false, message: error.message ?? 'Could not update status.' }
+  }
+
+  revalidatePath('/sites')
+  revalidatePath(`/sites/${params.siteId}`)
+  return { ok: true }
+}
+
+export async function addSiteToCart(
+  siteId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) {
+    return { ok: false, message: ctx.error }
+  }
+  const { supabase, role } = ctx
+
+  if (role !== 'client') {
+    return { ok: false, message: 'Only clients use the cart.' }
+  }
+
+  const { data: cart, error: cartErr } = await supabase.from('carts').select('id').maybeSingle()
+
+  if (cartErr || !cart) {
+    return { ok: false, message: cartErr?.message ?? 'Cart not found.' }
+  }
+
+  const { error: itemErr } = await supabase.from('cart_items').insert({
+    cart_id: cart.id,
+    site_id: siteId,
+  })
+
+  if (itemErr) {
+    return {
+      ok: false,
+      message:
+        itemErr.code === '23505'
+          ? 'This site is already in your cart.'
+          : (itemErr.message ?? 'Could not add to cart.'),
+    }
+  }
+
+  revalidatePath('/sites')
+  revalidatePath('/cart')
+  return { ok: true }
+}

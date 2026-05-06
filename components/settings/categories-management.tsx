@@ -339,9 +339,10 @@ export function CategoriesManagement({
                   {initialRows.map((row) => (
                     <li key={row.id}>
                       <div className="gap-block px-inset py-block flex items-start justify-between">
-                        <button
+                        <Button
                           type="button"
-                          className="hover:bg-muted/40 focus-visible:ring-ring min-w-0 flex-1 rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          variant="ghost"
+                          className="hover:bg-muted/40 h-auto min-w-0 flex-1 justify-start rounded-lg px-0 py-0 text-left transition-colors"
                           onClick={() => setMobileDetailRow(row)}
                           aria-label={`${row.name}, category details`}
                         >
@@ -349,7 +350,7 @@ export function CategoriesManagement({
                           <p className="text-muted-foreground mt-inset text-xs tabular-nums">
                             Created {formatRelativeLastActive(row.created_at)}
                           </p>
-                        </button>
+                        </Button>
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger

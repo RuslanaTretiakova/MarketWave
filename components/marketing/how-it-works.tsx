@@ -1,4 +1,5 @@
 import { Crown, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const steps = ['Step 01 — Admin', 'Step 02 — Configure', 'Step 03 — Invite'] as const
 
@@ -62,12 +63,13 @@ export function HowItWorks() {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
-                className="marketing-lift-hover px-block py-inset bg-cta text-cta-foreground rounded-xl text-xs font-semibold shadow-md"
+                variant="cta"
+                className="marketing-lift-hover px-block py-inset rounded-xl text-xs font-semibold shadow-md"
               >
                 Join
-              </button>
+              </Button>
             </div>
           </div>
         </div>
