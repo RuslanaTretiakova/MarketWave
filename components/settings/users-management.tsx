@@ -8,6 +8,7 @@ import {
   Mail,
   MoreHorizontal,
   Plus,
+  RotateCcw,
   Search,
   UserCog,
   UserMinus,
@@ -94,7 +95,7 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
 
 function chipClasses(active: boolean) {
   return cn(
-    'rounded-full border px-2.5 py-1 text-xs capitalize transition-colors',
+    'rounded-full border px-2.5 text-xs capitalize transition-colors min-h-10 py-2 sm:min-h-0 sm:py-1',
     active
       ? 'border-primary bg-primary-soft text-primary-ink'
       : 'border-border/60 bg-background hover:bg-muted'
@@ -165,7 +166,7 @@ export function UsersManagement({
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
-    router.push(buildListHref({ page: 1, q: searchDraft }))
+    router.push(buildListHref({ page: 1, q: searchDraft }), { scroll: false })
   }
 
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -382,10 +383,10 @@ export function UsersManagement({
               Invite teammates, change roles, and manage access.
             </p>
           </div>
-          <div className="gap-block flex shrink-0 flex-wrap items-center sm:justify-end">
+          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none"
+              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -395,7 +396,13 @@ export function UsersManagement({
                 type="search"
                 placeholder="Search name or email…"
                 value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setSearchDraft(v)
+                  if (!v.trim() && q.trim()) {
+                    router.push(buildListHref({ page: 1, q: '' }), { scroll: false })
+                  }
+                }}
                 className="pr-3 pl-10"
                 aria-label="Search users"
               />
@@ -404,7 +411,7 @@ export function UsersManagement({
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 shrink-0 rounded-full"
+              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
               onClick={() => {
                 setFormMessage(null)
                 setInviteOpen(true)
@@ -421,33 +428,35 @@ export function UsersManagement({
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <div className="gap-inset flex flex-wrap items-center">
-            {roleFilters.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={chipClasses(roleFilter === key)}
-                onClick={() => {
-                  router.push(buildListHref({ page: 1, role: key }))
-                }}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
-            {statusFilters.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={chipClasses(statusFilter === key)}
-                onClick={() => {
-                  router.push(buildListHref({ page: 1, status: key }))
-                }}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="text-muted-foreground ml-auto text-xs tabular-nums">
+          <div className="gap-inset flex flex-col sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="gap-inset flex flex-wrap items-center">
+              {roleFilters.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={chipClasses(roleFilter === key)}
+                  onClick={() => {
+                    router.push(buildListHref({ page: 1, role: key }), { scroll: false })
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+              <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
+              {statusFilters.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={chipClasses(statusFilter === key)}
+                  onClick={() => {
+                    router.push(buildListHref({ page: 1, status: key }), { scroll: false })
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="text-muted-foreground w-full text-end text-xs tabular-nums sm:ml-auto sm:w-auto sm:text-start">
               {loadingCountLabel ?? usersCountLabel}
             </span>
           </div>
@@ -474,21 +483,23 @@ export function UsersManagement({
                 <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
                   Try clearing filters or invite someone new to your workspace.
                 </p>
-                <div className="gap-inset mt-block flex flex-wrap justify-center">
+                <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   <Link
-                    href="/settings/users"
+                    href={buildListHref({ page: 1, q: '', role: 'all', status: 'all' })}
+                    scroll={false}
                     className={cn(
-                      buttonVariants({ variant: 'outline', size: 'sm' }),
-                      'inline-flex'
+                      buttonVariants({ variant: 'outline', size: 'default' }),
+                      'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
                     )}
                   >
+                    <RotateCcw className="size-4" aria-hidden />
                     Clear filters
                   </Link>
                   <Button
                     type="button"
                     variant="cta"
                     size="default"
-                    className="h-10 min-h-10 rounded-full"
+                    className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
                     onClick={() => {
                       setFormMessage(null)
                       setInviteOpen(true)

@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MoreHorizontal, Pencil, Plus, Search, Tags } from 'lucide-react'
+import { MoreHorizontal, Pencil, Plus, RotateCcw, Search, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/lib/categories/category-admin-actions'
@@ -151,7 +151,7 @@ export function CategoriesManagement({
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
-    router.push(buildListHref(1, searchDraft))
+    router.push(buildListHref(1, searchDraft), { scroll: false })
   }
 
   const sheetTitle = !sheet.open
@@ -176,10 +176,10 @@ export function CategoriesManagement({
               Manage catalog niches used when creating or filtering sites.
             </p>
           </div>
-          <div className="gap-block flex shrink-0 flex-wrap items-center sm:justify-end">
+          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none"
+              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -190,20 +190,24 @@ export function CategoriesManagement({
                 placeholder="Search by name…"
                 value={searchDraft}
                 onChange={(e) => {
-                  setSearchDraft(e.target.value)
+                  const v = e.target.value
+                  setSearchDraft(v)
+                  if (!v.trim() && q.trim()) {
+                    router.push(buildListHref(1, ''), { scroll: false })
+                  }
                 }}
                 className="pr-3 pl-10"
                 aria-label="Search categories"
               />
             </form>
-            <span className="text-muted-foreground hidden text-xs tabular-nums sm:inline">
+            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
               {countLabel}
             </span>
             <Button
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 shrink-0 rounded-full"
+              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
               onClick={openCreate}
             >
               <Plus className="size-4" aria-hidden />
@@ -227,15 +231,17 @@ export function CategoriesManagement({
                     ? 'Try a different term or clear the search.'
                     : 'Create a category to use in the site catalog.'}
                 </p>
-                <div className="gap-inset mt-block flex flex-wrap justify-center">
+                <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   {q.trim() ? (
                     <Link
-                      href="/settings/categories"
+                      href={buildListHref(1, '')}
+                      scroll={false}
                       className={cn(
-                        buttonVariants({ variant: 'outline', size: 'sm' }),
-                        'inline-flex'
+                        buttonVariants({ variant: 'outline', size: 'default' }),
+                        'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
                       )}
                     >
+                      <RotateCcw className="size-4" aria-hidden />
                       Clear search
                     </Link>
                   ) : (
@@ -243,7 +249,7 @@ export function CategoriesManagement({
                       type="button"
                       variant="cta"
                       size="default"
-                      className="h-10 min-h-10 rounded-full"
+                      className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
                       onClick={openCreate}
                     >
                       <Plus className="size-4" aria-hidden />

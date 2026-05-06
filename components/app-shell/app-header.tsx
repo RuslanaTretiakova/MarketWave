@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronsRight, Menu, PanelLeft } from 'lucide-react'
+import { Menu, PanelLeft } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebarNavPanel } from '@/components/app-shell/app-sidebar'
@@ -75,11 +75,7 @@ export function AppHeader({
           aria-expanded={!sidebarCollapsed}
           onClick={onToggleSidebarCollapsed}
         >
-          {sidebarCollapsed ? (
-            <ChevronsRight className="size-4" aria-hidden />
-          ) : (
-            <PanelLeft className="size-4" aria-hidden />
-          )}
+          <PanelLeft className="size-4" aria-hidden />
         </Button>
         <h1 className="text-foreground min-w-0 flex-1 leading-snug font-semibold tracking-tight">
           <span className="block truncate text-base md:text-lg">Welcome back, {firstName}</span>

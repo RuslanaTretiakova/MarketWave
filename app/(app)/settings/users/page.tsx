@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 
 import { UsersManagement } from '@/components/settings/users-management'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { searchParamFirstString } from '@/lib/pagination/search-param-first-string'
 import {
   loadOrgCopywriterCandidatesForAdmin,
   loadOrgUsersListForAdmin,
@@ -18,10 +19,10 @@ export const metadata = {
 }
 
 type SearchParams = {
-  page?: string
-  q?: string
-  role?: string
-  status?: string
+  page?: string | string[]
+  q?: string | string[]
+  role?: string | string[]
+  status?: string | string[]
 }
 
 export default async function SettingsUsersPage(props: { searchParams: Promise<SearchParams> }) {
@@ -45,10 +46,11 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
     notFound()
   }
 
-  const page = parseSettingsTablePage(sp.page)
-  const q = typeof sp.q === 'string' ? sp.q : ''
-  const role = parseOrgUsersListRoleFilter(sp.role)
-  const status = parseOrgUsersListStatusFilter(sp.status)
+  const page = parseSettingsTablePage(searchParamFirstString(sp.page))
+  const qRaw = searchParamFirstString(sp.q)
+  const q = qRaw !== undefined ? qRaw : ''
+  const role = parseOrgUsersListRoleFilter(searchParamFirstString(sp.role))
+  const status = parseOrgUsersListStatusFilter(searchParamFirstString(sp.status))
 
   let listResult
   let copywriterCandidates

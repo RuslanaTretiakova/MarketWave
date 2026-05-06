@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation'
 
 import { CategoriesManagement } from '@/components/settings/categories-management'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { searchParamFirstString } from '@/lib/pagination/search-param-first-string'
 import { sanitizeIlikePattern } from '@/lib/pagination/sanitize-ilike'
 import { createClient } from '@/lib/supabase/server'
+import { quotePostgrestFilterValue } from '@/lib/supabase/postgrest-quote-filter-value'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,14 +14,16 @@ export const metadata = {
 }
 
 type SearchParams = {
-  page?: string
-  q?: string
+  page?: string | string[]
+  q?: string | string[]
 }
 
 export default async function SettingsCategoriesPage(props: {
   searchParams: Promise<SearchParams>
 }) {
-  const { page: pageRaw, q: qRaw } = await props.searchParams
+  const sp = await props.searchParams
+  const pageRaw = searchParamFirstString(sp.page)
+  const qRaw = searchParamFirstString(sp.q)
 
   const supabase = await createClient()
   const {
@@ -39,7 +43,7 @@ export default async function SettingsCategoriesPage(props: {
     notFound()
   }
 
-  const q = typeof qRaw === 'string' ? qRaw.trim() : ''
+  const q = qRaw !== undefined ? qRaw.trim() : ''
   const pageParsed = Math.max(1, Math.floor(Number(pageRaw)) || 1)
 
   const safeQ = sanitizeIlikePattern(q)
@@ -51,7 +55,8 @@ export default async function SettingsCategoriesPage(props: {
       .order('name', { ascending: true })
     if (safeQ.length > 0) {
       const pat = `%${safeQ}%`
-      qb = qb.or(`name.ilike.${pat},slug.ilike.${pat}`)
+      const quoted = quotePostgrestFilterValue(pat)
+      qb = qb.or(`name.ilike.${quoted},slug.ilike.${quoted}`)
     }
     return qb
   }
