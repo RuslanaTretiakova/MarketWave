@@ -8,7 +8,7 @@ import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/types'
-import { getSiteOrigin } from '@/lib/site-url'
+import { getSiteOrigin, productionServerEmailRedirectBlockedMessage } from '@/lib/site-url'
 import { normalizeEmail } from '@/lib/validation/email'
 import { ORG_INVITABLE_ROLES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 
@@ -94,6 +94,11 @@ export async function inviteTeamMember(input: {
       return { ok: false, message: 'Invalid role for invitation.' }
     }
 
+    const redirectBlock = productionServerEmailRedirectBlockedMessage()
+    if (redirectBlock) {
+      return { ok: false, message: redirectBlock }
+    }
+
     const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/first-login-password')}&flow=${encodeURIComponent('invite')}`
 
     const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
@@ -171,6 +176,11 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
     const role = ORG_INVITABLE_ROLES.includes(roleRaw as OrgInviteRole)
       ? (roleRaw as OrgInviteRole)
       : 'client'
+
+    const redirectBlock = productionServerEmailRedirectBlockedMessage()
+    if (redirectBlock) {
+      return { ok: false, message: redirectBlock }
+    }
 
     const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/first-login-password')}&flow=${encodeURIComponent('invite')}`
 

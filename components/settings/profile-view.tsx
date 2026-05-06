@@ -18,8 +18,10 @@ import {
 } from '@/lib/profile/profile-avatar-sync'
 import { removeOwnAvatar, uploadOwnAvatar } from '@/lib/profile/avatar-own-actions'
 import { updateOwnProfile } from '@/lib/profile/update-own-profile'
+import { PasswordRequirementsHint } from '@/components/auth/password-requirements-hint'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
+import { confirmMatches, meetsMinLength, trimPasswordInput } from '@/lib/auth/password-validation'
 import { createClient } from '@/lib/supabase/client'
 import { avatarInitialsFromProfile, splitDisplayName } from '@/lib/user-display-name'
 import type { Database } from '@/lib/supabase/types'
@@ -353,11 +355,14 @@ function ProfileSettingsForm({
       setPwError('Current password is required.')
       return
     }
-    if (!pwNew || pwNew.length < AUTH_MIN_PASSWORD_LENGTH) {
+
+    const trimmedNew = trimPasswordInput(pwNew)
+    const trimmedConfirm = trimPasswordInput(pwConfirm)
+    if (!meetsMinLength(trimmedNew)) {
       setPwError(`New password must be at least ${AUTH_MIN_PASSWORD_LENGTH} characters.`)
       return
     }
-    if (pwNew !== pwConfirm) {
+    if (!confirmMatches(trimmedNew, trimmedConfirm)) {
       setPwError('New password and confirmation do not match.')
       return
     }
@@ -376,7 +381,7 @@ function ProfileSettingsForm({
       return
     }
 
-    const { error: updErr } = await supabase.auth.updateUser({ password: pwNew })
+    const { error: updErr } = await supabase.auth.updateUser({ password: trimmedNew })
 
     if (updErr) {
       setPwError(mapAuthError(updErr).message)
@@ -701,6 +706,7 @@ function ProfileSettingsForm({
                 disabled={pwBusy || saving}
               />
             </div>
+            <PasswordRequirementsHint password={pwNew} confirm={pwConfirm} className="mt-inset" />
             {pwError ? (
               <p className="text-destructive mt-block text-sm" role="alert">
                 {pwError}

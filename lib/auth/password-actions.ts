@@ -7,9 +7,8 @@ import {
   checkAndRecordPublicRateLimit,
 } from '@/lib/auth/public-rate-limit'
 import { adminClient } from '@/lib/supabase/admin'
+import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
 import { createClient } from '@/lib/supabase/server'
-
-const MIN_PASSWORD_LEN = 8
 
 export type SubmitSetPasswordResult = { ok: true } | { ok: false; message: string }
 
@@ -21,8 +20,8 @@ export async function submitSetPasswordAction(input: {
   password: string
 }): Promise<SubmitSetPasswordResult> {
   const password = input.password.trim()
-  if (password.length < MIN_PASSWORD_LEN) {
-    return { ok: false, message: `Use at least ${MIN_PASSWORD_LEN} characters.` }
+  if (password.length < AUTH_MIN_PASSWORD_LENGTH) {
+    return { ok: false, message: `Use at least ${AUTH_MIN_PASSWORD_LENGTH} characters.` }
   }
 
   const supabase = await createClient()
