@@ -8,8 +8,8 @@ import { toast } from 'sonner'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   FormControlInput,
+  FormControlSelect,
   FormControlTextarea,
-  formControlSelectClassName,
 } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 import type { SitesCatalogCategoryOption } from '@/components/sites/sites-catalog'
@@ -66,6 +66,18 @@ export function SiteListingForm({
   )
 
   const [form, setForm] = useState(defaults)
+  const categoryOptions = useMemo(
+    () => categories.map((c) => ({ value: String(c.id), label: c.name })),
+    [categories]
+  )
+  const sourcerOptions = useMemo(
+    () => [
+      { value: '', label: 'Unassigned' },
+      ...(sourcersForAdmin ?? []).map((s) => ({ value: s.id, label: s.label })),
+    ],
+    [sourcersForAdmin]
+  )
+  const linkTypeOptions = useMemo(() => LINK_TYPES.map((lt) => ({ value: lt, label: lt })), [])
 
   const submit = useCallback(() => {
     const payload: SiteListingPayload = {
@@ -163,36 +175,24 @@ export function SiteListingForm({
         </div>
         <div className="gap-inset flex flex-col sm:col-span-2">
           <Label htmlFor="category">Category</Label>
-          <select
+          <FormControlSelect
             id="category"
-            className={formControlSelectClassName}
             value={String(form.category_id)}
-            onChange={(e) => setForm((f) => ({ ...f, category_id: Number(e.target.value) }))}
-            required
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={(value) => setForm((f) => ({ ...f, category_id: Number(value) }))}
+            options={categoryOptions}
+            name="category"
+          />
         </div>
         {role === 'admin' && sourcersForAdmin !== undefined ? (
           <div className="gap-inset flex flex-col sm:col-span-2">
             <Label htmlFor="sourcer">Assigned sourcer</Label>
-            <select
+            <FormControlSelect
               id="sourcer"
-              className={formControlSelectClassName}
               value={form.sourcer_id}
-              onChange={(e) => setForm((f) => ({ ...f, sourcer_id: e.target.value }))}
-            >
-              <option value="">Unassigned</option>
-              {sourcersForAdmin.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) => setForm((f) => ({ ...f, sourcer_id: value }))}
+              options={sourcerOptions}
+              name="sourcer"
+            />
           </div>
         ) : null}
         <div className="gap-inset flex flex-col sm:col-span-2">
@@ -217,23 +217,18 @@ export function SiteListingForm({
         </div>
         <div className="gap-inset flex flex-col sm:col-span-2">
           <Label htmlFor="link_type">Link type</Label>
-          <select
+          <FormControlSelect
             id="link_type"
-            className={formControlSelectClassName}
             value={form.link_type}
-            onChange={(e) =>
+            onValueChange={(value) =>
               setForm((f) => ({
                 ...f,
-                link_type: e.target.value as Database['public']['Enums']['link_type'],
+                link_type: value as Database['public']['Enums']['link_type'],
               }))
             }
-          >
-            {LINK_TYPES.map((lt) => (
-              <option key={lt} value={lt}>
-                {lt}
-              </option>
-            ))}
-          </select>
+            options={linkTypeOptions}
+            name="link_type"
+          />
         </div>
         <div className="gap-inset flex flex-col">
           <Label htmlFor="organic_kw">Organic keywords count</Label>

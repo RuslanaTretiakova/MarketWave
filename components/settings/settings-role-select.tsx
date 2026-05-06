@@ -1,6 +1,6 @@
 'use client'
 
-import { formControlSelectClassName } from '@/components/ui/form-control'
+import { FormControlSelect } from '@/components/ui/form-control'
 import type { OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 import { ORG_INVITE_ROLE_OPTIONS } from '@/lib/org-users/org-invite-roles'
 
@@ -16,18 +16,15 @@ export function SettingsRoleSelect({
   disabled?: boolean
 }) {
   return (
-    <select
+    <FormControlSelect
       id={id}
-      disabled={disabled}
-      className={formControlSelectClassName}
       value={value}
-      onChange={(e) => onChange(e.target.value as OrgInviteRole)}
-    >
-      {ORG_INVITE_ROLE_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+      disabled={disabled}
+      onValueChange={(nextValue) => onChange(nextValue as OrgInviteRole)}
+      options={ORG_INVITE_ROLE_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))}
+    />
   )
 }

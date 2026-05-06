@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FormControlSelect } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 
 export type AdminDisableDialogState =
@@ -75,19 +76,19 @@ export function AdminUserDisableDialog({
                 </span>
                 <div className="space-y-inset pt-2">
                   <Label htmlFor="admin-disable-reassign-copywriter">Assign orders to</Label>
-                  <select
+                  <FormControlSelect
                     id="admin-disable-reassign-copywriter"
-                    className="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                     value={state.replacementId}
-                    onChange={(e) => onReplacementChange(e.target.value)}
-                  >
-                    <option value="">Select copywriter…</option>
-                    {copywriterReplacementOptions.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {adminUserDisplayName(r)} ({r.email ?? r.id})
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={onReplacementChange}
+                    options={[
+                      { value: '', label: 'Select copywriter…' },
+                      ...copywriterReplacementOptions.map((r) => ({
+                        value: r.id,
+                        label: `${adminUserDisplayName(r)} (${r.email ?? r.id})`,
+                      })),
+                    ]}
+                    triggerClassName="h-9 rounded-md"
+                  />
                   {copywriterReplacementOptions.length === 0 ? (
                     <p className="text-destructive text-xs">
                       Add another active copywriter before disabling this user.

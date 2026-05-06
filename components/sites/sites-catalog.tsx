@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FormControlInput } from '@/components/ui/form-control'
+import { FormControlInput, FormControlSelect } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 import {
   Table,
@@ -132,6 +132,27 @@ export function SitesCatalog({
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
     return SITE_STATUSES_ORDERED.filter((s) => s !== 'inactive')
   }, [role])
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: '', label: 'All categories' },
+      ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+    ],
+    [categories]
+  )
+  const statusOptions = useMemo(
+    () => [
+      { value: '', label: 'All statuses' },
+      ...statusFilterOptions.map((s) => ({ value: s, label: SITE_STATUS_LABEL[s] })),
+    ],
+    [statusFilterOptions]
+  )
+  const linkTypeOptions = useMemo(
+    () => [
+      { value: '', label: 'Any link type' },
+      ...LINK_TYPES.map((lt) => ({ value: lt, label: lt })),
+    ],
+    []
+  )
 
   const buildListHref = useCallback(
     (
@@ -318,50 +339,27 @@ export function SitesCatalog({
                 <Label htmlFor="filter-category" className="text-muted-foreground text-xs">
                   Category
                 </Label>
-                <select
+                <FormControlSelect
                   id="filter-category"
-                  className={cn(
-                    'border-border/70 bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50',
-                    'h-10 w-full min-w-0 cursor-pointer rounded-full border px-4 pr-10 text-sm outline-none',
-                    'focus-visible:ring-3'
-                  )}
                   value={categoryId?.toString() ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    router.push(buildListHref(1, { category_id: v }), { scroll: false })
-                  }}
-                >
-                  <option value="">All categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(value) =>
+                    router.push(buildListHref(1, { category_id: value }), { scroll: false })
+                  }
+                  options={categoryFilterOptions}
+                />
               </div>
               <div className="gap-inset flex flex-col">
                 <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
                   Status
                 </Label>
-                <select
+                <FormControlSelect
                   id="filter-status"
-                  className={cn(
-                    'border-border/70 bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50',
-                    'h-10 w-full min-w-0 cursor-pointer rounded-full border px-4 pr-10 text-sm outline-none',
-                    'focus-visible:ring-3'
-                  )}
                   value={status ?? ''}
-                  onChange={(e) =>
-                    router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+                  onValueChange={(value) =>
+                    router.push(buildListHref(1, { status: value }), { scroll: false })
                   }
-                >
-                  <option value="">All statuses</option>
-                  {statusFilterOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {SITE_STATUS_LABEL[s]}
-                    </option>
-                  ))}
-                </select>
+                  options={statusOptions}
+                />
               </div>
               <div className="gap-inset flex flex-col">
                 <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
@@ -395,25 +393,14 @@ export function SitesCatalog({
                 <Label htmlFor="filter-link" className="text-muted-foreground text-xs">
                   Link type
                 </Label>
-                <select
+                <FormControlSelect
                   id="filter-link"
-                  className={cn(
-                    'border-border/70 bg-muted/40 focus-visible:border-ring focus-visible:ring-ring/50',
-                    'h-10 w-full min-w-0 cursor-pointer rounded-full border px-4 pr-10 text-sm outline-none',
-                    'focus-visible:ring-3'
-                  )}
                   value={linkType ?? ''}
-                  onChange={(e) =>
-                    router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
+                  onValueChange={(value) =>
+                    router.push(buildListHref(1, { link_type: value }), { scroll: false })
                   }
-                >
-                  <option value="">Any link type</option>
-                  {LINK_TYPES.map((lt) => (
-                    <option key={lt} value={lt}>
-                      {lt}
-                    </option>
-                  ))}
-                </select>
+                  options={linkTypeOptions}
+                />
               </div>
               <div className="gap-inset flex flex-col">
                 <Label htmlFor="price-min" className="text-muted-foreground text-xs">
@@ -630,24 +617,27 @@ export function SitesCatalog({
                   {rows.map((row) => (
                     <li key={row.id}>
                       <div className="gap-block px-inset py-block flex items-start justify-between">
-                        <button
+                        <Button
                           type="button"
-                          className="hover:bg-muted/40 focus-visible:ring-ring min-w-0 flex-1 rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          variant="ghost"
+                          className="hover:bg-muted/40 focus-visible:ring-ring h-auto min-w-0 flex-1 justify-start rounded-lg px-0 py-0 text-left transition-colors focus-visible:ring-2"
                           onClick={() => setMobileDetailRow(row)}
                           aria-label={`${row.domain}, site summary`}
                         >
-                          <p className="text-foreground font-medium">{row.domain}</p>
-                          <p className="text-muted-foreground mt-inset text-xs tabular-nums">
-                            DR {row.dr ?? '—'} ·{' '}
-                            {row.price.toLocaleString(undefined, {
-                              style: 'currency',
-                              currency: 'USD',
-                            })}
-                          </p>
-                          <p className="text-muted-foreground mt-inset text-xs">
-                            {SITE_STATUS_LABEL[row.status]}
-                          </p>
-                        </button>
+                          <div>
+                            <p className="text-foreground font-medium">{row.domain}</p>
+                            <p className="text-muted-foreground mt-inset text-xs tabular-nums">
+                              DR {row.dr ?? '—'} ·{' '}
+                              {row.price.toLocaleString(undefined, {
+                                style: 'currency',
+                                currency: 'USD',
+                              })}
+                            </p>
+                            <p className="text-muted-foreground mt-inset text-xs">
+                              {SITE_STATUS_LABEL[row.status]}
+                            </p>
+                          </div>
+                        </Button>
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger

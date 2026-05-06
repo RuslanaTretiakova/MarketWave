@@ -131,9 +131,11 @@ function PillPasswordField({
           disabled={disabled}
           className="pr-11 pl-10"
         />
-        <button
+        <Button
           type="button"
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1 outline-none focus-visible:ring-2"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 size-7 -translate-y-1/2 rounded-full"
           onClick={() => setShow((s) => !s)}
           aria-label={show ? 'Hide password' : 'Show password'}
         >
@@ -142,7 +144,7 @@ function PillPasswordField({
           ) : (
             <Eye className="size-4" aria-hidden />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -447,14 +449,16 @@ function ProfileSettingsForm({
                     />
                   </label>
                   {persistedAvatarUrl ? (
-                    <button
+                    <Button
                       type="button"
                       aria-label="Remove profile photo"
+                      variant="outline"
+                      size="icon"
                       disabled={avatarPickBusy}
                       className={cn(
                         'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
-                        'absolute -top-1 -right-1 z-10 flex size-7 items-center justify-center rounded-full border shadow-sm',
-                        'focus-visible:ring-ring focus-visible:ring-offset-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                        'absolute -top-1 -right-1 z-10 size-7 rounded-full border shadow-sm',
+                        'transition-colors',
                         avatarPickBusy && 'pointer-events-none opacity-40'
                       )}
                       onClick={(e) => {
@@ -464,7 +468,7 @@ function ProfileSettingsForm({
                       }}
                     >
                       <X className="size-3.5" aria-hidden strokeWidth={2.5} />
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 <div className="gap-inset ml-block flex min-w-0 flex-col">
@@ -668,14 +672,15 @@ function ProfileSettingsForm({
             <p className="text-muted-foreground mt-inset mb-block max-w-lg text-xs leading-relaxed">
               Confirm your current password, then set a new one. To change your email (and
               optionally password in one place), use{' '}
-              <button
+              <Button
                 type="button"
-                className="text-cta hover:text-cta inline p-0 font-medium underline-offset-2 hover:underline"
+                variant="link"
+                className="text-cta hover:text-cta inline h-auto p-0 font-medium underline-offset-2 hover:underline"
                 disabled={saving}
                 onClick={() => setCredOpen(true)}
               >
                 Change email
-              </button>{' '}
+              </Button>{' '}
               above.
             </p>
             <div className="gap-inset grid sm:grid-cols-2">

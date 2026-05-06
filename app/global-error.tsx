@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 
+import { Button } from '@/components/ui/button'
 import '@/app/globals.css'
 
 /** Renders outside the root layout when the root layout itself fails — keep HTML self-contained. */
@@ -42,13 +43,9 @@ export default function GlobalErrorBoundary({
           <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed dark:text-zinc-400">
             The app failed to render. Reload the page or try again in a moment.
           </p>
-          <button
-            type="button"
-            className="ring-offset-background mt-8 inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white ring-zinc-400 transition hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-            onClick={handleReset}
-          >
+          <Button type="button" className="mt-8" onClick={handleReset}>
             Try again
-          </button>
+          </Button>
         </div>
       </body>
     </html>
