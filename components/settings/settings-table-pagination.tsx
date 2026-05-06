@@ -25,7 +25,10 @@ export function SettingsTablePagination({
     return null
   }
 
-  const navBtnClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'inline-flex')
+  const navBtnClass = cn(
+    buttonVariants({ variant: 'outline', size: 'sm' }),
+    'inline-flex min-h-10 flex-1 justify-center sm:min-h-0 sm:flex-none'
+  )
 
   return (
     <div
@@ -39,13 +42,19 @@ export function SettingsTablePagination({
         <span className="text-muted-foreground/80 hidden sm:inline"> · </span>
         <span className="block sm:inline">{totalCount} total</span>
       </p>
-      <div className="gap-inset flex justify-center sm:justify-end">
+      <div className="gap-inset flex w-full justify-center sm:w-auto sm:justify-end">
         {hasPrev ? (
           <Link href={buildHref(safePage - 1)} scroll={false} className={navBtnClass}>
             Previous
           </Link>
         ) : (
-          <Button type="button" variant="outline" size="sm" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-10 flex-1 sm:min-h-0 sm:flex-none"
+            disabled
+          >
             Previous
           </Button>
         )}
@@ -54,7 +63,13 @@ export function SettingsTablePagination({
             Next
           </Link>
         ) : (
-          <Button type="button" variant="outline" size="sm" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-10 flex-1 sm:min-h-0 sm:flex-none"
+            disabled
+          >
             Next
           </Button>
         )}

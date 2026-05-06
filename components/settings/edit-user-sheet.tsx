@@ -5,10 +5,12 @@ import { useState } from 'react'
 import { updateTeamMemberProfile } from '@/lib/auth/user-admin-actions'
 import type { OrgUserRowJson } from '@/lib/org-users/types'
 import { ORG_INVITABLE_ROLE_VALUES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
+import { SETTINGS_RIGHT_SHEET_CONTENT_CLASS } from '@/components/settings/settings-right-sheet'
 import { SettingsRoleSelect } from '@/components/settings/settings-role-select'
 import { Button } from '@/components/ui/button'
 import { FormControlInput, FormControlTextarea } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 import {
   Sheet,
   SheetContent,
@@ -193,7 +195,7 @@ export function EditUserSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="gap-0 sm:max-w-md">
+      <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
         <SheetHeader>
           <SheetTitle>Edit profile</SheetTitle>
           <SheetDescription>

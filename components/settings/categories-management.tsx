@@ -3,11 +3,15 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MoreHorizontal, Pencil, Plus, Search, Tags } from 'lucide-react'
+import { MoreHorizontal, Pencil, Plus, RotateCcw, Search, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/lib/categories/category-admin-actions'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
+import {
+  SETTINGS_RIGHT_SHEET_CONTENT_CLASS,
+  SettingsRightSheet,
+} from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -73,6 +77,7 @@ export function CategoriesManagement({
   q: string
 }) {
   const router = useRouter()
+  const [mobileDetailRow, setMobileDetailRow] = useState<CategoryRow | null>(null)
   const [sheet, setSheet] = useState<SheetState>({ open: false })
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -106,6 +111,11 @@ export function CategoriesManagement({
     setFormError(null)
     setName(row.name)
     setSheet({ open: true, mode: 'edit', row })
+  }
+
+  function openEditFromMobileDetail(row: CategoryRow) {
+    setMobileDetailRow(null)
+    queueMicrotask(() => openEdit(row))
   }
 
   function closeSheet() {
@@ -151,7 +161,7 @@ export function CategoriesManagement({
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
-    router.push(buildListHref(1, searchDraft))
+    router.push(buildListHref(1, searchDraft), { scroll: false })
   }
 
   const sheetTitle = !sheet.open
@@ -176,10 +186,10 @@ export function CategoriesManagement({
               Manage catalog niches used when creating or filtering sites.
             </p>
           </div>
-          <div className="gap-block flex shrink-0 flex-wrap items-center sm:justify-end">
+          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none"
+              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -190,20 +200,24 @@ export function CategoriesManagement({
                 placeholder="Search by name…"
                 value={searchDraft}
                 onChange={(e) => {
-                  setSearchDraft(e.target.value)
+                  const v = e.target.value
+                  setSearchDraft(v)
+                  if (!v.trim() && q.trim()) {
+                    router.push(buildListHref(1, ''), { scroll: false })
+                  }
                 }}
                 className="pr-3 pl-10"
                 aria-label="Search categories"
               />
             </form>
-            <span className="text-muted-foreground hidden text-xs tabular-nums sm:inline">
+            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
               {countLabel}
             </span>
             <Button
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 shrink-0 rounded-full"
+              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
               onClick={openCreate}
             >
               <Plus className="size-4" aria-hidden />
@@ -227,15 +241,17 @@ export function CategoriesManagement({
                     ? 'Try a different term or clear the search.'
                     : 'Create a category to use in the site catalog.'}
                 </p>
-                <div className="gap-inset mt-block flex flex-wrap justify-center">
+                <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   {q.trim() ? (
                     <Link
-                      href="/settings/categories"
+                      href={buildListHref(1, '')}
+                      scroll={false}
                       className={cn(
-                        buttonVariants({ variant: 'outline', size: 'sm' }),
-                        'inline-flex'
+                        buttonVariants({ variant: 'outline', size: 'default' }),
+                        'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
                       )}
                     >
+                      <RotateCcw className="size-4" aria-hidden />
                       Clear search
                     </Link>
                   ) : (
@@ -243,7 +259,7 @@ export function CategoriesManagement({
                       type="button"
                       variant="cta"
                       size="default"
-                      className="h-10 min-h-10 rounded-full"
+                      className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
                       onClick={openCreate}
                     >
                       <Plus className="size-4" aria-hidden />
@@ -323,12 +339,17 @@ export function CategoriesManagement({
                   {initialRows.map((row) => (
                     <li key={row.id}>
                       <div className="gap-block px-inset py-block flex items-start justify-between">
-                        <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          className="hover:bg-muted/40 focus-visible:ring-ring min-w-0 flex-1 rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          onClick={() => setMobileDetailRow(row)}
+                          aria-label={`${row.name}, category details`}
+                        >
                           <p className="text-foreground font-medium">{row.name}</p>
                           <p className="text-muted-foreground mt-inset text-xs tabular-nums">
                             Created {formatRelativeLastActive(row.created_at)}
                           </p>
-                        </div>
+                        </button>
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger
@@ -372,6 +393,54 @@ export function CategoriesManagement({
         </div>
       </section>
 
+      <SettingsRightSheet
+        open={mobileDetailRow !== null}
+        onOpenChange={(open) => {
+          if (!open) setMobileDetailRow(null)
+        }}
+        title={mobileDetailRow?.name ?? '\u200b'}
+        description={
+          mobileDetailRow
+            ? `Created ${formatRelativeLastActive(mobileDetailRow.created_at)}`
+            : undefined
+        }
+        footer={
+          mobileDetailRow ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setMobileDetailRow(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="w-full gap-2 sm:w-auto"
+                onClick={() => openEditFromMobileDetail(mobileDetailRow)}
+              >
+                <Pencil className="size-4" aria-hidden />
+                Edit
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {mobileDetailRow ? (
+          <div className="gap-inset flex flex-col">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              Name
+            </p>
+            <p className="text-foreground font-medium">{mobileDetailRow.name}</p>
+            <p className="text-muted-foreground mt-block text-xs tabular-nums">
+              Created {formatRelativeLastActive(mobileDetailRow.created_at)}
+            </p>
+          </div>
+        ) : null}
+      </SettingsRightSheet>
+
       <Sheet
         open={sheet.open}
         onOpenChange={(open) => {
@@ -380,7 +449,7 @@ export function CategoriesManagement({
           }
         }}
       >
-        <SheetContent className="flex flex-col sm:max-w-md" side="right">
+        <SheetContent className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)} side="right">
           <SheetHeader className="text-left">
             <SheetTitle>{sheetTitle}</SheetTitle>
             <SheetDescription>

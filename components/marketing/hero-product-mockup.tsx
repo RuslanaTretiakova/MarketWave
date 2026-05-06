@@ -20,7 +20,7 @@ function HeroFloatingOrderCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'border-border/80 shadow-soft motion-safe:animate-hero-order-float-top gap-inset px-block pb-block pointer-events-auto absolute top-[-100px] left-[-30px] z-40 flex w-[min(100%,13.75rem)] max-w-[220px] items-start justify-between rounded-2xl border bg-(--marketing-card) pt-6 motion-reduce:animate-none',
+        'border-border/80 shadow-soft motion-safe:animate-hero-order-float-top gap-inset px-block pb-block pointer-events-auto absolute top-[-92px] left-[-8px] z-40 flex w-[min(100%,13.75rem)] max-w-[220px] items-start justify-between rounded-2xl border bg-(--marketing-card) pt-6 motion-reduce:animate-none sm:top-[-100px] sm:left-[-30px]',
         className
       )}
     >
@@ -50,7 +50,7 @@ export function HeroProductMockup() {
   const stages = ['Order', 'Assign', 'Write', 'Approve', 'Publish', 'Invoice'] as const
 
   return (
-    <div className="relative z-10 col-start-1 row-start-2 mx-auto min-h-[440px] w-full max-w-xl overflow-visible lg:col-start-2 lg:row-start-1 lg:min-h-[500px]">
+    <div className="relative z-10 col-start-1 row-start-2 mx-auto min-h-[440px] w-full max-w-xl overflow-visible pt-6 sm:pt-0 lg:col-start-2 lg:row-start-1 lg:min-h-[500px]">
       {/* Main card */}
       <div className="border-border/70 mt-layout shadow-soft relative z-10 mx-auto max-w-[340px] overflow-visible rounded-[20px] border bg-(--marketing-card) sm:mt-0 sm:max-w-none md:mx-0">
         <HeroFloatingOrderCard />

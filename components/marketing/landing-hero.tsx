@@ -37,13 +37,13 @@ export async function LandingHero() {
             clients — can trust.
           </p>
 
-          <div className="mt-layout gap-inset lg:gap-block flex flex-wrap">
+          <div className="mt-layout gap-inset lg:gap-block flex w-full flex-col sm:flex-row sm:flex-wrap">
             {isLoggedIn ? (
               <a
                 href="/dashboard"
                 className={cn(
                   buttonVariants({ variant: 'cta', size: 'lg' }),
-                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans font-semibold text-(--marketing-button-text) lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
+                  'marketing-lift-hover text-cta-foreground shadow-accent w-full justify-center rounded-2xl px-7 font-sans text-[0.9375rem] font-semibold sm:w-auto lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
                 )}
               >
                 Go to dashboard <ArrowRight className="size-4" aria-hidden />
@@ -53,7 +53,7 @@ export async function LandingHero() {
                 href="/auth/login"
                 className={cn(
                   buttonVariants({ variant: 'cta', size: 'lg' }),
-                  'marketing-lift-hover shadow-accent rounded-2xl px-7 font-sans font-semibold text-(--marketing-button-text) lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
+                  'marketing-lift-hover text-cta-foreground shadow-accent w-full justify-center rounded-2xl px-7 font-sans text-[0.9375rem] font-semibold sm:w-auto lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5'
                 )}
               >
                 Log in <ArrowRight className="size-4" aria-hidden />
@@ -63,7 +63,7 @@ export async function LandingHero() {
               href="#workflow"
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'lg' }),
-                'marketing-lift-hover border-border/70 bg-card/90 shadow-soft rounded-2xl px-7 font-sans text-(--marketing-button-text) backdrop-blur-sm lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg lg:font-semibold'
+                'marketing-lift-hover border-border/70 bg-card/90 text-foreground shadow-soft w-full justify-center rounded-2xl px-7 font-sans text-[0.9375rem] backdrop-blur-sm sm:w-auto lg:h-11 lg:rounded-3xl lg:px-11 lg:text-lg lg:font-semibold'
               )}
             >
               See the workflow

@@ -8,6 +8,7 @@ import {
   Mail,
   MoreHorizontal,
   Plus,
+  RotateCcw,
   Search,
   UserCog,
   UserMinus,
@@ -65,6 +66,10 @@ import { isValidEmail, normalizeEmail } from '@/lib/validation/email'
 import { cn } from '@/lib/utils'
 
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
+import {
+  SETTINGS_RIGHT_SHEET_CONTENT_CLASS,
+  SettingsRightSheet,
+} from '@/components/settings/settings-right-sheet'
 import { ROLE_LABEL, RoleBadge } from '@/components/settings/role-badge'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { SettingsRoleSelect } from '@/components/settings/settings-role-select'
@@ -94,7 +99,7 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
 
 function chipClasses(active: boolean) {
   return cn(
-    'rounded-full border px-2.5 py-1 text-xs capitalize transition-colors',
+    'rounded-full border px-2.5 text-xs capitalize transition-colors min-h-10 py-2 sm:min-h-0 sm:py-1',
     active
       ? 'border-primary bg-primary-soft text-primary-ink'
       : 'border-border/60 bg-background hover:bg-muted'
@@ -165,7 +170,7 @@ export function UsersManagement({
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
-    router.push(buildListHref({ page: 1, q: searchDraft }))
+    router.push(buildListHref({ page: 1, q: searchDraft }), { scroll: false })
   }
 
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -176,6 +181,7 @@ export function UsersManagement({
 
   const [editOpen, setEditOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<OrgUserRowJson | null>(null)
+  const [mobileDetailUser, setMobileDetailUser] = useState<OrgUserRowJson | null>(null)
 
   const [formMessage, setFormMessage] = useState<string | null>(null)
 
@@ -235,6 +241,11 @@ export function UsersManagement({
     setFormMessage(null)
     setEditTarget(row)
     setEditOpen(true)
+  }
+
+  function openEditFromMobileDetail(row: OrgUserRowJson) {
+    setMobileDetailUser(null)
+    queueMicrotask(() => openEdit(row))
   }
 
   async function onResendConfirmed() {
@@ -382,10 +393,10 @@ export function UsersManagement({
               Invite teammates, change roles, and manage access.
             </p>
           </div>
-          <div className="gap-block flex shrink-0 flex-wrap items-center sm:justify-end">
+          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative min-w-48 flex-1 sm:max-w-xs sm:flex-none"
+              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -395,7 +406,13 @@ export function UsersManagement({
                 type="search"
                 placeholder="Search name or email…"
                 value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setSearchDraft(v)
+                  if (!v.trim() && q.trim()) {
+                    router.push(buildListHref({ page: 1, q: '' }), { scroll: false })
+                  }
+                }}
                 className="pr-3 pl-10"
                 aria-label="Search users"
               />
@@ -404,7 +421,7 @@ export function UsersManagement({
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 shrink-0 rounded-full"
+              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
               onClick={() => {
                 setFormMessage(null)
                 setInviteOpen(true)
@@ -421,33 +438,35 @@ export function UsersManagement({
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <div className="gap-inset flex flex-wrap items-center">
-            {roleFilters.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={chipClasses(roleFilter === key)}
-                onClick={() => {
-                  router.push(buildListHref({ page: 1, role: key }))
-                }}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
-            {statusFilters.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={chipClasses(statusFilter === key)}
-                onClick={() => {
-                  router.push(buildListHref({ page: 1, status: key }))
-                }}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="text-muted-foreground ml-auto text-xs tabular-nums">
+          <div className="gap-inset flex flex-col sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="gap-inset flex flex-wrap items-center">
+              {roleFilters.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={chipClasses(roleFilter === key)}
+                  onClick={() => {
+                    router.push(buildListHref({ page: 1, role: key }), { scroll: false })
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+              <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
+              {statusFilters.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={chipClasses(statusFilter === key)}
+                  onClick={() => {
+                    router.push(buildListHref({ page: 1, status: key }), { scroll: false })
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span className="text-muted-foreground w-full text-end text-xs tabular-nums sm:ml-auto sm:w-auto sm:text-start">
               {loadingCountLabel ?? usersCountLabel}
             </span>
           </div>
@@ -474,21 +493,23 @@ export function UsersManagement({
                 <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
                   Try clearing filters or invite someone new to your workspace.
                 </p>
-                <div className="gap-inset mt-block flex flex-wrap justify-center">
+                <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   <Link
-                    href="/settings/users"
+                    href={buildListHref({ page: 1, q: '', role: 'all', status: 'all' })}
+                    scroll={false}
                     className={cn(
-                      buttonVariants({ variant: 'outline', size: 'sm' }),
-                      'inline-flex'
+                      buttonVariants({ variant: 'outline', size: 'default' }),
+                      'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
                     )}
                   >
+                    <RotateCcw className="size-4" aria-hidden />
                     Clear filters
                   </Link>
                   <Button
                     type="button"
                     variant="cta"
                     size="default"
-                    className="h-10 min-h-10 rounded-full"
+                    className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
                     onClick={() => {
                       setFormMessage(null)
                       setInviteOpen(true)
@@ -652,22 +673,31 @@ export function UsersManagement({
 
                     return (
                       <li key={row.id}>
-                        <div
-                          className="gap-block px-inset py-block flex cursor-pointer flex-col"
-                          onClick={(e) => navigateToUser(e, row.id)}
-                        >
+                        <div className="gap-block px-inset py-block flex flex-col">
                           <div className="gap-block flex items-start justify-between">
-                            <Link
-                              href={`/settings/users/${row.id}`}
-                              className="gap-block flex min-w-0 flex-1 items-center"
-                              onClick={(e) => e.stopPropagation()}
+                            <button
+                              type="button"
+                              className="hover:bg-muted/40 focus-visible:ring-ring gap-block flex min-w-0 flex-1 flex-col rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                              onClick={() => setMobileDetailUser(row)}
+                              aria-label={`${name}, user details`}
                             >
-                              <UserAvatar fullName={row.full_name} email={email || name} />
-                              <div className="min-w-0">
-                                <p className="text-foreground truncate font-medium">{name}</p>
-                                <p className="text-muted-foreground truncate text-xs">{email}</p>
+                              <div className="gap-block flex items-center">
+                                <UserAvatar fullName={row.full_name} email={email || name} />
+                                <div className="min-w-0">
+                                  <p className="text-foreground truncate font-medium">{name}</p>
+                                  <p className="text-muted-foreground truncate text-xs">{email}</p>
+                                </div>
                               </div>
-                            </Link>
+                              <div className="gap-inset flex flex-wrap items-center justify-between pl-14">
+                                <div className="gap-inset flex flex-wrap items-center">
+                                  <RoleBadge role={row.role} />
+                                  <StatusBadge status={st} />
+                                </div>
+                                <span className="text-muted-foreground text-xs tabular-nums">
+                                  {formatRelativeLastActive(row.last_sign_in_at)}
+                                </span>
+                              </div>
+                            </button>
                             <div data-row-actions onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger
@@ -736,15 +766,6 @@ export function UsersManagement({
                               </DropdownMenu>
                             </div>
                           </div>
-                          <div className="gap-inset flex flex-wrap items-center justify-between pl-14">
-                            <div className="gap-inset flex flex-wrap items-center">
-                              <RoleBadge role={row.role} />
-                              <StatusBadge status={st} />
-                            </div>
-                            <span className="text-muted-foreground text-xs tabular-nums">
-                              {formatRelativeLastActive(row.last_sign_in_at)}
-                            </span>
-                          </div>
                         </div>
                       </li>
                     )
@@ -772,7 +793,7 @@ export function UsersManagement({
           }
         }}
       >
-        <SheetContent side="right" className="gap-0 sm:max-w-md">
+        <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
           <SheetHeader>
             <SheetTitle>Invitation</SheetTitle>
             <SheetDescription>
@@ -825,6 +846,124 @@ export function UsersManagement({
           </form>
         </SheetContent>
       </Sheet>
+
+      <SettingsRightSheet
+        open={mobileDetailUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setMobileDetailUser(null)
+        }}
+        title={mobileDetailUser ? adminUserDisplayName(mobileDetailUser) : '\u200b'}
+        description={mobileDetailUser?.email ?? undefined}
+        footerClassName="flex-col items-stretch"
+        footer={
+          mobileDetailUser ? (
+            <>
+              <Link
+                href={`/settings/users/${mobileDetailUser.id}`}
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'default' }),
+                  'h-10 min-h-10 w-full shrink-0 justify-center rounded-full'
+                )}
+                onClick={() => setMobileDetailUser(null)}
+              >
+                View full profile
+              </Link>
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={rowBusyId === mobileDetailUser.id}
+                onClick={() => openEditFromMobileDetail(mobileDetailUser)}
+              >
+                <UserCog className="size-4" aria-hidden />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={
+                  rowBusyId === mobileDetailUser.id || !orgUserCanResendInvite(mobileDetailUser)
+                }
+                onClick={() => {
+                  const emailToResend = orgUserResendInviteEmail(mobileDetailUser)
+                  setMobileDetailUser(null)
+                  setResendTargetEmail(emailToResend)
+                }}
+              >
+                <Mail className="size-4" aria-hidden />
+                Resend invite
+              </Button>
+              {isUserBanned(mobileDetailUser) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                  disabled={
+                    rowBusyId === mobileDetailUser.id ||
+                    mobileDetailUser.id === currentUserId ||
+                    mobileDetailUser.role === 'admin'
+                  }
+                  onClick={() => {
+                    const target = mobileDetailUser
+                    setMobileDetailUser(null)
+                    setActivateTarget(target)
+                  }}
+                >
+                  <UserPlus className="size-4" aria-hidden />
+                  Activate
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                  disabled={
+                    rowBusyId === mobileDetailUser.id ||
+                    mobileDetailUser.id === currentUserId ||
+                    mobileDetailUser.role === 'admin'
+                  }
+                  onClick={() => {
+                    const target = mobileDetailUser
+                    setMobileDetailUser(null)
+                    void beginDisable(target)
+                  }}
+                >
+                  <UserMinus className="size-4" aria-hidden />
+                  Disable
+                </Button>
+              )}
+            </>
+          ) : null
+        }
+      >
+        {mobileDetailUser ? (
+          <>
+            <div className="gap-block flex items-center">
+              <UserAvatar
+                fullName={mobileDetailUser.full_name}
+                email={mobileDetailUser.email ?? adminUserDisplayName(mobileDetailUser)}
+              />
+              <div className="min-w-0">
+                <p className="text-foreground font-medium">
+                  {adminUserDisplayName(mobileDetailUser)}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
+                  {mobileDetailUser.email ?? '—'}
+                </p>
+              </div>
+            </div>
+            <div className="gap-inset flex flex-wrap items-center">
+              <RoleBadge role={mobileDetailUser.role} />
+              <StatusBadge status={rowStatus(mobileDetailUser)} />
+            </div>
+            <p className="text-muted-foreground text-xs tabular-nums">
+              Last active {formatRelativeLastActive(mobileDetailUser.last_sign_in_at)}
+            </p>
+          </>
+        ) : null}
+      </SettingsRightSheet>
 
       <EditUserSheet
         open={editOpen}

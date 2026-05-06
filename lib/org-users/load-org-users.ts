@@ -4,7 +4,6 @@ import { splitDisplayName } from '@/lib/user-display-name'
 
 import { listAllAuthUsers } from '@/lib/auth/admin-auth-user-list'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
-import { sanitizeIlikePattern } from '@/lib/pagination/sanitize-ilike'
 import { ACTIVE_ORDER_STATUSES } from '@/lib/org-users/active-order-statuses'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -122,7 +121,9 @@ async function assertAdminOrgList(): Promise<
 }
 
 /**
- * Paginated user directory for admin UI. When `status !== 'all'`, falls back to a full merge + in-memory filter + slice (Auth-dependent status).
+ * Paginated user directory for admin UI.
+ * Uses profile+Auth merge + in-memory filter when search is active or status is narrowed (display email/name/status come from Auth).
+ * Otherwise SQL pagination on `profiles` only.
  */
 export async function loadOrgUsersListForAdmin(input: {
   page: number
@@ -139,10 +140,10 @@ export async function loadOrgUsersListForAdmin(input: {
   const { supabase } = gate
 
   let page = Math.max(1, Math.floor(input.page) || 1)
+  const trimmedQ = input.q.trim()
 
-  if (input.status !== 'all') {
+  if (input.status !== 'all' || trimmedQ !== '') {
     const merged = await loadOrgUsersForAdminPageInner(supabase)
-    const trimmedQ = input.q.trim()
     const filtered = merged.filter((row) => {
       if (input.role !== 'all' && row.role !== input.role) return false
       if (!rowMatchesOrgSearch(row, trimmedQ)) return false
@@ -161,11 +162,6 @@ export async function loadOrgUsersListForAdmin(input: {
     let q = supabase.from('profiles').select('*', { count: 'exact' })
     if (input.role !== 'all') {
       q = q.eq('role', input.role)
-    }
-    const safeQ = sanitizeIlikePattern(input.q)
-    if (safeQ.length > 0) {
-      const pat = `%${safeQ}%`
-      q = q.or(`email.ilike.${pat},full_name.ilike.${pat}`)
     }
     return q
       .order('email', { ascending: true, nullsFirst: true })
