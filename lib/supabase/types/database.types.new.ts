@@ -526,6 +526,8 @@ export type Database = {
       }
       sites: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           category_id: number
           contact_info: string | null
           created_at: string
@@ -535,15 +537,20 @@ export type Database = {
           id: string
           keywords_relevance: string | null
           link_type: Database['public']['Enums']['link_type']
+          needs_changes_at: string | null
+          needs_changes_by: string | null
           organic_keywords_count: number | null
           organic_traffic_count: number | null
           price: number
           requirements: string | null
           sourcer_id: string | null
+          sourcer_notes: string | null
           status: Database['public']['Enums']['site_status']
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           category_id: number
           contact_info?: string | null
           created_at?: string
@@ -553,15 +560,20 @@ export type Database = {
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
+          needs_changes_at?: string | null
+          needs_changes_by?: string | null
           organic_keywords_count?: number | null
           organic_traffic_count?: number | null
           price: number
           requirements?: string | null
           sourcer_id?: string | null
+          sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           category_id?: number
           contact_info?: string | null
           created_at?: string
@@ -571,11 +583,14 @@ export type Database = {
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
+          needs_changes_at?: string | null
+          needs_changes_by?: string | null
           organic_keywords_count?: number | null
           organic_traffic_count?: number | null
           price?: number
           requirements?: string | null
           sourcer_id?: string | null
+          sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
           updated_at?: string
         }
@@ -585,6 +600,20 @@ export type Database = {
             columns: ['category_id']
             isOneToOne: false
             referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sites_needs_changes_by_fkey'
+            columns: ['needs_changes_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sites_approved_by_fkey'
+            columns: ['approved_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
@@ -607,6 +636,14 @@ export type Database = {
         Args: never
         Returns: Database['public']['Enums']['user_role']
       }
+      replace_site_countries_and_languages: {
+        Args: {
+          p_site_id: string
+          p_countries: string[]
+          p_languages: string[]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       change_request_status: 'open' | 'resolved' | 'dismissed'
@@ -621,7 +658,13 @@ export type Database = {
         | 'published'
         | 'completed'
         | 'canceled'
-      site_status: 'active' | 'inactive' | 'pending_review'
+      site_status:
+        | 'active'
+        | 'inactive'
+        | 'pending_review'
+        | 'needs_changes'
+        | 'approved'
+        | 'archived'
       user_role: 'client' | 'admin' | 'sourcer' | 'manager' | 'copywriter'
     }
     CompositeTypes: {
