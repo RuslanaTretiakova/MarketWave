@@ -8,6 +8,10 @@ import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/lib/categories/category-admin-actions'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
+import {
+  SETTINGS_RIGHT_SHEET_CONTENT_CLASS,
+  SettingsRightSheet,
+} from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -73,6 +77,7 @@ export function CategoriesManagement({
   q: string
 }) {
   const router = useRouter()
+  const [mobileDetailRow, setMobileDetailRow] = useState<CategoryRow | null>(null)
   const [sheet, setSheet] = useState<SheetState>({ open: false })
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -106,6 +111,11 @@ export function CategoriesManagement({
     setFormError(null)
     setName(row.name)
     setSheet({ open: true, mode: 'edit', row })
+  }
+
+  function openEditFromMobileDetail(row: CategoryRow) {
+    setMobileDetailRow(null)
+    queueMicrotask(() => openEdit(row))
   }
 
   function closeSheet() {
@@ -329,12 +339,17 @@ export function CategoriesManagement({
                   {initialRows.map((row) => (
                     <li key={row.id}>
                       <div className="gap-block px-inset py-block flex items-start justify-between">
-                        <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          className="hover:bg-muted/40 focus-visible:ring-ring min-w-0 flex-1 rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          onClick={() => setMobileDetailRow(row)}
+                          aria-label={`${row.name}, category details`}
+                        >
                           <p className="text-foreground font-medium">{row.name}</p>
                           <p className="text-muted-foreground mt-inset text-xs tabular-nums">
                             Created {formatRelativeLastActive(row.created_at)}
                           </p>
-                        </div>
+                        </button>
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger
@@ -378,6 +393,54 @@ export function CategoriesManagement({
         </div>
       </section>
 
+      <SettingsRightSheet
+        open={mobileDetailRow !== null}
+        onOpenChange={(open) => {
+          if (!open) setMobileDetailRow(null)
+        }}
+        title={mobileDetailRow?.name ?? '\u200b'}
+        description={
+          mobileDetailRow
+            ? `Created ${formatRelativeLastActive(mobileDetailRow.created_at)}`
+            : undefined
+        }
+        footer={
+          mobileDetailRow ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setMobileDetailRow(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="w-full gap-2 sm:w-auto"
+                onClick={() => openEditFromMobileDetail(mobileDetailRow)}
+              >
+                <Pencil className="size-4" aria-hidden />
+                Edit
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {mobileDetailRow ? (
+          <div className="gap-inset flex flex-col">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              Name
+            </p>
+            <p className="text-foreground font-medium">{mobileDetailRow.name}</p>
+            <p className="text-muted-foreground mt-block text-xs tabular-nums">
+              Created {formatRelativeLastActive(mobileDetailRow.created_at)}
+            </p>
+          </div>
+        ) : null}
+      </SettingsRightSheet>
+
       <Sheet
         open={sheet.open}
         onOpenChange={(open) => {
@@ -386,7 +449,7 @@ export function CategoriesManagement({
           }
         }}
       >
-        <SheetContent className="flex flex-col sm:max-w-md" side="right">
+        <SheetContent className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)} side="right">
           <SheetHeader className="text-left">
             <SheetTitle>{sheetTitle}</SheetTitle>
             <SheetDescription>

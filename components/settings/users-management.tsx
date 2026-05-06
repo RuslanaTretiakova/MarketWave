@@ -66,6 +66,10 @@ import { isValidEmail, normalizeEmail } from '@/lib/validation/email'
 import { cn } from '@/lib/utils'
 
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
+import {
+  SETTINGS_RIGHT_SHEET_CONTENT_CLASS,
+  SettingsRightSheet,
+} from '@/components/settings/settings-right-sheet'
 import { ROLE_LABEL, RoleBadge } from '@/components/settings/role-badge'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { SettingsRoleSelect } from '@/components/settings/settings-role-select'
@@ -177,6 +181,7 @@ export function UsersManagement({
 
   const [editOpen, setEditOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<OrgUserRowJson | null>(null)
+  const [mobileDetailUser, setMobileDetailUser] = useState<OrgUserRowJson | null>(null)
 
   const [formMessage, setFormMessage] = useState<string | null>(null)
 
@@ -236,6 +241,11 @@ export function UsersManagement({
     setFormMessage(null)
     setEditTarget(row)
     setEditOpen(true)
+  }
+
+  function openEditFromMobileDetail(row: OrgUserRowJson) {
+    setMobileDetailUser(null)
+    queueMicrotask(() => openEdit(row))
   }
 
   async function onResendConfirmed() {
@@ -663,22 +673,31 @@ export function UsersManagement({
 
                     return (
                       <li key={row.id}>
-                        <div
-                          className="gap-block px-inset py-block flex cursor-pointer flex-col"
-                          onClick={(e) => navigateToUser(e, row.id)}
-                        >
+                        <div className="gap-block px-inset py-block flex flex-col">
                           <div className="gap-block flex items-start justify-between">
-                            <Link
-                              href={`/settings/users/${row.id}`}
-                              className="gap-block flex min-w-0 flex-1 items-center"
-                              onClick={(e) => e.stopPropagation()}
+                            <button
+                              type="button"
+                              className="hover:bg-muted/40 focus-visible:ring-ring gap-block flex min-w-0 flex-1 flex-col rounded-lg text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                              onClick={() => setMobileDetailUser(row)}
+                              aria-label={`${name}, user details`}
                             >
-                              <UserAvatar fullName={row.full_name} email={email || name} />
-                              <div className="min-w-0">
-                                <p className="text-foreground truncate font-medium">{name}</p>
-                                <p className="text-muted-foreground truncate text-xs">{email}</p>
+                              <div className="gap-block flex items-center">
+                                <UserAvatar fullName={row.full_name} email={email || name} />
+                                <div className="min-w-0">
+                                  <p className="text-foreground truncate font-medium">{name}</p>
+                                  <p className="text-muted-foreground truncate text-xs">{email}</p>
+                                </div>
                               </div>
-                            </Link>
+                              <div className="gap-inset flex flex-wrap items-center justify-between pl-14">
+                                <div className="gap-inset flex flex-wrap items-center">
+                                  <RoleBadge role={row.role} />
+                                  <StatusBadge status={st} />
+                                </div>
+                                <span className="text-muted-foreground text-xs tabular-nums">
+                                  {formatRelativeLastActive(row.last_sign_in_at)}
+                                </span>
+                              </div>
+                            </button>
                             <div data-row-actions onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger
@@ -747,15 +766,6 @@ export function UsersManagement({
                               </DropdownMenu>
                             </div>
                           </div>
-                          <div className="gap-inset flex flex-wrap items-center justify-between pl-14">
-                            <div className="gap-inset flex flex-wrap items-center">
-                              <RoleBadge role={row.role} />
-                              <StatusBadge status={st} />
-                            </div>
-                            <span className="text-muted-foreground text-xs tabular-nums">
-                              {formatRelativeLastActive(row.last_sign_in_at)}
-                            </span>
-                          </div>
                         </div>
                       </li>
                     )
@@ -783,7 +793,7 @@ export function UsersManagement({
           }
         }}
       >
-        <SheetContent side="right" className="gap-0 sm:max-w-md">
+        <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
           <SheetHeader>
             <SheetTitle>Invitation</SheetTitle>
             <SheetDescription>
@@ -836,6 +846,124 @@ export function UsersManagement({
           </form>
         </SheetContent>
       </Sheet>
+
+      <SettingsRightSheet
+        open={mobileDetailUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setMobileDetailUser(null)
+        }}
+        title={mobileDetailUser ? adminUserDisplayName(mobileDetailUser) : '\u200b'}
+        description={mobileDetailUser?.email ?? undefined}
+        footerClassName="flex-col items-stretch"
+        footer={
+          mobileDetailUser ? (
+            <>
+              <Link
+                href={`/settings/users/${mobileDetailUser.id}`}
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'default' }),
+                  'h-10 min-h-10 w-full shrink-0 justify-center rounded-full'
+                )}
+                onClick={() => setMobileDetailUser(null)}
+              >
+                View full profile
+              </Link>
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={rowBusyId === mobileDetailUser.id}
+                onClick={() => openEditFromMobileDetail(mobileDetailUser)}
+              >
+                <UserCog className="size-4" aria-hidden />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={
+                  rowBusyId === mobileDetailUser.id || !orgUserCanResendInvite(mobileDetailUser)
+                }
+                onClick={() => {
+                  const emailToResend = orgUserResendInviteEmail(mobileDetailUser)
+                  setMobileDetailUser(null)
+                  setResendTargetEmail(emailToResend)
+                }}
+              >
+                <Mail className="size-4" aria-hidden />
+                Resend invite
+              </Button>
+              {isUserBanned(mobileDetailUser) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                  disabled={
+                    rowBusyId === mobileDetailUser.id ||
+                    mobileDetailUser.id === currentUserId ||
+                    mobileDetailUser.role === 'admin'
+                  }
+                  onClick={() => {
+                    const target = mobileDetailUser
+                    setMobileDetailUser(null)
+                    setActivateTarget(target)
+                  }}
+                >
+                  <UserPlus className="size-4" aria-hidden />
+                  Activate
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                  disabled={
+                    rowBusyId === mobileDetailUser.id ||
+                    mobileDetailUser.id === currentUserId ||
+                    mobileDetailUser.role === 'admin'
+                  }
+                  onClick={() => {
+                    const target = mobileDetailUser
+                    setMobileDetailUser(null)
+                    void beginDisable(target)
+                  }}
+                >
+                  <UserMinus className="size-4" aria-hidden />
+                  Disable
+                </Button>
+              )}
+            </>
+          ) : null
+        }
+      >
+        {mobileDetailUser ? (
+          <>
+            <div className="gap-block flex items-center">
+              <UserAvatar
+                fullName={mobileDetailUser.full_name}
+                email={mobileDetailUser.email ?? adminUserDisplayName(mobileDetailUser)}
+              />
+              <div className="min-w-0">
+                <p className="text-foreground font-medium">
+                  {adminUserDisplayName(mobileDetailUser)}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
+                  {mobileDetailUser.email ?? '—'}
+                </p>
+              </div>
+            </div>
+            <div className="gap-inset flex flex-wrap items-center">
+              <RoleBadge role={mobileDetailUser.role} />
+              <StatusBadge status={rowStatus(mobileDetailUser)} />
+            </div>
+            <p className="text-muted-foreground text-xs tabular-nums">
+              Last active {formatRelativeLastActive(mobileDetailUser.last_sign_in_at)}
+            </p>
+          </>
+        ) : null}
+      </SettingsRightSheet>
 
       <EditUserSheet
         open={editOpen}

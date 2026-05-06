@@ -9,7 +9,9 @@ import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
 import { confirmMatches, meetsMinLength, trimPasswordInput } from '@/lib/auth/password-validation'
 import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 import { isValidEmail, normalizeEmail } from '@/lib/validation/email'
+import { SETTINGS_RIGHT_SHEET_CONTENT_CLASS } from '@/components/settings/settings-right-sheet'
 import { Button } from '@/components/ui/button'
 import { FormControlInput } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
@@ -35,7 +37,11 @@ export function ChangeCredentialsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="gap-0 sm:max-w-md" showCloseButton={true}>
+      <SheetContent
+        side="right"
+        className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}
+        showCloseButton={true}
+      >
         <SheetHeader>
           <SheetTitle>Change credentials</SheetTitle>
           <SheetDescription>
