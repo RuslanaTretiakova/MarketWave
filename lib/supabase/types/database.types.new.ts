@@ -168,23 +168,34 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          created_by: string | null
           id: number
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name: string
           slug: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name?: string
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'categories_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       change_requests: {
         Row: {

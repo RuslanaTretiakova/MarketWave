@@ -1,0 +1,25 @@
+---
+description: Data tables — pagination required for new list/table UIs (admin settings pattern)
+globs: "components/settings/**/*.tsx,app/**/settings/**/*.tsx,**/components/**/*management*.tsx"
+alwaysApply: false
+---
+
+## New tables must paginate
+
+Any **new screen** that lists entities in a **`Table`** from [`components/ui/table.tsx`](components/ui/table.tsx) (or equivalent split desktop table + mobile list fed from the same query) **must** include pagination — do not ship unbounded full-table loads for directories that can grow.
+
+### Defaults (match existing)
+
+- **Page size:** [`SETTINGS_TABLE_PAGE_SIZE`](lib/pagination/constants.ts) (**10**). Do not introduce ad‑hoc sizes without a maintainer decision.
+- **Footer UI:** [`SettingsTablePagination`](components/settings/settings-table-pagination.tsx) with a `buildHref(nextPage)` that preserves current query params (`q`, filters, etc.).
+- **URL state:** Drive **`page`** (and search/filter params) via **`searchParams`** on the route (see [`app/(app)/settings/categories/page.tsx`](app/(app)/settings/categories/page.tsx), [`app/(app)/settings/users/page.tsx`](app/(app)/settings/users/page.tsx)). Reset **`page` to `1`** when search or filters change.
+- **Supabase:** Use **`.select(..., { count: 'exact' })`**, **`.order(...)`**, and **`.range(from, to)`** for the efficient path; clamp **`page`** when it exceeds `totalPages` (same retry pattern as those pages). If filters require Auth-only fields (e.g. ban state), document the hybrid approach like [`loadOrgUsersListForAdmin`](lib/org-users/load-org-users.ts) (SQL page vs full merge + slice).
+
+### Reference implementations
+
+- Categories: [`components/settings/categories-management.tsx`](components/settings/categories-management.tsx) + categories settings page.
+- Users: [`components/settings/users-management.tsx`](components/settings/users-management.tsx) + users settings page.
+
+### Exceptions
+
+- Tiny fixed sets (e.g. &lt; 15 rows **guaranteed** by product, not data) may skip pagination only if called out explicitly in the task; default is **always paginate** for user- or admin-managed lists.

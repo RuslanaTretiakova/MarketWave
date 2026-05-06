@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 
 import { AuthPrimaryButton } from './auth-primary-button'
 import { AuthTextField } from './auth-text-field'
+import { PasswordRequirementsHint } from './password-requirements-hint'
+import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
 import { submitSetPasswordAction } from '@/lib/auth/password-actions'
+import { confirmMatches, meetsMinLength, trimPasswordInput } from '@/lib/auth/password-validation'
 import { createClient } from '@/lib/supabase/client'
-
-const MIN_LEN = 8
 
 type SetPasswordFormProps = {
   mode: 'first-login' | 'recovery'
@@ -28,12 +29,14 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
   function validate(): boolean {
     setPasswordError(null)
     setConfirmError(null)
+    const trimmedPassword = trimPasswordInput(password)
+    const trimmedConfirm = trimPasswordInput(confirm)
     let ok = true
-    if (password.length < MIN_LEN) {
-      setPasswordError(`Use at least ${MIN_LEN} characters.`)
+    if (!meetsMinLength(trimmedPassword)) {
+      setPasswordError(`Use at least ${AUTH_MIN_PASSWORD_LENGTH} characters.`)
       ok = false
     }
-    if (password !== confirm) {
+    if (!confirmMatches(trimmedPassword, trimmedConfirm)) {
       setConfirmError('Passwords do not match.')
       ok = false
     }
@@ -45,8 +48,9 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
     setError(null)
     if (!validate()) return
 
+    const trimmedPassword = trimPasswordInput(password)
     setLoading(true)
-    const result = await submitSetPasswordAction({ password })
+    const result = await submitSetPasswordAction({ password: trimmedPassword })
     setLoading(false)
     if (!result.ok) {
       setError(result.message)
@@ -99,7 +103,7 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
         }}
         error={passwordError}
         errorId="new-password-error"
-        minLength={MIN_LEN}
+        minLength={AUTH_MIN_PASSWORD_LENGTH}
       />
       <AuthTextField
         label="Confirm password"
@@ -114,6 +118,7 @@ export function SetPasswordForm({ mode }: SetPasswordFormProps) {
         error={confirmError}
         errorId="confirm-password-error"
       />
+      <PasswordRequirementsHint password={password} confirm={confirm} />
       {error ? (
         <p className="text-destructive text-sm" role="alert">
           {error}

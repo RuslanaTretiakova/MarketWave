@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+import { PasswordRequirementsHint } from '@/components/auth/password-requirements-hint'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
+import { confirmMatches, meetsMinLength, trimPasswordInput } from '@/lib/auth/password-validation'
 import { createClient } from '@/lib/supabase/client'
 import { isValidEmail, normalizeEmail } from '@/lib/validation/email'
 import { Button } from '@/components/ui/button'
@@ -86,11 +88,14 @@ function ChangeCredentialsForm({
       setError('Current password is required.')
       return
     }
-    if (!newPassword || newPassword.length < AUTH_MIN_PASSWORD_LENGTH) {
+
+    const trimmedNew = trimPasswordInput(newPassword)
+    const trimmedConfirm = trimPasswordInput(confirmPassword)
+    if (!meetsMinLength(trimmedNew)) {
       setError(`New password must be at least ${AUTH_MIN_PASSWORD_LENGTH} characters.`)
       return
     }
-    if (newPassword !== confirmPassword) {
+    if (!confirmMatches(trimmedNew, trimmedConfirm)) {
       setError('New password and confirmation do not match.')
       return
     }
@@ -110,7 +115,7 @@ function ChangeCredentialsForm({
     }
 
     const nextEmail = normalizeEmail(trimmedEmail)
-    const payload: { email?: string; password: string } = { password: newPassword }
+    const payload: { email?: string; password: string } = { password: trimmedNew }
     if (nextEmail !== normalizeEmail(sessionEmail)) {
       payload.email = nextEmail
     }
@@ -170,6 +175,7 @@ function ChangeCredentialsForm({
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           required
+          minLength={AUTH_MIN_PASSWORD_LENGTH}
         />
       </div>
       <div className="gap-inset flex flex-col">
@@ -183,8 +189,11 @@ function ChangeCredentialsForm({
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
+          minLength={AUTH_MIN_PASSWORD_LENGTH}
         />
       </div>
+
+      <PasswordRequirementsHint password={newPassword} confirm={confirmPassword} />
 
       {error ? (
         <p className="text-destructive text-sm" role="alert">

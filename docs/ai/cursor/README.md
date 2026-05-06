@@ -10,15 +10,16 @@ Cursor reads Markdown-with-frontmatter rules from **[`.cursor/rules`](../../../.
 
 ## Scoped (globs)
 
-| File                                                                | `globs`               | Purpose                        |
-| ------------------------------------------------------------------- | --------------------- | ------------------------------ |
-| [react-components.mdc](../../../.cursor/rules/react-components.mdc) | `**/*.{tsx,jsx}`      | React + a11y skills, RSC-first |
-| [next-app-router.mdc](../../../.cursor/rules/next-app-router.mdc)   | `app/**/*`            | Next App Router, `proxy.ts`    |
-| [typescript.mdc](../../../.cursor/rules/typescript.mdc)             | `**/*.{ts,tsx}`       | Clean TypeScript skill         |
-| [styling-tailwind.mdc](../../../.cursor/rules/styling-tailwind.mdc) | `**/*.css`            | Tailwind skill + AGENTS v4     |
-| [security.mdc](../../../.cursor/rules/security.mdc)                 | `lib/**/*action*.ts`  | Server Actions security        |
-| [security-api.mdc](../../../.cursor/rules/security-api.mdc)         | `app/api/**/*.ts`     | Route handlers                 |
-| [security-profile.mdc](../../../.cursor/rules/security-profile.mdc) | `lib/profile/**/*.ts` | Profile mutations              |
+| File                                                                  | `globs`                                                               | Purpose                                                  |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------- |
+| [react-components.mdc](../../../.cursor/rules/react-components.mdc)   | `**/*.{tsx,jsx}`                                                      | React + a11y skills, RSC-first                           |
+| [next-app-router.mdc](../../../.cursor/rules/next-app-router.mdc)     | `app/**/*`                                                            | Next App Router, `proxy.ts`                              |
+| [typescript.mdc](../../../.cursor/rules/typescript.mdc)               | `**/*.{ts,tsx}`                                                       | Clean TypeScript skill                                   |
+| [styling-tailwind.mdc](../../../.cursor/rules/styling-tailwind.mdc)   | `**/*.css`                                                            | Tailwind skill + AGENTS v4                               |
+| [tables-pagination.mdc](../../../.cursor/rules/tables-pagination.mdc) | `components/settings/**`, `app/**/settings/**`, `**/*management*.tsx` | New data tables must paginate (10 / URL / shared footer) |
+| [security.mdc](../../../.cursor/rules/security.mdc)                   | `lib/**/*action*.ts`                                                  | Server Actions security                                  |
+| [security-api.mdc](../../../.cursor/rules/security-api.mdc)           | `app/api/**/*.ts`                                                     | Route handlers                                           |
+| [security-profile.mdc](../../../.cursor/rules/security-profile.mdc)   | `lib/profile/**/*.ts`                                                 | Profile mutations                                        |
 
 ## Shared context with Claude
 

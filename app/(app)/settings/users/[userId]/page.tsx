@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation'
 
 import { UserDetailClient } from '@/components/settings/user-detail-client'
 import {
+  loadOrgCopywriterCandidatesForAdmin,
   loadOrgUserAssignmentCountsForAdmin,
   loadOrgUserRowForAdmin,
-  loadOrgUsersForAdminPage,
 } from '@/lib/org-users/load-org-users'
 import { createClient } from '@/lib/supabase/server'
 
@@ -47,17 +47,24 @@ export default async function SettingsUserDetailPage(props: {
     notFound()
   }
 
-  let orgRows
+  let copywriterCandidates
   try {
-    const result = await loadOrgUsersForAdminPage()
+    const result = await loadOrgCopywriterCandidatesForAdmin()
     if ('forbidden' in result) {
       notFound()
     }
-    orgRows = result
+    copywriterCandidates = result
   } catch (err) {
-    console.error('[settings/users/detail] loadOrgUsersForAdminPage', err)
-    throw err instanceof Error ? err : new Error('Failed to load organization users.')
+    console.error('[settings/users/detail] loadOrgCopywriterCandidatesForAdmin', err)
+    throw err instanceof Error ? err : new Error('Failed to load copywriter candidates.')
   }
 
-  return <UserDetailClient row={row} currentUserId={user.id} orgRows={orgRows} counts={counts} />
+  return (
+    <UserDetailClient
+      row={row}
+      currentUserId={user.id}
+      copywriterCandidates={copywriterCandidates}
+      counts={counts}
+    />
+  )
 }

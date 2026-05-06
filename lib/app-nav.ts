@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { ClipboardList, Globe, LayoutDashboard, ShoppingCart, Users } from 'lucide-react'
+import { ClipboardList, Globe, LayoutDashboard, ShoppingCart, Tags, Users } from 'lucide-react'
 
 import type { Database } from '@/lib/supabase/types'
 
@@ -27,6 +27,7 @@ export function getAppNavItems(role: AppNavRole): AppNavItem[] {
   return [
     APP_NAV_ITEMS[0],
     { href: '/settings/users', label: 'Users', Icon: Users },
+    { href: '/settings/categories', label: 'Categories', Icon: Tags },
     ...APP_NAV_ITEMS.slice(1),
   ]
 }
@@ -41,6 +42,7 @@ function settingsAreaTitle(pathname: string): string | undefined {
   if (pathname !== '/settings' && !pathname.startsWith('/settings/')) return undefined
   if (pathname === '/settings/profile') return 'Profile'
   if (pathname === '/settings/users' || pathname.startsWith('/settings/users/')) return 'Users'
+  if (pathname === '/settings/categories') return 'Categories'
   return 'Settings'
 }
 
