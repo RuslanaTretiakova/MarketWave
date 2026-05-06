@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { type ReactNode, useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -25,6 +25,17 @@ const LINK_TYPES: Database['public']['Enums']['link_type'][] = [
 ]
 
 export type SiteFormSourcerOption = { id: string; label: string }
+
+function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-border/60 bg-card gap-block rounded-2xl border p-5">
+      <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        {title}
+      </h3>
+      {children}
+    </section>
+  )
+}
 
 export function SiteListingForm({
   mode,
@@ -133,176 +144,200 @@ export function SiteListingForm({
   }, [form, mode, siteId, router, role])
 
   return (
-    <div className="border-border/60 bg-card shadow-soft p-section mx-auto max-w-3xl overflow-hidden rounded-2xl border">
-      <div className="gap-block mb-layout grid grid-cols-1 sm:grid-cols-2">
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="domain">Domain</Label>
-          <FormControlInput
-            id="domain"
-            value={form.domain}
-            onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
-            placeholder="example.com"
-            required
-            autoComplete="off"
-          />
-        </div>
-        <div className="gap-inset flex flex-col">
-          <Label htmlFor="dr">DR</Label>
-          <FormControlInput
-            id="dr"
-            inputMode="numeric"
-            value={form.dr === 0 ? '' : String(form.dr)}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, dr: e.target.value === '' ? 0 : Number(e.target.value) }))
-            }
-            required
-          />
-        </div>
-        <div className="gap-inset flex flex-col">
-          <Label htmlFor="price">Price (USD)</Label>
-          <FormControlInput
-            id="price"
-            inputMode="decimal"
-            value={form.price === 0 ? '' : String(form.price)}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                price: e.target.value === '' ? 0 : Number(e.target.value),
-              }))
-            }
-            required
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="category">Category</Label>
-          <FormControlSelect
-            id="category"
-            value={String(form.category_id)}
-            onValueChange={(value) => setForm((f) => ({ ...f, category_id: Number(value) }))}
-            options={categoryOptions}
-            name="category"
-          />
-        </div>
-        {role === 'admin' && sourcersForAdmin !== undefined ? (
-          <div className="gap-inset flex flex-col sm:col-span-2">
-            <Label htmlFor="sourcer">Assigned sourcer</Label>
-            <FormControlSelect
-              id="sourcer"
-              value={form.sourcer_id}
-              onValueChange={(value) => setForm((f) => ({ ...f, sourcer_id: value }))}
-              options={sourcerOptions}
-              name="sourcer"
+    <div className="gap-layout mx-auto flex w-full max-w-4xl flex-col">
+      <SectionCard title="Basics">
+        <div className="gap-block grid grid-cols-1 sm:grid-cols-2">
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="domain">Domain *</Label>
+            <FormControlInput
+              id="domain"
+              value={form.domain}
+              onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
+              placeholder="example.com"
+              required
+              autoComplete="off"
             />
           </div>
-        ) : null}
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="countries">Countries (ISO codes, comma-separated)</Label>
-          <FormControlInput
-            id="countries"
-            value={form.countriesCsv}
-            onChange={(e) => setForm((f) => ({ ...f, countriesCsv: e.target.value }))}
-            placeholder="US, GB, CA"
-            required
-          />
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="category">Category *</Label>
+            <FormControlSelect
+              id="category"
+              value={String(form.category_id)}
+              onValueChange={(value) => setForm((f) => ({ ...f, category_id: Number(value) }))}
+              options={categoryOptions}
+              name="category"
+              placeholder="Select category"
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="link_type">Link type *</Label>
+            <FormControlSelect
+              id="link_type"
+              value={form.link_type}
+              onValueChange={(value) =>
+                setForm((f) => ({
+                  ...f,
+                  link_type: value as Database['public']['Enums']['link_type'],
+                }))
+              }
+              options={linkTypeOptions}
+              name="link_type"
+              placeholder="Select link type"
+            />
+          </div>
+          {role === 'admin' && sourcersForAdmin !== undefined ? (
+            <div className="gap-inset flex flex-col">
+              <Label htmlFor="sourcer">Assigned sourcer</Label>
+              <FormControlSelect
+                id="sourcer"
+                value={form.sourcer_id}
+                onValueChange={(value) => setForm((f) => ({ ...f, sourcer_id: value }))}
+                options={sourcerOptions}
+                name="sourcer"
+              />
+            </div>
+          ) : null}
         </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="languages">Languages (BCP-47, comma-separated)</Label>
-          <FormControlInput
-            id="languages"
-            value={form.languagesCsv}
-            onChange={(e) => setForm((f) => ({ ...f, languagesCsv: e.target.value }))}
-            placeholder="en, es"
-            required
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="link_type">Link type</Label>
-          <FormControlSelect
-            id="link_type"
-            value={form.link_type}
-            onValueChange={(value) =>
-              setForm((f) => ({
-                ...f,
-                link_type: value as Database['public']['Enums']['link_type'],
-              }))
-            }
-            options={linkTypeOptions}
-            name="link_type"
-          />
-        </div>
-        <div className="gap-inset flex flex-col">
-          <Label htmlFor="organic_kw">Organic keywords count</Label>
-          <FormControlInput
-            id="organic_kw"
-            inputMode="numeric"
-            value={form.organic_keywords_count === 0 ? '' : String(form.organic_keywords_count)}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                organic_keywords_count: e.target.value === '' ? 0 : Number(e.target.value),
-              }))
-            }
-            required
-          />
-        </div>
-        <div className="gap-inset flex flex-col">
-          <Label htmlFor="organic_traffic">Organic traffic count</Label>
-          <FormControlInput
-            id="organic_traffic"
-            inputMode="numeric"
-            value={form.organic_traffic_count === 0 ? '' : String(form.organic_traffic_count)}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                organic_traffic_count: e.target.value === '' ? 0 : Number(e.target.value),
-              }))
-            }
-            required
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="keywords_rel">Keywords relevance</Label>
-          <FormControlInput
-            id="keywords_rel"
-            value={form.keywords_relevance}
-            onChange={(e) => setForm((f) => ({ ...f, keywords_relevance: e.target.value }))}
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="requirements">Requirements</Label>
-          <FormControlTextarea
-            id="requirements"
-            value={form.requirements}
-            onChange={(e) => setForm((f) => ({ ...f, requirements: e.target.value }))}
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="description">Description</Label>
-          <FormControlTextarea
-            id="description"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="sourcer_notes">Sourcer notes</Label>
-          <FormControlTextarea
-            id="sourcer_notes"
-            value={form.sourcer_notes}
-            onChange={(e) => setForm((f) => ({ ...f, sourcer_notes: e.target.value }))}
-          />
-        </div>
-        <div className="gap-inset flex flex-col sm:col-span-2">
-          <Label htmlFor="contact_info">Contact info</Label>
-          <FormControlTextarea
-            id="contact_info"
-            value={form.contact_info}
-            onChange={(e) => setForm((f) => ({ ...f, contact_info: e.target.value }))}
-          />
-        </div>
-      </div>
+      </SectionCard>
 
-      <div className="gap-block border-border/60 pt-block flex flex-wrap justify-end border-t">
+      <SectionCard title="Metrics">
+        <div className="gap-block grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="dr">DR *</Label>
+            <FormControlInput
+              id="dr"
+              inputMode="numeric"
+              value={form.dr === 0 ? '' : String(form.dr)}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, dr: e.target.value === '' ? 0 : Number(e.target.value) }))
+              }
+              required
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="price">Price (USD) *</Label>
+            <FormControlInput
+              id="price"
+              inputMode="decimal"
+              value={form.price === 0 ? '' : String(form.price)}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  price: e.target.value === '' ? 0 : Number(e.target.value),
+                }))
+              }
+              required
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="organic_kw">Organic keywords *</Label>
+            <FormControlInput
+              id="organic_kw"
+              inputMode="numeric"
+              value={form.organic_keywords_count === 0 ? '' : String(form.organic_keywords_count)}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  organic_keywords_count: e.target.value === '' ? 0 : Number(e.target.value),
+                }))
+              }
+              required
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="organic_traffic">Organic traffic *</Label>
+            <FormControlInput
+              id="organic_traffic"
+              inputMode="numeric"
+              value={form.organic_traffic_count === 0 ? '' : String(form.organic_traffic_count)}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  organic_traffic_count: e.target.value === '' ? 0 : Number(e.target.value),
+                }))
+              }
+              required
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Geography & Language">
+        <div className="gap-block grid grid-cols-1 lg:grid-cols-2">
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="countries">Countries *</Label>
+            <FormControlInput
+              id="countries"
+              value={form.countriesCsv}
+              onChange={(e) => setForm((f) => ({ ...f, countriesCsv: e.target.value }))}
+              placeholder="US, GB, CA"
+              required
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="languages">Languages *</Label>
+            <FormControlInput
+              id="languages"
+              value={form.languagesCsv}
+              onChange={(e) => setForm((f) => ({ ...f, languagesCsv: e.target.value }))}
+              placeholder="en, es"
+              required
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Details (Optional)">
+        <div className="gap-block grid grid-cols-1 sm:grid-cols-2">
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="requirements">Requirements</Label>
+            <FormControlTextarea
+              id="requirements"
+              value={form.requirements}
+              onChange={(e) => setForm((f) => ({ ...f, requirements: e.target.value }))}
+              placeholder="Editorial guidelines, anchor rules..."
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="description">Description</Label>
+            <FormControlTextarea
+              id="description"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="What this placement covers."
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="sourcer_notes">Sourcer notes</Label>
+            <FormControlTextarea
+              id="sourcer_notes"
+              value={form.sourcer_notes}
+              onChange={(e) => setForm((f) => ({ ...f, sourcer_notes: e.target.value }))}
+              placeholder="Internal sourcing context."
+            />
+          </div>
+          <div className="gap-inset flex flex-col">
+            <Label htmlFor="contact_info">Contact info</Label>
+            <FormControlInput
+              id="contact_info"
+              value={form.contact_info}
+              onChange={(e) => setForm((f) => ({ ...f, contact_info: e.target.value }))}
+              placeholder="editor@domain.com"
+            />
+          </div>
+          <div className="gap-inset flex flex-col sm:col-span-2">
+            <Label htmlFor="keywords_rel">Keywords relevance</Label>
+            <FormControlTextarea
+              id="keywords_rel"
+              value={form.keywords_relevance}
+              onChange={(e) => setForm((f) => ({ ...f, keywords_relevance: e.target.value }))}
+              placeholder="Comma-separated relevance keywords."
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      <div className="gap-block flex flex-wrap justify-end">
         <Link
           href={mode === 'edit' && siteId ? `/sites/${siteId}` : '/sites'}
           className={cn(
@@ -319,7 +354,7 @@ export function SiteListingForm({
           disabled={pending}
           onClick={submit}
         >
-          Save
+          {mode === 'create' ? 'Create site' : 'Save changes'}
         </Button>
       </div>
     </div>

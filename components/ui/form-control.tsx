@@ -68,8 +68,17 @@ export function FormControlSelect({
   disabled?: boolean
   name?: string
 }) {
+  const handleValueChange = React.useCallback(
+    (nextValue: string | null) => {
+      if (nextValue !== null) {
+        onValueChange(nextValue)
+      }
+    },
+    [onValueChange]
+  )
+
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled} name={name}>
+    <Select value={value} onValueChange={handleValueChange} disabled={disabled} name={name}>
       <SelectTrigger id={id} className={cn(formControlSelectTriggerClassName, triggerClassName)}>
         <SelectValue placeholder={placeholder ?? 'Select an option'} />
       </SelectTrigger>

@@ -73,6 +73,7 @@ export function SiteDetailToolbar({
       <SiteChangeStatusDialog
         siteId={siteId}
         domainLabel={domain}
+        currentStatus={status}
         open={statusDialog !== null && statusDialog.transition !== null}
         onOpenChange={(open) => {
           if (!open) setStatusDialog(null)

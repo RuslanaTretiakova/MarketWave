@@ -15,6 +15,9 @@ import {
 } from '@/components/ui/dialog'
 import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 import { changeSiteStatus } from '@/lib/sites/site-actions'
+import type { Database } from '@/lib/supabase/types'
+
+type SiteStatus = Database['public']['Enums']['site_status']
 const DISCLAIMER: Record<SiteAdminTransition, string> = {
   needs_changes:
     'The sourcer will be asked to update this listing. The site status will change to Needs changes.',
@@ -28,12 +31,14 @@ const DISCLAIMER: Record<SiteAdminTransition, string> = {
 export function SiteChangeStatusDialog({
   siteId,
   domainLabel,
+  currentStatus,
   open,
   onOpenChange,
   transition,
 }: {
   siteId: string
   domainLabel: string
+  currentStatus?: SiteStatus
   open: boolean
   onOpenChange: (open: boolean) => void
   transition: SiteAdminTransition | null
@@ -50,13 +55,13 @@ export function SiteChangeStatusDialog({
       case 'approve':
         return 'Approve site'
       case 'activate':
-        return 'Activate site'
+        return currentStatus === 'archived' ? 'Unarchive site' : 'Activate site'
       case 'archive':
         return 'Archive site'
       default:
         return 'Change status'
     }
-  }, [transition])
+  }, [currentStatus, transition])
 
   const disclaimer = transition === null ? 'Pick an action from the menu.' : DISCLAIMER[transition]
 
