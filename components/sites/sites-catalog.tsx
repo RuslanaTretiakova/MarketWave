@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import {
+  ChevronDown,
+  ChevronUp,
   Eye,
   Filter,
   Globe,
@@ -12,6 +14,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  ShieldCheck,
   ShoppingCart,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -71,6 +74,54 @@ const SITE_ROW_CELL_MUTED =
 const SITE_ROW_CELL_ACTIONS =
   'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/site-row:bg-muted/50 group-has-[[aria-expanded=true]]/site-row:bg-muted/50'
 
+const SITE_STATUS_CHIP: Record<Database['public']['Enums']['site_status'], string> = {
+  active: 'bg-emerald-500/12 text-emerald-900 dark:text-emerald-100',
+  archived: 'bg-muted text-muted-foreground',
+  approved: 'bg-sky-500/12 text-sky-900 dark:text-sky-100',
+  inactive: 'bg-muted text-muted-foreground',
+  needs_changes: 'bg-rose-500/12 text-rose-900 dark:text-rose-100',
+  pending_review: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
+}
+
+function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex min-h-6 items-center rounded-full px-2 py-0.5 text-xs font-medium',
+        tone === 'warm'
+          ? 'bg-amber-500/12 text-amber-900 dark:text-amber-100'
+          : 'bg-muted text-muted-foreground'
+      )}
+    >
+      {value}
+    </span>
+  )
+}
+
+function ValuePillList({
+  values,
+  warm = false,
+  max = 3,
+}: {
+  values: string[]
+  warm?: boolean
+  max?: number
+}) {
+  const shown = values.slice(0, max)
+  const extra = Math.max(0, values.length - shown.length)
+  if (values.length === 0) {
+    return <span className="text-muted-foreground text-xs">—</span>
+  }
+  return (
+    <div className="gap-inset flex flex-wrap">
+      {shown.map((value) => (
+        <TokenPill key={value} value={value} tone={warm ? 'warm' : 'neutral'} />
+      ))}
+      {extra > 0 ? <TokenPill value={`+${extra}`} /> : null}
+    </div>
+  )
+}
+
 export function SitesCatalog({
   role,
   userId,
@@ -116,6 +167,7 @@ export function SitesCatalog({
   const [statusDialog, setStatusDialog] = useState<{
     siteId: string
     domain: string
+    currentStatus: Database['public']['Enums']['site_status']
     transition: SiteAdminTransition | null
   } | null>(null)
 
@@ -127,6 +179,7 @@ export function SitesCatalog({
     linkType !== undefined ||
     priceMin !== undefined ||
     priceMax !== undefined
+  const [filtersOpen, setFiltersOpen] = useState(() => role !== 'client' && hasStructuredFilters)
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
@@ -218,6 +271,9 @@ export function SitesCatalog({
   }, [])
 
   const filtersActive = q.trim() || hasStructuredFilters
+  if (role !== 'client' && hasStructuredFilters && !filtersOpen) {
+    setFiltersOpen(true)
+  }
 
   const countLabel = filtersActive
     ? `${totalCount} match${totalCount === 1 ? '' : 'es'}`
@@ -229,12 +285,17 @@ export function SitesCatalog({
       ? 'No active listings yet'
       : 'No sites yet'
 
-  const canCreate = role === 'sourcer' || role === 'admin'
+  const canCreate = role === 'sourcer'
   const canUseCart = role === 'client'
   const canAdminStatus = role === 'admin'
 
-  function openStatus(siteId: string, domain: string, transition: SiteAdminTransition) {
-    setStatusDialog({ siteId, domain, transition })
+  function openStatus(
+    siteId: string,
+    domain: string,
+    currentStatus: Database['public']['Enums']['site_status'],
+    transition: SiteAdminTransition
+  ) {
+    setStatusDialog({ siteId, domain, currentStatus, transition })
   }
 
   const editAllowed = useCallback(
@@ -256,6 +317,7 @@ export function SitesCatalog({
       <SiteChangeStatusDialog
         siteId={statusDialog?.siteId ?? ''}
         domainLabel={statusDialog?.domain ?? ''}
+        currentStatus={statusDialog?.currentStatus}
         open={statusDialog !== null && statusDialog.transition !== null}
         onOpenChange={(open) => {
           if (!open) setStatusDialog(null)
@@ -287,10 +349,27 @@ export function SitesCatalog({
             ) : null}
           </div>
           <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-            <form
-              onSubmit={onSearchSubmit}
-              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
-            >
+            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
+              {countLabel}
+            </span>
+            {canCreate ? (
+              <Link
+                href="/sites/new"
+                className={cn(
+                  buttonVariants({ variant: 'cta', size: 'default' }),
+                  'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
+                )}
+              >
+                <Plus className="size-4" aria-hidden />
+                Create site
+              </Link>
+            ) : null}
+          </div>
+        </header>
+
+        <div className="border-border/60 px-section py-block border-b">
+          <div className="gap-inset flex items-center">
+            <form onSubmit={onSearchSubmit} className="relative min-w-0 flex-1">
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden
@@ -310,130 +389,140 @@ export function SitesCatalog({
                 aria-label="Search sites"
               />
             </form>
-            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
-              {countLabel}
-            </span>
-            {canCreate ? (
-              <Link
-                href="/sites/new"
-                className={cn(
-                  buttonVariants({ variant: 'cta', size: 'default' }),
-                  'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
-                )}
+            {role !== 'client' ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 min-h-10 rounded-full px-4"
+                onClick={() => setFiltersOpen((v) => !v)}
+                aria-expanded={filtersOpen}
+                aria-controls="sites-catalog-filters"
               >
-                <Plus className="size-4" aria-hidden />
-                Create site
-              </Link>
+                <Filter className="size-4" aria-hidden />
+                Filters
+                {filtersOpen ? (
+                  <ChevronUp className="size-4 opacity-70" aria-hidden />
+                ) : (
+                  <ChevronDown className="size-4 opacity-70" aria-hidden />
+                )}
+              </Button>
             ) : null}
           </div>
-        </header>
+        </div>
 
         {role !== 'client' ? (
-          <div className="border-border/60 gap-inset px-section py-block flex flex-col border-b">
-            <div className="text-muted-foreground gap-inset flex items-center text-xs font-medium">
-              <Filter className="size-3.5 shrink-0" aria-hidden />
-              <span>Filters</span>
-            </div>
-            <div className="gap-block grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="filter-category" className="text-muted-foreground text-xs">
-                  Category
-                </Label>
-                <FormControlSelect
-                  id="filter-category"
-                  value={categoryId?.toString() ?? ''}
-                  onValueChange={(value) =>
-                    router.push(buildListHref(1, { category_id: value }), { scroll: false })
-                  }
-                  options={categoryFilterOptions}
-                />
+          <>
+            {filtersOpen ? (
+              <div className="px-section py-block border-border/60 bg-muted/20 border-b">
+                <div
+                  id="sites-catalog-filters"
+                  className="gap-block grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+                >
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="filter-category" className="text-muted-foreground text-xs">
+                      Category
+                    </Label>
+                    <FormControlSelect
+                      id="filter-category"
+                      value={categoryId?.toString() ?? ''}
+                      onValueChange={(value) =>
+                        router.push(buildListHref(1, { category_id: value }), { scroll: false })
+                      }
+                      options={categoryFilterOptions}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
+                      Status
+                    </Label>
+                    <FormControlSelect
+                      id="filter-status"
+                      value={status ?? ''}
+                      onValueChange={(value) =>
+                        router.push(buildListHref(1, { status: value }), { scroll: false })
+                      }
+                      options={statusOptions}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
+                      Country code
+                    </Label>
+                    <FormControlInput
+                      id="filter-country"
+                      placeholder="Any country"
+                      value={country ?? ''}
+                      onChange={(e) =>
+                        router.push(buildListHref(1, { country: e.target.value }), {
+                          scroll: false,
+                        })
+                      }
+                      maxLength={8}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="filter-language" className="text-muted-foreground text-xs">
+                      Language code
+                    </Label>
+                    <FormControlInput
+                      id="filter-language"
+                      placeholder="All languages"
+                      value={language ?? ''}
+                      onChange={(e) =>
+                        router.push(buildListHref(1, { language: e.target.value }), {
+                          scroll: false,
+                        })
+                      }
+                      maxLength={16}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="filter-link" className="text-muted-foreground text-xs">
+                      Link type
+                    </Label>
+                    <FormControlSelect
+                      id="filter-link"
+                      value={linkType ?? ''}
+                      onValueChange={(value) =>
+                        router.push(buildListHref(1, { link_type: value }), { scroll: false })
+                      }
+                      options={linkTypeOptions}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="price-min" className="text-muted-foreground text-xs">
+                      Price from
+                    </Label>
+                    <FormControlInput
+                      id="price-min"
+                      inputMode="decimal"
+                      placeholder="From"
+                      value={priceMin !== undefined ? String(priceMin) : ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        router.push(buildListHref(1, { price_min: v }), { scroll: false })
+                      }}
+                    />
+                  </div>
+                  <div className="gap-inset flex flex-col">
+                    <Label htmlFor="price-max" className="text-muted-foreground text-xs">
+                      Price to
+                    </Label>
+                    <FormControlInput
+                      id="price-max"
+                      inputMode="decimal"
+                      placeholder="To"
+                      value={priceMax !== undefined ? String(priceMax) : ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        router.push(buildListHref(1, { price_max: v }), { scroll: false })
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
-                  Status
-                </Label>
-                <FormControlSelect
-                  id="filter-status"
-                  value={status ?? ''}
-                  onValueChange={(value) =>
-                    router.push(buildListHref(1, { status: value }), { scroll: false })
-                  }
-                  options={statusOptions}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
-                  Country code
-                </Label>
-                <FormControlInput
-                  id="filter-country"
-                  placeholder="e.g. US"
-                  value={country ?? ''}
-                  onChange={(e) =>
-                    router.push(buildListHref(1, { country: e.target.value }), { scroll: false })
-                  }
-                  maxLength={8}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="filter-language" className="text-muted-foreground text-xs">
-                  Language code
-                </Label>
-                <FormControlInput
-                  id="filter-language"
-                  placeholder="e.g. en"
-                  value={language ?? ''}
-                  onChange={(e) =>
-                    router.push(buildListHref(1, { language: e.target.value }), { scroll: false })
-                  }
-                  maxLength={16}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="filter-link" className="text-muted-foreground text-xs">
-                  Link type
-                </Label>
-                <FormControlSelect
-                  id="filter-link"
-                  value={linkType ?? ''}
-                  onValueChange={(value) =>
-                    router.push(buildListHref(1, { link_type: value }), { scroll: false })
-                  }
-                  options={linkTypeOptions}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="price-min" className="text-muted-foreground text-xs">
-                  Price from
-                </Label>
-                <FormControlInput
-                  id="price-min"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={priceMin !== undefined ? String(priceMin) : ''}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    router.push(buildListHref(1, { price_min: v }), { scroll: false })
-                  }}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="price-max" className="text-muted-foreground text-xs">
-                  Price to
-                </Label>
-                <FormControlInput
-                  id="price-max"
-                  inputMode="decimal"
-                  placeholder="9999"
-                  value={priceMax !== undefined ? String(priceMax) : ''}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    router.push(buildListHref(1, { price_max: v }), { scroll: false })
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+            ) : null}
+          </>
         ) : null}
 
         <div className="flex flex-col">
@@ -525,9 +614,8 @@ export function SitesCatalog({
                         </TableCell>
                         <TableCell className={SITE_ROW_CELL_MUTED}>{row.dr ?? '—'}</TableCell>
                         <TableCell className={SITE_ROW_CELL}>{row.category_name ?? '—'}</TableCell>
-                        <TableCell className={SITE_ROW_CELL_MUTED} title={row.countries.join(', ')}>
-                          {row.countries.slice(0, 4).join(', ')}
-                          {row.countries.length > 4 ? '…' : ''}
+                        <TableCell className={SITE_ROW_CELL_MUTED}>
+                          <ValuePillList values={row.countries} warm max={2} />
                         </TableCell>
                         <TableCell className={SITE_ROW_CELL_MUTED}>
                           {row.price.toLocaleString(undefined, {
@@ -536,75 +624,97 @@ export function SitesCatalog({
                           })}
                         </TableCell>
                         <TableCell className={SITE_ROW_CELL}>
-                          {SITE_STATUS_LABEL[row.status]}
+                          <span
+                            className={cn(
+                              'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                              SITE_STATUS_CHIP[row.status]
+                            )}
+                          >
+                            <span
+                              className="size-1.5 rounded-full bg-current opacity-70"
+                              aria-hidden
+                            />
+                            {SITE_STATUS_LABEL[row.status]}
+                          </span>
                         </TableCell>
                         <TableCell
                           className={SITE_ROW_CELL_ACTIONS}
                           data-row-actions
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              type="button"
-                              aria-label={`Manage ${row.domain}`}
-                              className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'rounded-full opacity-80 hover:opacity-100'
-                              )}
-                            >
-                              <MoreHorizontal className="size-4" aria-hidden />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-48">
-                              <DropdownMenuGroup>
-                                <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                  Manage
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="gap-2"
-                                  onClick={() => router.push(`/sites/${row.id}`)}
-                                >
-                                  <Eye className="size-4" aria-hidden />
-                                  View
-                                </DropdownMenuItem>
+                          <div className="gap-inset inline-flex items-center justify-end">
+                            {canUseCart ? (
+                              <Button
+                                type="button"
+                                variant="cta"
+                                size="sm"
+                                className="h-9 rounded-full px-3"
+                                disabled={cartPending || row.status !== 'active'}
+                                onClick={() => addCart(row.id, row.domain)}
+                              >
+                                <ShoppingCart className="size-4" aria-hidden />
+                                Add to cart
+                              </Button>
+                            ) : (
+                              <>
                                 {editAllowed(row) ? (
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    onClick={() => router.push(`/sites/${row.id}/edit`)}
+                                  <Link
+                                    href={`/sites/${row.id}/edit`}
+                                    className={cn(
+                                      buttonVariants({ variant: 'outline', size: 'sm' }),
+                                      'h-9 rounded-full px-3'
+                                    )}
                                   >
                                     <Pencil className="size-4" aria-hidden />
                                     Edit
-                                  </DropdownMenuItem>
-                                ) : null}
-                                {canUseCart ? (
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    disabled={cartPending || row.status !== 'active'}
-                                    onClick={() => addCart(row.id, row.domain)}
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    href={`/sites/${row.id}`}
+                                    className={cn(
+                                      buttonVariants({ variant: 'outline', size: 'sm' }),
+                                      'h-9 rounded-full px-3'
+                                    )}
                                   >
-                                    <ShoppingCart className="size-4" aria-hidden />
-                                    Add to cart
-                                  </DropdownMenuItem>
-                                ) : null}
+                                    <Eye className="size-4" aria-hidden />
+                                    View
+                                  </Link>
+                                )}
                                 {canAdminStatus ? (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                      Change status
-                                    </DropdownMenuLabel>
-                                    {siteAdminTransitions(row.status).map((t) => (
-                                      <DropdownMenuItem
-                                        key={t}
-                                        onSelect={() => openStatus(row.id, row.domain, t)}
-                                      >
-                                        {siteAdminTransitionMenuLabel(row.status, t)}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger
+                                      type="button"
+                                      className={cn(
+                                        buttonVariants({ variant: 'outline', size: 'sm' }),
+                                        'h-9 rounded-full px-3'
+                                      )}
+                                    >
+                                      <ShieldCheck className="size-4" aria-hidden />
+                                      Status
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="min-w-48">
+                                      <DropdownMenuGroup>
+                                        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                                          Change status
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {siteAdminTransitions(row.status).map((t) => (
+                                          <DropdownMenuItem
+                                            key={t}
+                                            onSelect={() =>
+                                              openStatus(row.id, row.domain, row.status, t)
+                                            }
+                                          >
+                                            {siteAdminTransitionMenuLabel(row.status, t)}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuGroup>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 ) : null}
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -633,9 +743,20 @@ export function SitesCatalog({
                                 currency: 'USD',
                               })}
                             </p>
-                            <p className="text-muted-foreground mt-inset text-xs">
-                              {SITE_STATUS_LABEL[row.status]}
-                            </p>
+                            <div className="mt-inset">
+                              <span
+                                className={cn(
+                                  'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                                  SITE_STATUS_CHIP[row.status]
+                                )}
+                              >
+                                <span
+                                  className="size-1.5 rounded-full bg-current opacity-70"
+                                  aria-hidden
+                                />
+                                {SITE_STATUS_LABEL[row.status]}
+                              </span>
+                            </div>
                           </div>
                         </Button>
                         <div data-row-actions className="shrink-0">
@@ -691,7 +812,9 @@ export function SitesCatalog({
                                     {siteAdminTransitions(row.status).map((t) => (
                                       <DropdownMenuItem
                                         key={t}
-                                        onSelect={() => openStatus(row.id, row.domain, t)}
+                                        onSelect={() =>
+                                          openStatus(row.id, row.domain, row.status, t)
+                                        }
                                       >
                                         {siteAdminTransitionMenuLabel(row.status, t)}
                                       </DropdownMenuItem>

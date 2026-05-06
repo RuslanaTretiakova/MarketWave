@@ -84,7 +84,7 @@ export async function createSite(
   }
   const { supabase, role } = ctx
 
-  if (role !== 'admin' && role !== 'sourcer') {
+  if (role !== 'sourcer') {
     return { ok: false, message: 'You cannot create sites.' }
   }
 
@@ -133,11 +133,6 @@ export async function createSite(
     keywords_relevance: input.keywords_relevance?.trim() || null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
-  }
-
-  if (role === 'admin') {
-    row.sourcer_id = input.sourcer_id?.trim() || null
-    row.status = 'pending_review'
   }
 
   const { data: inserted, error: insErr } = await supabase

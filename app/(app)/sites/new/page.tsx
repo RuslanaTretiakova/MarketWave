@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SiteListingForm } from '@/components/sites/site-listing-form'
-import type { SiteFormSourcerOption } from '@/components/sites/site-listing-form'
 import { buttonVariants } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
@@ -26,7 +25,7 @@ export default async function NewSitePage() {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'sourcer')) {
+  if (!profile || profile.role !== 'sourcer') {
     notFound()
   }
 
@@ -37,21 +36,6 @@ export default async function NewSitePage() {
 
   if (catErr || !categoriesRaw?.length) {
     throw new Error(catErr?.message ?? 'No categories available. Create a category first.')
-  }
-
-  let sourcersForAdmin: SiteFormSourcerOption[] | undefined
-  if (profile.role === 'admin') {
-    const { data: sourcers } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('role', 'sourcer')
-      .order('full_name', { ascending: true })
-
-    sourcersForAdmin =
-      sourcers?.map((s) => ({
-        id: s.id,
-        label: (s.full_name?.trim() || s.email || s.id).slice(0, 80),
-      })) ?? []
   }
 
   return (
@@ -77,12 +61,7 @@ export default async function NewSitePage() {
         </Link>
       </div>
 
-      <SiteListingForm
-        mode="create"
-        role={profile.role}
-        categories={categoriesRaw}
-        sourcersForAdmin={sourcersForAdmin}
-      />
+      <SiteListingForm mode="create" role={profile.role} categories={categoriesRaw} />
     </div>
   )
 }
