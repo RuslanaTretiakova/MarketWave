@@ -1,6 +1,7 @@
 'use server'
 
 import { adminClient } from '@/lib/supabase/admin'
+import type { Json } from '@/lib/supabase/types'
 
 const SENSITIVE_KEYS = new Set([
   'password',
@@ -54,7 +55,7 @@ export async function logAuthError(opts: {
     level,
     context: context.slice(0, 500),
     message: message.slice(0, 4000),
-    payload: safe ?? null,
+    payload: (safe ?? null) as Json | null,
     user_id: userId ?? null,
   })
 

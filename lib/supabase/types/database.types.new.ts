@@ -168,34 +168,23 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
-          created_by: string | null
           id: number
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
-          created_by?: string | null
           id?: number
           name: string
           slug: string
         }
         Update: {
           created_at?: string
-          created_by?: string | null
           id?: number
           name?: string
           slug?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'categories_created_by_fkey'
-            columns: ['created_by']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       change_requests: {
         Row: {
@@ -596,6 +585,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: 'sites_approved_by_fkey'
+            columns: ['approved_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'sites_category_id_fkey'
             columns: ['category_id']
             isOneToOne: false
@@ -605,13 +601,6 @@ export type Database = {
           {
             foreignKeyName: 'sites_needs_changes_by_fkey'
             columns: ['needs_changes_by']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'sites_approved_by_fkey'
-            columns: ['approved_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -638,9 +627,9 @@ export type Database = {
       }
       replace_site_countries_and_languages: {
         Args: {
-          p_site_id: string
           p_countries: string[]
           p_languages: string[]
+          p_site_id: string
         }
         Returns: undefined
       }
@@ -807,7 +796,14 @@ export const Constants = {
         'completed',
         'canceled',
       ],
-      site_status: ['active', 'inactive', 'pending_review'],
+      site_status: [
+        'active',
+        'inactive',
+        'pending_review',
+        'needs_changes',
+        'approved',
+        'archived',
+      ],
       user_role: ['client', 'admin', 'sourcer', 'manager', 'copywriter'],
     },
   },

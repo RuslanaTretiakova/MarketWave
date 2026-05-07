@@ -1,0 +1,3 @@
+-- This migration was moved to a later version because it references site_status values
+-- that are added by the site management workflow migration.
+-- The actual implementation was copied to 20260512120003_sites_management_fixes.sql.

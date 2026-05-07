@@ -47,7 +47,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col" suppressHydrationWarning>
+      <head>
         <Script
           id="supabase-recovery-hash-redirect"
           src="/supabase-recovery-hash-redirect.js"
@@ -58,6 +58,8 @@ export default function RootLayout({
           src="/strip-extension-dom-markers.js"
           strategy="beforeInteractive"
         />
+      </head>
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthSessionHashHandler />
         {children}
         <Toaster />
