@@ -8,7 +8,19 @@
       "Bash(npm run *)",
       "Bash(npx prettier *)",
       "mcp__supabase__apply_migration",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\treti\\\\linkbuilding\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(xargs grep -l \"sites\")",
+      "Bash(xargs grep -l \"action\\\\|POST\\\\|PUT\\\\|DELETE\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\treti\\\\linkbuilding\" -Directory -Exclude \"node_modules\", \".next\")",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\treti\\\\linkbuilding\\\\app\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\treti\\\\linkbuilding\\\\app\" -Directory | ForEach-Object { Write-Host \"$\\(\\($_ | Get-ChildItem -Recurse -Force | Measure-Object\\).Count\\) items in $_\" })",
+      "PowerShell(ls *)"
     ]
   },
   "enableAllProjectMcpServers": true,
