@@ -34,6 +34,7 @@ export function CartItemRow({
             className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
             value={item.publish_date ?? ''}
             min={new Date().toISOString().split('T')[0]}
+            suppressHydrationWarning
             onChange={(e) => onPublishDateChange(item.id, e.target.value || null)}
             disabled={pending}
           />
