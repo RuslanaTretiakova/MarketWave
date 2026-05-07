@@ -75,19 +75,14 @@ const SITE_ROW_CELL_ACTIONS =
   'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/site-row:bg-muted/50 group-has-[[aria-expanded=true]]/site-row:bg-muted/50'
 
 const SITE_STATUS_CHIP: Record<Database['public']['Enums']['site_status'], string> = {
+  pending: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
+  needs_changes: 'bg-rose-500/12 text-rose-900 dark:text-rose-100',
   active: 'bg-emerald-500/12 text-emerald-900 dark:text-emerald-100',
   archived: 'bg-muted text-muted-foreground',
+  // legacy enum values — no longer used in workflow
   approved: 'bg-sky-500/12 text-sky-900 dark:text-sky-100',
   inactive: 'bg-muted text-muted-foreground',
-  needs_changes: 'bg-rose-500/12 text-rose-900 dark:text-rose-100',
-  pending_review: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
 }
-
-const SUPPORTED_STATUS_FILTERS: Database['public']['Enums']['site_status'][] = [
-  'pending_review',
-  'active',
-  'inactive',
-]
 
 function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
   return (
@@ -189,9 +184,7 @@ export function SitesCatalog({
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
-    return SITE_STATUSES_ORDERED.filter(
-      (s) => SUPPORTED_STATUS_FILTERS.includes(s) && s !== 'inactive'
-    )
+    return SITE_STATUSES_ORDERED
   }, [role])
   const categoryFilterOptions = useMemo(
     () => [
@@ -713,7 +706,7 @@ export function SitesCatalog({
                                               openStatus(row.id, row.domain, row.status, t)
                                             }
                                           >
-                                            {siteAdminTransitionMenuLabel(row.status, t)}
+                                            {siteAdminTransitionMenuLabel(t)}
                                           </DropdownMenuItem>
                                         ))}
                                       </DropdownMenuGroup>
@@ -824,7 +817,7 @@ export function SitesCatalog({
                                           openStatus(row.id, row.domain, row.status, t)
                                         }
                                       >
-                                        {siteAdminTransitionMenuLabel(row.status, t)}
+                                        {siteAdminTransitionMenuLabel(t)}
                                       </DropdownMenuItem>
                                     ))}
                                   </>

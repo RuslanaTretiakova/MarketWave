@@ -136,7 +136,7 @@ export function SiteDetailToolbar({
                 <DropdownMenuSeparator />
                 {siteAdminTransitions(status).map((t) => (
                   <DropdownMenuItem key={t} onSelect={() => openStatus(t)}>
-                    {siteAdminTransitionMenuLabel(status, t)}
+                    {siteAdminTransitionMenuLabel(t)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>

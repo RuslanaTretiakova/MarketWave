@@ -83,7 +83,6 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
   const row = site as unknown as SiteDetailRow
   const countries = [...new Set((row.site_countries ?? []).map((c) => c.country))].sort()
   const languages = [...new Set((row.site_languages ?? []).map((l) => l.language))].sort()
-  const topCountriesDisplay = countries.slice(0, 8).join(', ') + (countries.length > 8 ? '…' : '')
 
   const ids = [row.needs_changes_by, row.approved_by, row.sourcer_id].filter(Boolean) as string[]
   const profileMap = new Map<string, { full_name: string | null; email: string | null }>()
@@ -158,7 +157,7 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
           <Field label="Domain">{row.domain}</Field>
           <Field label="DR">{row.dr ?? '—'}</Field>
           <Field label="Category">{row.categories?.name ?? '—'}</Field>
-          <Field label="Top countries">{topCountriesDisplay || '—'}</Field>
+          <Field label="Top countries">{row.top_countries?.trim() || '—'}</Field>
           <Field label="Countries">{countries.length ? countries.join(', ') : '—'}</Field>
           <Field label="Languages">{languages.length ? languages.join(', ') : '—'}</Field>
           <Field label="Price">{formatMoney(row.price)}</Field>
@@ -173,7 +172,7 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
             </>
           ) : null}
 
-          {role === 'admin' && row.status === 'approved' ? (
+          {role === 'admin' && row.status === 'active' && row.approved_by ? (
             <>
               <Field label="Approved by">{profileLabel(row.approved_by)}</Field>
               <Field label="Approved at">

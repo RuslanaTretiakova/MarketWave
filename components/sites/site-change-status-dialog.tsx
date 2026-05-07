@@ -22,7 +22,7 @@ const DISCLAIMER: Record<SiteAdminTransition, string> = {
   needs_changes:
     'The sourcer will be asked to update this listing. The site status will change to Needs changes.',
   approve: 'Mark this listing as approved before activating it for clients.',
-  activate:
+  unarchive:
     'This site becomes visible to clients when Active (catalog eligibility applies). Confirm activation.',
   archive:
     'Archived sites are hidden from sourcers and managers. Clients cannot purchase placements.',
@@ -54,8 +54,8 @@ export function SiteChangeStatusDialog({
         return 'Request changes'
       case 'approve':
         return 'Approve site'
-      case 'activate':
-        return currentStatus === 'archived' ? 'Unarchive site' : 'Activate site'
+      case 'unarchive':
+        return 'Unarchive site'
       case 'archive':
         return 'Archive site'
       default:

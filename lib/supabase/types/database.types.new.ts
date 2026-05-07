@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.5'
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_invite_rate_events: {
@@ -168,23 +143,34 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          created_by: string | null
           id: number
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name: string
           slug: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name?: string
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'categories_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       change_requests: {
         Row: {
@@ -522,7 +508,7 @@ export type Database = {
           created_at: string
           description: string | null
           domain: string
-          dr: number | null
+          dr: number
           id: string
           keywords_relevance: string | null
           link_type: Database['public']['Enums']['link_type']
@@ -535,6 +521,7 @@ export type Database = {
           sourcer_id: string | null
           sourcer_notes: string | null
           status: Database['public']['Enums']['site_status']
+          top_countries: string | null
           updated_at: string
         }
         Insert: {
@@ -545,7 +532,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           domain: string
-          dr?: number | null
+          dr: number
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
@@ -558,6 +545,7 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
+          top_countries?: string | null
           updated_at?: string
         }
         Update: {
@@ -568,7 +556,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           domain?: string
-          dr?: number | null
+          dr?: number
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
@@ -581,6 +569,7 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
+          top_countries?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -647,13 +636,7 @@ export type Database = {
         | 'published'
         | 'completed'
         | 'canceled'
-      site_status:
-        | 'active'
-        | 'inactive'
-        | 'pending_review'
-        | 'needs_changes'
-        | 'approved'
-        | 'archived'
+      site_status: 'active' | 'inactive' | 'pending' | 'needs_changes' | 'approved' | 'archived'
       user_role: 'client' | 'admin' | 'sourcer' | 'manager' | 'copywriter'
     }
     CompositeTypes: {
@@ -778,9 +761,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       change_request_status: ['open', 'resolved', 'dismissed'],
@@ -796,14 +776,7 @@ export const Constants = {
         'completed',
         'canceled',
       ],
-      site_status: [
-        'active',
-        'inactive',
-        'pending_review',
-        'needs_changes',
-        'approved',
-        'archived',
-      ],
+      site_status: ['active', 'inactive', 'pending', 'needs_changes', 'approved', 'archived'],
       user_role: ['client', 'admin', 'sourcer', 'manager', 'copywriter'],
     },
   },

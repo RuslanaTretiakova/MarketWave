@@ -4,40 +4,32 @@ import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 
 type SiteStatus = Database['public']['Enums']['site_status']
 
-/** Admin-only status actions available for a catalog row’s current status. */
+/** Admin-only status actions available for a catalog row's current status. */
 export function siteAdminTransitions(status: SiteStatus): SiteAdminTransition[] {
   switch (status) {
-    case 'archived':
-      return ['activate']
-    case 'active':
-      return ['needs_changes', 'archive']
+    case 'pending':
+      return ['needs_changes', 'approve', 'archive']
     case 'needs_changes':
       return ['approve', 'archive']
-    case 'approved':
-      return ['activate', 'needs_changes', 'archive']
-    case 'pending_review':
-      return ['needs_changes', 'approve', 'archive']
+    case 'active':
+      return ['needs_changes', 'archive']
+    case 'archived':
+      return ['unarchive']
     default:
-      return ['activate', 'archive']
+      return ['archive']
   }
 }
 
-export function siteAdminTransitionMenuLabel(
-  rowStatus: SiteStatus,
-  t: SiteAdminTransition
-): string {
-  if (t === 'activate' && rowStatus === 'archived') {
-    return 'Unarchive (activate)'
-  }
+export function siteAdminTransitionMenuLabel(t: SiteAdminTransition): string {
   switch (t) {
     case 'needs_changes':
       return 'Request changes'
     case 'approve':
       return 'Approve'
-    case 'activate':
-      return 'Activate'
     case 'archive':
       return 'Archive'
+    case 'unarchive':
+      return 'Unarchive'
     default:
       return t
   }

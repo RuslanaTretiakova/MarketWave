@@ -122,10 +122,7 @@ export async function loadDashboardStats(
         .select('id', { count: 'exact', head: true })
         .in('status', ACTIVE_ORDER_STATUSES),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'new'),
-      supabase
-        .from('sites')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending_review'),
+      supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase
         .from('change_requests')
         .select('id', { count: 'exact', head: true })
@@ -152,10 +149,7 @@ export async function loadDashboardStats(
         .select('id', { count: 'exact', head: true })
         .in('status', ACTIVE_ORDER_STATUSES),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'new'),
-      supabase
-        .from('sites')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending_review'),
+      supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase
         .from('change_requests')
         .select('id', { count: 'exact', head: true })
@@ -182,7 +176,7 @@ export async function loadDashboardStats(
         .from('sites')
         .select('id', { count: 'exact', head: true })
         .eq('sourcer_id', userId)
-        .eq('status', 'pending_review'),
+        .eq('status', 'pending'),
     ])
     return {
       kind: 'sourcer',

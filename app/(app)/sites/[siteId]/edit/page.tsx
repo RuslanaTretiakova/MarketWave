@@ -134,6 +134,7 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
           keywords_relevance: site.keywords_relevance ?? '',
           organic_keywords_count: site.organic_keywords_count ?? 0,
           organic_traffic_count: site.organic_traffic_count ?? 0,
+          top_countries: site.top_countries ?? '',
           countriesCsv,
           languagesCsv,
           sourcer_id: site.sourcer_id ?? '',

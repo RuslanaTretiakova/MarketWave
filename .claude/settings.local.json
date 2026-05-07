@@ -20,7 +20,8 @@
       "Bash(Sort-Object)",
       "Bash(Get-ChildItem *)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\treti\\\\linkbuilding\\\\app\" -Directory | ForEach-Object { Write-Host \"$\\(\\($_ | Get-ChildItem -Recurse -Force | Measure-Object\\).Count\\) items in $_\" })",
-      "PowerShell(ls *)"
+      "PowerShell(ls *)",
+      "Bash(Select-Object -ExpandProperty Name)"
     ]
   },
   "enableAllProjectMcpServers": true,
