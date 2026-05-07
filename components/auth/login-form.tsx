@@ -8,6 +8,7 @@ import { AuthPrimaryButton } from './auth-primary-button'
 import { AuthTextField } from './auth-text-field'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { safeReturnPath } from '@/lib/auth-redirect'
+import { reportAuthErrorClient } from '@/lib/errors/report-auth-error-client'
 import { createClient } from '@/lib/supabase/client'
 import { isValidEmail } from '@/lib/validation/email'
 
@@ -52,7 +53,9 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         password,
       })
       if (signError) {
-        setError(mapAuthError(signError).message)
+        const mapped = mapAuthError(signError)
+        reportAuthErrorClient(mapped, 'auth/sign-in')
+        setError(mapped.message)
         return
       }
       router.push(safeReturnPath(redirectTo))

@@ -6,6 +6,7 @@ import {
   SET_PASSWORD_WINDOW_MS,
   checkAndRecordPublicRateLimit,
 } from '@/lib/auth/public-rate-limit'
+import { logAuthError } from '@/lib/errors/log-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
 import { createClient } from '@/lib/supabase/server'
@@ -50,7 +51,14 @@ export async function submitSetPasswordAction(input: {
     password,
   })
   if (authUpdErr) {
-    return { ok: false, message: mapAuthError(authUpdErr).message }
+    const mapped = mapAuthError(authUpdErr)
+    await logAuthError({
+      context: 'auth/set-password',
+      message: mapped.message,
+      payload: { code: mapped.code },
+      userId: user.id,
+    })
+    return { ok: false, message: mapped.message }
   }
 
   const { error: profErr } = await adminClient
