@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { PasswordRequirementsHint } from '@/components/auth/password-requirements-hint'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
+import { reportAuthErrorClient } from '@/lib/errors/report-auth-error-client'
 import { confirmMatches, meetsMinLength, trimPasswordInput } from '@/lib/auth/password-validation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -115,7 +116,9 @@ function ChangeCredentialsForm({
     })
 
     if (signErr) {
-      setError(mapAuthError(signErr).message)
+      const mapped = mapAuthError(signErr)
+      reportAuthErrorClient(mapped, 'auth/change-credentials-verify')
+      setError(mapped.message)
       setBusy(false)
       return
     }
@@ -129,7 +132,9 @@ function ChangeCredentialsForm({
     const { error: updErr } = await supabase.auth.updateUser(payload)
 
     if (updErr) {
-      setError(mapAuthError(updErr).message)
+      const mapped = mapAuthError(updErr)
+      reportAuthErrorClient(mapped, 'auth/change-credentials-update')
+      setError(mapped.message)
       setBusy(false)
       return
     }

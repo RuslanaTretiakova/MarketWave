@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js'
 import { findAuthUserByEmailLower } from '@/lib/auth/admin-auth-user-list'
 import { checkAndRecordAdminInviteRateLimit } from '@/lib/auth/admin-invite-rate-limit'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
+import { logAuthError } from '@/lib/errors/log-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/types'
@@ -112,6 +113,13 @@ export async function inviteTeamMember(input: {
 
     if (error) {
       console.error('[inviteTeamMember] inviteUserByEmail:', error.message)
+      const mapped = mapAuthError(error)
+      await logAuthError({
+        context: 'auth/invite',
+        message: mapped.message,
+        payload: { code: mapped.code },
+        userId: gate.userId,
+      })
       const low = error.message.toLowerCase()
       if (low.includes('already') || low.includes('registered')) {
         return {
@@ -119,7 +127,7 @@ export async function inviteTeamMember(input: {
           message: 'This email may already be registered. Try resend invite or password reset.',
         }
       }
-      return { ok: false, message: mapAuthError(error).message }
+      return { ok: false, message: mapped.message }
     }
 
     await audit(gate.userId, 'invite', email, { role })
@@ -195,7 +203,14 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
 
     if (error) {
       console.error('[resendTeamInvite] inviteUserByEmail:', error.message)
-      return { ok: false, message: mapAuthError(error).message }
+      const mapped = mapAuthError(error)
+      await logAuthError({
+        context: 'auth/invite-resend',
+        message: mapped.message,
+        payload: { code: mapped.code },
+        userId: gate.userId,
+      })
+      return { ok: false, message: mapped.message }
     }
 
     await audit(gate.userId, 'resend_invite', email, { role })

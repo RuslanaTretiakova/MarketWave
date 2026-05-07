@@ -9,6 +9,7 @@ import {
   tryConsumePasswordResetRateLimit,
 } from '@/lib/auth/public-rate-limit'
 import { isValidEmail } from '@/lib/validation/email'
+import { logAuthError } from '@/lib/errors/log-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { resolveSupabaseProjectUrl } from '@/lib/supabase/supabase-public-env-vars'
 import { getSiteOrigin } from '@/lib/site-url'
@@ -54,7 +55,13 @@ export async function requestPasswordResetAction(
     if (likelyMissingUser) {
       console.warn('[password reset] suppressed client error for possible unknown email')
     } else {
-      console.error('[password reset]', mapAuthError(resetError).message)
+      const mapped = mapAuthError(resetError)
+      console.error('[password reset]', mapped.message)
+      await logAuthError({
+        context: 'auth/password-reset',
+        message: mapped.message,
+        payload: { code: mapped.code },
+      })
     }
   }
 

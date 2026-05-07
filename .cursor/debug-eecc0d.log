@@ -1,0 +1,17 @@
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778143909449}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778143909461}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778143909812}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778143909839}
+{"sessionId":"eecc0d","runId":"transport-test","hypothesisId":"H0","location":"manual","message":"endpoint-probe","data":{"ok":true},"timestamp":1778143951018}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144090413}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778144090424}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144090726}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778144090736}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144155596}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778144155709}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144160727}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778144160836}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144161851}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:190","message":"catalog-load-success","data":{"rowCount":0,"totalCount":0},"timestamp":1778144161962}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:99","message":"catalog-load-enter","data":{"hasSourcerNotesInSelect":false},"timestamp":1778144164314}
+{"sessionId":"eecc0d","runId":"pre-fix","hypothesisId":"H5","location":"lib/sites/load-sites-catalog.ts:165","message":"catalog-load-error","data":{"errorCode":"22P02","errorMessage":"invalid input value for enum site_status: \"approved\"","hasSourcerNotesInSelect":false},"timestamp":1778144164421}

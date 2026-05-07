@@ -83,6 +83,12 @@ const SITE_STATUS_CHIP: Record<Database['public']['Enums']['site_status'], strin
   pending_review: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
 }
 
+const SUPPORTED_STATUS_FILTERS: Database['public']['Enums']['site_status'][] = [
+  'pending_review',
+  'active',
+  'inactive',
+]
+
 function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
   return (
     <span
@@ -183,7 +189,9 @@ export function SitesCatalog({
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
-    return SITE_STATUSES_ORDERED.filter((s) => s !== 'inactive')
+    return SITE_STATUSES_ORDERED.filter(
+      (s) => SUPPORTED_STATUS_FILTERS.includes(s) && s !== 'inactive'
+    )
   }, [role])
   const categoryFilterOptions = useMemo(
     () => [

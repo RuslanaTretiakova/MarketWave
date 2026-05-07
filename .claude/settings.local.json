@@ -6,9 +6,11 @@
       "Bash(cmd /c \"copy /Y c:/Users/treti/linkbuilding/lib/supabase/types/database.types.new.ts c:/Users/treti/linkbuilding/lib/supabase/types/database.types.ts\")",
       "Bash(npx tsc *)",
       "Bash(npm run *)",
-      "Bash(npx prettier *)"
+      "Bash(npx prettier *)",
+      "mcp__supabase__apply_migration",
+      "mcp__ide__getDiagnostics"
     ]
   },
-  "enabledMcpjsonServers": ["supabase"],
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["supabase"]
 }

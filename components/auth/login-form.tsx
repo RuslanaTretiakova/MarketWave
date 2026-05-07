@@ -3,11 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { FlaskConical } from 'lucide-react'
 
 import { AuthPrimaryButton } from './auth-primary-button'
 import { AuthTextField } from './auth-text-field'
+import { RoleBadge } from '@/components/settings/role-badge'
+import { ensureTestUsersForLogin } from '@/lib/auth/test-login-actions'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
 import { safeReturnPath } from '@/lib/auth-redirect'
+import { reportAuthErrorClient } from '@/lib/errors/report-auth-error-client'
 import { createClient } from '@/lib/supabase/client'
 import { isValidEmail } from '@/lib/validation/email'
 
@@ -27,6 +31,13 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [testLoginLoading, setTestLoginLoading] = useState<string | null>(null)
+
+  const showTestLoginPanel =
+    process.env.NODE_ENV === 'development' ||
+    process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN?.trim().toLowerCase() === 'true'
+
+  const testRoles = ['sourcer', 'manager', 'client', 'copywriter'] as const
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,12 +63,47 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         password,
       })
       if (signError) {
-        setError(mapAuthError(signError).message)
+        const mapped = mapAuthError(signError)
+        reportAuthErrorClient(mapped, 'auth/sign-in')
+        setError(mapped.message)
         return
       }
       router.push(safeReturnPath(redirectTo))
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function onQuickTestLogin(role: (typeof testRoles)[number]) {
+    setError(null)
+    setEmailError(null)
+    setPasswordError(null)
+    setTestLoginLoading(role)
+    try {
+      const prep = await ensureTestUsersForLogin()
+      if (!prep.ok) {
+        setError(prep.message)
+        return
+      }
+      const target = prep.users.find((u) => u.role === role)
+      if (!target) {
+        setError(`No prepared test user found for role: ${role}`)
+        return
+      }
+      const supabase = createClient()
+      const { error: signError } = await supabase.auth.signInWithPassword({
+        email: target.email,
+        password: prep.passwordHint,
+      })
+      if (signError) {
+        const mapped = mapAuthError(signError)
+        reportAuthErrorClient(mapped, 'auth/quick-test-sign-in')
+        setError(mapped.message)
+        return
+      }
+      router.push(safeReturnPath(redirectTo))
+    } finally {
+      setTestLoginLoading(null)
     }
   }
 
@@ -146,6 +192,31 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       <AuthPrimaryButton type="submit" disabled={loading}>
         {loading ? 'Signing in…' : 'Sign in'}
       </AuthPrimaryButton>
+      {showTestLoginPanel ? (
+        <div className="bg-muted/40 flex flex-col rounded-lg border border-sky-500/30 px-3 py-3">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="size-4 text-sky-600 dark:text-sky-300" aria-hidden />
+            <p className="text-foreground text-sm font-medium">Quick test login</p>
+          </div>
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto">
+            {testRoles.map((role) => (
+              <button
+                key={role}
+                type="button"
+                disabled={Boolean(testLoginLoading)}
+                onClick={() => onQuickTestLogin(role)}
+                className="inline-flex items-center justify-center rounded-full"
+              >
+                {testLoginLoading === role ? (
+                  <span className="text-xs">Signing in…</span>
+                ) : (
+                  <RoleBadge role={role} />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <p className="text-muted-foreground pt-inset text-center text-sm leading-relaxed">
         Access is by invitation. Your admin invites teammates by email.
       </p>

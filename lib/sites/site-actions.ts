@@ -2,8 +2,31 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/types'
+import type { Database, Json } from '@/lib/supabase/types'
+
+async function logSiteError(opts: {
+  level?: 'info' | 'warn' | 'error' | 'critical'
+  context: string
+  message: string
+  payload?: Record<string, unknown> | null
+  userId?: string | null
+}): Promise<void> {
+  const { level = 'error', context, message, payload, userId } = opts
+
+  const { error } = await adminClient.from('error_logs').insert({
+    level,
+    context: context.slice(0, 500),
+    message: message.slice(0, 4000),
+    payload: (payload ?? null) as Json | null,
+    user_id: userId ?? null,
+  })
+
+  if (error) {
+    console.error('[logSiteError] DB write failed', error.message)
+  }
+}
 
 type ProfileRole = Database['public']['Enums']['user_role']
 
@@ -39,6 +62,16 @@ function parseCodeList(raw: string): string[] {
     .split(/[,;\s]+/)
     .map((s) => s.trim())
     .filter(Boolean)
+}
+
+/** Validate ISO 3166-1 alpha-2 country code */
+function isValidCountryCode(code: string): boolean {
+  return /^[A-Z]{2}$/.test(code)
+}
+
+/** Validate ISO 639-1/3 language code */
+function isValidLanguageCode(code: string): boolean {
+  return /^[a-z]{2,3}$/.test(code)
 }
 
 /** Normalize DR / counts; rejects NaN and negatives. */
@@ -84,7 +117,7 @@ export async function createSite(
   }
   const { supabase, role } = ctx
 
-  if (role !== 'sourcer') {
+  if (role !== 'sourcer' && role !== 'admin') {
     return { ok: false, message: 'You cannot create sites.' }
   }
 
@@ -100,6 +133,12 @@ export async function createSite(
   }
   if (languages.length === 0) {
     return { ok: false, message: 'Add at least one language code.' }
+  }
+  if (!countries.every(isValidCountryCode)) {
+    return { ok: false, message: 'Invalid country code(s). Use ISO 3166-1 alpha-2 (e.g., US, GB).' }
+  }
+  if (!languages.every(isValidLanguageCode)) {
+    return { ok: false, message: 'Invalid language code(s). Use ISO 639-1/3 (e.g., en, spa).' }
   }
 
   const eDr = reqNat('DR', input.dr)
@@ -120,6 +159,39 @@ export async function createSite(
     return { ok: false, message: 'Pick a category.' }
   }
 
+  // Check category exists
+  const { data: category, error: categoryErr } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('id', input.category_id)
+    .maybeSingle()
+  if (categoryErr || !category) {
+    return { ok: false, message: 'Category not found.' }
+  }
+
+  if (role === 'admin' && input.sourcer_id?.trim()) {
+    const { data: sourcerProfile, error: sourcerErr } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', input.sourcer_id.trim())
+      .maybeSingle()
+    if (sourcerErr || !sourcerProfile || sourcerProfile.role !== 'sourcer') {
+      return { ok: false, message: 'Assigned sourcer not found.' }
+    }
+  }
+
+  const { data: existingByDomain, error: domainErr } = await supabase
+    .from('sites')
+    .select('id')
+    .eq('domain', domain)
+    .maybeSingle()
+  if (domainErr) {
+    return { ok: false, message: domainErr.message ?? 'Could not validate domain uniqueness.' }
+  }
+  if (existingByDomain) {
+    return { ok: false, message: 'A site with this domain already exists.' }
+  }
+
   const row: Database['public']['Tables']['sites']['Insert'] = {
     domain,
     dr: input.dr,
@@ -133,6 +205,7 @@ export async function createSite(
     keywords_relevance: input.keywords_relevance?.trim() || null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
+    sourcer_id: role === 'admin' && input.sourcer_id?.trim() ? input.sourcer_id.trim() : undefined,
   }
 
   const { data: inserted, error: insErr } = await supabase
@@ -142,6 +215,12 @@ export async function createSite(
     .maybeSingle()
 
   if (insErr || !inserted) {
+    await logSiteError({
+      context: 'site/create',
+      message: insErr?.message ?? 'Could not create site.',
+      userId: ctx.userId,
+      payload: { domain, category_id: input.category_id },
+    })
     return {
       ok: false,
       message: insErr?.message ?? 'Could not create site.',
@@ -158,6 +237,12 @@ export async function createSite(
 
   if (rpcErr) {
     await supabase.from('sites').delete().eq('id', siteId)
+    await logSiteError({
+      context: 'site/create',
+      message: rpcErr.message ?? 'Could not save countries/languages.',
+      userId: ctx.userId,
+      payload: { siteId, countries: countries.slice(0, 5), languages: languages.slice(0, 5) },
+    })
     return { ok: false, message: rpcErr.message ?? 'Could not save countries/languages.' }
   }
 
@@ -189,6 +274,12 @@ export async function updateSite(
   if (languages.length === 0) {
     return { ok: false, message: 'Add at least one language code.' }
   }
+  if (!countries.every(isValidCountryCode)) {
+    return { ok: false, message: 'Invalid country code(s). Use ISO 3166-1 alpha-2 (e.g., US, GB).' }
+  }
+  if (!languages.every(isValidLanguageCode)) {
+    return { ok: false, message: 'Invalid language code(s). Use ISO 639-1/3 (e.g., en, spa).' }
+  }
 
   const eDr = reqNat('DR', input.dr)
   if (eDr) return { ok: false, message: eDr }
@@ -208,6 +299,16 @@ export async function updateSite(
     return { ok: false, message: 'Pick a category.' }
   }
 
+  // Check category exists
+  const { data: cat, error: catErr } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('id', input.category_id)
+    .maybeSingle()
+  if (catErr || !cat) {
+    return { ok: false, message: 'Category not found.' }
+  }
+
   const { data: existing, error: loadErr } = await supabase
     .from('sites')
     .select('id, sourcer_id, status')
@@ -216,6 +317,19 @@ export async function updateSite(
 
   if (loadErr || !existing) {
     return { ok: false, message: loadErr?.message ?? 'Site not found.' }
+  }
+
+  const { data: duplicate, error: duplicateErr } = await supabase
+    .from('sites')
+    .select('id')
+    .eq('domain', domain)
+    .neq('id', siteId)
+    .maybeSingle()
+  if (duplicateErr) {
+    return { ok: false, message: duplicateErr.message ?? 'Could not validate domain uniqueness.' }
+  }
+  if (duplicate) {
+    return { ok: false, message: 'A site with this domain already exists.' }
   }
 
   const canEdit =
@@ -242,12 +356,39 @@ export async function updateSite(
   }
 
   if (role === 'admin') {
-    patch.sourcer_id = input.sourcer_id?.trim() || null
+    const targetSourcerId = input.sourcer_id?.trim() || null
+    if (targetSourcerId) {
+      const { data: sourcerProfile, error: sourcerErr } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', targetSourcerId)
+        .maybeSingle()
+      if (sourcerErr || !sourcerProfile || sourcerProfile.role !== 'sourcer') {
+        return { ok: false, message: 'Assigned sourcer not found.' }
+      }
+    }
+
+    patch.sourcer_id = targetSourcerId
+
+    // If admin reassigns sourcer, reset status to pending_review and clear audit fields
+    if (targetSourcerId !== existing.sourcer_id) {
+      patch.status = 'pending_review'
+      patch.needs_changes_by = null
+      patch.needs_changes_at = null
+      patch.approved_by = null
+      patch.approved_at = null
+    }
   }
 
   const { error: upErr } = await supabase.from('sites').update(patch).eq('id', siteId)
 
   if (upErr) {
+    await logSiteError({
+      context: 'site/update',
+      message: upErr.message ?? 'Could not update site.',
+      userId,
+      payload: { siteId, domain, category_id: input.category_id },
+    })
     return { ok: false, message: upErr.message ?? 'Could not update site.' }
   }
 
@@ -258,6 +399,12 @@ export async function updateSite(
   })
 
   if (rpcErr) {
+    await logSiteError({
+      context: 'site/update',
+      message: rpcErr.message ?? 'Could not update countries/languages.',
+      userId,
+      payload: { siteId, countries: countries.slice(0, 5), languages: languages.slice(0, 5) },
+    })
     return { ok: false, message: rpcErr.message ?? 'Could not update countries/languages.' }
   }
 
@@ -323,6 +470,12 @@ export async function changeSiteStatus(params: {
   const { error } = await supabase.from('sites').update(patch).eq('id', params.siteId)
 
   if (error) {
+    await logSiteError({
+      context: 'site/change-status',
+      message: error.message ?? 'Could not update status.',
+      userId,
+      payload: { siteId: params.siteId, transition: params.transition },
+    })
     return { ok: false, message: error.message ?? 'Could not update status.' }
   }
 

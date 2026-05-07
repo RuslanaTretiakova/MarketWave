@@ -2,6 +2,7 @@
 
 import type { Json } from '@/lib/supabase/types'
 
+import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 const LEVELS = new Set(['info', 'warn', 'error', 'critical'])
@@ -37,7 +38,7 @@ export async function reportClientErrorFromSession(input: {
     payload = { payload_error: true } as Json
   }
 
-  const { error } = await supabase.from('error_logs').insert({
+  const { error } = await adminClient.from('error_logs').insert({
     message,
     context,
     level,

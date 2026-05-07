@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ChevronRight } from 'lucide-react'
 
 import { SiteListingForm } from '@/components/sites/site-listing-form'
-import { buttonVariants } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
-import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +39,23 @@ export default async function NewSitePage() {
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
-      <div className="gap-block flex flex-wrap items-start justify-between">
+      <div className="gap-block flex flex-col items-start">
+        <nav aria-label="Breadcrumb" className="text-muted-foreground text-xs">
+          <ol className="gap-inset flex items-center">
+            <li>
+              <Link
+                href="/sites"
+                className="hover:text-foreground transition-colors hover:underline"
+              >
+                Sites
+              </Link>
+            </li>
+            <li aria-hidden>
+              <ChevronRight className="size-3.5 opacity-70" />
+            </li>
+            <li className="text-foreground font-medium">Create site</li>
+          </ol>
+        </nav>
         <div className="space-y-inset min-w-0">
           <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
             Create site
@@ -50,15 +65,6 @@ export default async function NewSitePage() {
             codes (comma-separated).
           </p>
         </div>
-        <Link
-          href="/sites"
-          className={cn(
-            buttonVariants({ variant: 'outline', size: 'default' }),
-            'h-10 min-h-10 shrink-0 justify-center rounded-full'
-          )}
-        >
-          Back to catalog
-        </Link>
       </div>
 
       <SiteListingForm mode="create" role={profile.role} categories={categoriesRaw} />

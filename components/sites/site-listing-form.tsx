@@ -78,7 +78,11 @@ export function SiteListingForm({
 
   const [form, setForm] = useState(defaults)
   const categoryOptions = useMemo(
-    () => categories.map((c) => ({ value: String(c.id), label: c.name })),
+    () =>
+      categories.map((c) => ({
+        value: String(c.id),
+        label: c.name.trim() ? c.name : `Category ${c.id}`,
+      })),
     [categories]
   )
   const sourcerOptions = useMemo(
