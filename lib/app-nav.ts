@@ -11,25 +11,32 @@ export type AppNavItem = {
 
 export type AppNavRole = Database['public']['Enums']['user_role']
 
-/** Authenticated app shell navigation — mirrors typical MarketWeave / ops flows. */
-export const APP_NAV_ITEMS: AppNavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { href: '/sites', label: 'Site catalog', Icon: Globe },
-  { href: '/orders', label: 'Orders', Icon: ClipboardList },
-  { href: '/cart', label: 'Cart', Icon: ShoppingCart },
-]
+const dashboard: AppNavItem = { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard }
+const sites: AppNavItem = { href: '/sites', label: 'Site catalog', Icon: Globe }
+const orders: AppNavItem = { href: '/orders', label: 'Orders', Icon: ClipboardList }
+const cart: AppNavItem = { href: '/cart', label: 'Cart', Icon: ShoppingCart }
+const users: AppNavItem = { href: '/settings/users', label: 'Users', Icon: Users }
+const categories: AppNavItem = { href: '/settings/categories', label: 'Categories', Icon: Tags }
 
-/** Admin-only “Users” tab (longest-prefix match favors `/settings/users` over shorter routes). */
+/** All items — kept for backwards-compat and active-state helpers. */
+export const APP_NAV_ITEMS: AppNavItem[] = [dashboard, sites, orders, cart, users, categories]
+
+/** Role-filtered nav items shown in the app sidebar. */
 export function getAppNavItems(role: AppNavRole): AppNavItem[] {
-  if (role !== 'admin') {
-    return APP_NAV_ITEMS
+  switch (role) {
+    case 'client':
+      return [dashboard, sites, cart, orders]
+    case 'admin':
+      return [dashboard, users, categories, sites, orders]
+    case 'manager':
+      return [dashboard, sites, orders]
+    case 'sourcer':
+      return [dashboard, sites]
+    case 'copywriter':
+      return [dashboard, orders]
+    default:
+      return [dashboard, sites, orders]
   }
-  return [
-    APP_NAV_ITEMS[0],
-    { href: '/settings/users', label: 'Users', Icon: Users },
-    { href: '/settings/categories', label: 'Categories', Icon: Tags },
-    ...APP_NAV_ITEMS.slice(1),
-  ]
 }
 
 /** Longest-prefix wins so `/settings/users` highlights Users. */

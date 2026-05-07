@@ -117,7 +117,7 @@ export async function createSite(
   }
   const { supabase, role } = ctx
 
-  if (role !== 'sourcer' && role !== 'admin') {
+  if (role !== 'sourcer') {
     return { ok: false, message: 'You cannot create sites.' }
   }
 
@@ -169,17 +169,6 @@ export async function createSite(
     return { ok: false, message: 'Category not found.' }
   }
 
-  if (role === 'admin' && input.sourcer_id?.trim()) {
-    const { data: sourcerProfile, error: sourcerErr } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('id', input.sourcer_id.trim())
-      .maybeSingle()
-    if (sourcerErr || !sourcerProfile || sourcerProfile.role !== 'sourcer') {
-      return { ok: false, message: 'Assigned sourcer not found.' }
-    }
-  }
-
   const { data: existingByDomain, error: domainErr } = await supabase
     .from('sites')
     .select('id')
@@ -205,7 +194,6 @@ export async function createSite(
     keywords_relevance: input.keywords_relevance?.trim() || null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
-    sourcer_id: role === 'admin' && input.sourcer_id?.trim() ? input.sourcer_id.trim() : undefined,
   }
 
   const { data: inserted, error: insErr } = await supabase

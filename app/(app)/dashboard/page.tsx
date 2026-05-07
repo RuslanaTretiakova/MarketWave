@@ -4,9 +4,13 @@ import { notFound, redirect } from 'next/navigation'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
+import { loadDashboardStats } from '@/lib/dashboard/load-dashboard-stats'
+import { createClient } from '@/lib/supabase/server'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Dashboard',
@@ -35,23 +39,100 @@ function roleHeadline(role: Role, name: string | null) {
   }
 }
 
-const snapshots = [
-  {
-    title: 'Orders in flight',
-    value: '—',
-    hint: 'Statuses from new through published sync here once orders exist.',
-  },
-  {
-    title: 'Sites in catalog',
-    value: '—',
-    hint: 'Curated inventory your team shops from — wired to Supabase next.',
-  },
-  {
-    title: 'Pending approvals',
-    value: '—',
-    hint: 'Client and manager approvals surface here for faster turnaround.',
-  },
-] as const
+type Snapshot = { title: string; value: string | number; hint: string }
+
+function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): Snapshot[] {
+  switch (stats.kind) {
+    case 'client':
+      return [
+        {
+          title: 'Orders in flight',
+          value: stats.ordersInFlight,
+          hint: 'Active orders from new through published.',
+        },
+        {
+          title: 'Completed orders',
+          value: stats.ordersCompleted,
+          hint: 'Successfully completed placements.',
+        },
+        {
+          title: 'Awaiting your approval',
+          value: stats.pendingContentApprovals,
+          hint: 'Content sent — review and approve or request changes.',
+        },
+      ]
+    case 'admin':
+      return [
+        {
+          title: 'Active orders',
+          value: stats.totalActiveOrders,
+          hint: 'Orders in progress across all clients.',
+        },
+        {
+          title: 'Sites in review',
+          value: stats.sitesInReview,
+          hint: 'Pending sourcer submissions awaiting approval.',
+        },
+        {
+          title: 'Pending invoices',
+          value: stats.pendingInvoices,
+          hint: 'Invoices awaiting payment confirmation.',
+        },
+      ]
+    case 'manager':
+      return [
+        { title: 'Active orders', value: stats.totalActiveOrders, hint: 'Orders in progress.' },
+        {
+          title: 'Awaiting action',
+          value: stats.ordersAwaitingAction,
+          hint: 'New orders ready to start.',
+        },
+        {
+          title: 'Open change requests',
+          value: stats.openChangeRequests,
+          hint: 'Client change requests to address.',
+        },
+      ]
+    case 'copywriter':
+      return [
+        {
+          title: 'Assigned orders',
+          value: stats.assignedOrders,
+          hint: 'Orders currently assigned to you.',
+        },
+        {
+          title: 'Pending content send',
+          value: stats.pendingContentSend,
+          hint: 'In-progress orders waiting for your content.',
+        },
+        { title: 'Completed', value: stats.completedOrders, hint: 'Orders you have completed.' },
+      ]
+    case 'sourcer':
+      return [
+        {
+          title: 'Sites submitted',
+          value: stats.sitesSubmitted,
+          hint: 'All sites you have submitted.',
+        },
+        {
+          title: 'Active sites',
+          value: stats.sitesActive,
+          hint: 'Sites live in the client catalog.',
+        },
+        {
+          title: 'Pending review',
+          value: stats.sitesPendingReview,
+          hint: 'Awaiting admin approval.',
+        },
+      ]
+    default:
+      return [
+        { title: 'Orders in flight', value: '—', hint: 'Active orders.' },
+        { title: 'Sites in catalog', value: '—', hint: 'Curated inventory.' },
+        { title: 'Pending approvals', value: '—', hint: 'Items awaiting your action.' },
+      ]
+  }
+}
 
 export default async function DashboardPage() {
   const { user, profile } = await getCachedAppUserContext()
@@ -68,6 +149,10 @@ export default async function DashboardPage() {
     role,
     profile?.full_name ?? user.user_metadata?.full_name ?? null
   )
+
+  const supabase = await createClient()
+  const stats = await loadDashboardStats(supabase, role, user.id)
+  const snapshots = buildSnapshots(stats)
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">

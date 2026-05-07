@@ -12,7 +12,7 @@ export function siteAdminTransitions(status: SiteStatus): SiteAdminTransition[] 
     case 'active':
       return ['needs_changes', 'archive']
     case 'needs_changes':
-      return ['approve', 'activate', 'archive']
+      return ['approve', 'archive']
     case 'approved':
       return ['activate', 'needs_changes', 'archive']
     case 'pending_review':
