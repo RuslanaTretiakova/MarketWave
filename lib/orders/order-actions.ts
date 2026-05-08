@@ -68,35 +68,6 @@ export async function startOrder(
   return res
 }
 
-export async function markContentSent(
-  orderId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const ctx = await getSessionContext()
-  if ('error' in ctx) return { ok: false, message: ctx.error }
-  if (ctx.role !== 'copywriter') {
-    return { ok: false, message: 'Only copywriters can mark content as sent.' }
-  }
-
-  // Verify this copywriter is assigned to the order
-  const { data: order, error: loadErr } = await adminClient
-    .from('orders')
-    .select('id, copywriter_id, status')
-    .eq('id', orderId)
-    .maybeSingle()
-
-  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
-  if (order.copywriter_id !== ctx.userId) {
-    return { ok: false, message: 'You are not assigned to this order.' }
-  }
-  if (order.status !== 'in_progress') {
-    return { ok: false, message: 'Order must be in progress to mark content sent.' }
-  }
-
-  const res = await updateOrderStatus(orderId, 'content_sent')
-  if (res.ok) revalidateOrder(orderId)
-  return res
-}
-
 export async function approveContent(
   orderId: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -189,8 +160,27 @@ export async function resumeOrder(
   return res
 }
 
+function normalizePublishedUrl(
+  input: string
+): { ok: true; url: string } | { ok: false; message: string } {
+  const trimmed = input.trim()
+  if (!trimmed) return { ok: false, message: 'A published URL is required.' }
+  if (trimmed.length > 2048) return { ok: false, message: 'URL must be 2048 characters or fewer.' }
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    return { ok: false, message: 'Enter a valid URL including https://' }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, message: 'URL must use http or https.' }
+  }
+  return { ok: true, url: parsed.toString() }
+}
+
 export async function markPublished(
-  orderId: string
+  orderId: string,
+  publishedUrl: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getSessionContext()
   if ('error' in ctx) return { ok: false, message: ctx.error }
@@ -198,7 +188,10 @@ export async function markPublished(
     return { ok: false, message: 'Only admins and managers can mark orders as published.' }
   }
 
-  const res = await updateOrderStatus(orderId, 'published')
+  const urlCheck = normalizePublishedUrl(publishedUrl)
+  if (!urlCheck.ok) return urlCheck
+
+  const res = await updateOrderStatus(orderId, 'published', { published_url: urlCheck.url })
   if (res.ok) revalidateOrder(orderId)
   return res
 }

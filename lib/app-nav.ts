@@ -3,6 +3,8 @@ import {
   ClipboardList,
   Globe,
   LayoutDashboard,
+  MessageSquare,
+  Receipt,
   ShoppingCart,
   Tags,
   User,
@@ -23,26 +25,37 @@ const dashboard: AppNavItem = { href: '/dashboard', label: 'Dashboard', Icon: La
 const profile: AppNavItem = { href: '/settings/profile', label: 'Profile', Icon: User }
 const sites: AppNavItem = { href: '/sites', label: 'Site catalog', Icon: Globe }
 const orders: AppNavItem = { href: '/orders', label: 'Orders', Icon: ClipboardList }
+const invoices: AppNavItem = { href: '/invoices', label: 'Invoices', Icon: Receipt }
 const cart: AppNavItem = { href: '/cart', label: 'Cart', Icon: ShoppingCart }
 const users: AppNavItem = { href: '/settings/users', label: 'Users', Icon: Users }
 const categories: AppNavItem = { href: '/settings/categories', label: 'Categories', Icon: Tags }
+const chats: AppNavItem = { href: '/chats', label: 'Chats', Icon: MessageSquare }
 
 /** All items — kept for backwards-compat and active-state helpers. */
-export const APP_NAV_ITEMS: AppNavItem[] = [dashboard, sites, orders, cart, users, categories]
+export const APP_NAV_ITEMS: AppNavItem[] = [
+  dashboard,
+  sites,
+  orders,
+  invoices,
+  cart,
+  users,
+  categories,
+  chats,
+]
 
 /** Role-filtered nav items shown in the app sidebar. */
 export function getAppNavItems(role: AppNavRole): AppNavItem[] {
   switch (role) {
     case 'client':
-      return [dashboard, profile, sites, cart, orders]
+      return [dashboard, profile, sites, cart, orders, invoices, chats]
     case 'admin':
-      return [dashboard, profile, users, categories, sites, orders]
+      return [dashboard, profile, users, categories, sites, orders, invoices, chats]
     case 'manager':
-      return [dashboard, profile, sites, orders]
+      return [dashboard, profile, sites, orders, invoices, chats]
     case 'sourcer':
       return [dashboard, profile, sites]
     case 'copywriter':
-      return [dashboard, profile, orders]
+      return [dashboard, profile, orders, chats]
     default:
       return [dashboard, profile, sites, orders]
   }

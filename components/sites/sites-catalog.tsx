@@ -261,7 +261,7 @@ export function SitesCatalog({
         toast.error(res.message)
         return
       }
-      toast.success(`${domain} added to cart.`)
+      toast.success(`Added to cart: ${domain}`)
     })
   }, [])
 

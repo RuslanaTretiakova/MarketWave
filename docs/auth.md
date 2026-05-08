@@ -5,6 +5,7 @@
 1. [How authentication works](#1-how-authentication-works)
 2. [Role-based access control](#2-role-based-access-control)
 3. [Auth error logging](#3-auth-error-logging)
+4. [Client role capabilities](#4-client-role-capabilities)
 
 ---
 
@@ -235,3 +236,27 @@ error_logs
 
 Indexes: (context, created_at DESC), (created_at DESC)
 ```
+
+---
+
+## 4. Client role capabilities
+
+The `client` role is the external buyer role in the placement workflow.
+
+### What clients can do
+
+- Browse active sites, apply catalog filters, and add sites to cart
+- Create orders through checkout Server Actions
+- View their own orders
+- Approve content or request revisions when an order is in `content_sent`
+- Cancel their own orders only while status is `new`
+- View their own invoices and download invoice PDFs
+- Use client-facing chat channels (support, sales, standard/order)
+
+### What clients cannot do
+
+- Read or mutate other users' orders, invoices, profiles, or chats
+- Directly insert privileged order/invoice rows from the client
+- Perform staff-only transitions (assign copywriter, mark published, mark invoice paid)
+
+Canonical product-level definition: [client-role.md](client-role.md).

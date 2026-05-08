@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { OrderDetailView } from '@/components/orders/order-detail-view'
+import { findOrderRoomId } from '@/lib/chat/find-room'
 import { loadCopywriterOptions } from '@/lib/orders/load-copywriter-options'
 import { loadOrderDetail } from '@/lib/orders/load-order-detail'
 import { createClient } from '@/lib/supabase/server'
@@ -28,14 +29,16 @@ export default async function OrderDetailPage({
 
   if (!profile) notFound()
 
-  // Sourcers do not have access to orders
   if (profile.role === 'sourcer') notFound()
 
   const order = await loadOrderDetail(supabase, orderId, profile.role)
   if (!order) notFound()
 
   const isStaff = profile.role === 'admin' || profile.role === 'manager'
-  const copywriterOptions = isStaff ? await loadCopywriterOptions() : undefined
+  const [copywriterOptions, chatRoomId] = await Promise.all([
+    isStaff ? loadCopywriterOptions() : Promise.resolve(undefined),
+    findOrderRoomId(orderId),
+  ])
 
   return (
     <OrderDetailView
@@ -43,6 +46,7 @@ export default async function OrderDetailPage({
       role={profile.role}
       userId={user.id}
       copywriterOptions={copywriterOptions}
+      chatRoomId={chatRoomId}
     />
   )
 }

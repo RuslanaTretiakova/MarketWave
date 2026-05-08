@@ -40,6 +40,7 @@ export type CopywriterStats = {
   kind: 'copywriter'
   assignedOrders: number
   pendingContentSend: number
+  needsRevisionOrders: number
   completedOrders: number
 }
 
@@ -90,7 +91,7 @@ export async function loadDashboardStats(
   }
 
   if (role === 'copywriter') {
-    const [assigned, pendingSend, completed] = await Promise.all([
+    const [assigned, pendingSend, needsRevision, completed] = await Promise.all([
       supabase
         .from('orders')
         .select('id', { count: 'exact', head: true })
@@ -105,12 +106,18 @@ export async function loadDashboardStats(
         .from('orders')
         .select('id', { count: 'exact', head: true })
         .eq('copywriter_id', userId)
+        .eq('status', 'needs_changes'),
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('copywriter_id', userId)
         .eq('status', 'completed'),
     ])
     return {
       kind: 'copywriter',
       assignedOrders: assigned.count ?? 0,
       pendingContentSend: pendingSend.count ?? 0,
+      needsRevisionOrders: needsRevision.count ?? 0,
       completedOrders: completed.count ?? 0,
     }
   }

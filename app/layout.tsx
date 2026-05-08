@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { Fraunces, Inter, Roboto_Mono } from 'next/font/google'
+import Script from 'next/script'
 
 import { metadataKeywords, SITE_NAME, SITE_TAGLINE } from '@/lib/brand'
 
@@ -48,8 +48,16 @@ export default function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <Script src="/supabase-recovery-hash-redirect.js" strategy="beforeInteractive" />
-        <Script src="/strip-extension-dom-markers.js" strategy="beforeInteractive" />
+        <Script
+          suppressHydrationWarning
+          src="/supabase-recovery-hash-redirect.js"
+          strategy="beforeInteractive"
+        />
+        <Script
+          suppressHydrationWarning
+          src="/strip-extension-dom-markers.js"
+          strategy="beforeInteractive"
+        />
       </head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthSessionHashHandler />

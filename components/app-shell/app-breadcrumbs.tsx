@@ -3,6 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import type { AppNavItem } from '@/lib/app-nav'
 import { navTitleForPath } from '@/lib/app-nav'
 
@@ -67,24 +75,24 @@ export function AppBreadcrumbs({ navItems }: { navItems: AppNavItem[] }) {
   if (crumbs.length === 0) return null
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-layout">
-      <ol className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+    <Breadcrumb className="mb-layout">
+      <BreadcrumbList className="text-xs">
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1
           return (
-            <li key={crumb.href} className="flex items-center gap-2">
+            <BreadcrumbItem key={crumb.href}>
               {isLast ? (
-                <span className="text-foreground font-medium">{crumb.label}</span>
+                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
               ) : (
-                <Link href={crumb.href} className="hover:text-foreground transition-colors">
-                  {crumb.label}
-                </Link>
+                <>
+                  <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>
+                  <BreadcrumbSeparator />
+                </>
               )}
-              {!isLast ? <span aria-hidden>/</span> : null}
-            </li>
+            </BreadcrumbItem>
           )
         })}
-      </ol>
-    </nav>
+      </BreadcrumbList>
+    </Breadcrumb>
   )
 }

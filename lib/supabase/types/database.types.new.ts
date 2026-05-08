@@ -172,6 +172,197 @@ export type Database = {
           },
         ]
       }
+      chat_message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_attachments_message_id_fkey'
+            columns: ['message_id']
+            isOneToOne: false
+            referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          message_type: Database['public']['Enums']['chat_message_type']
+          room_id: string
+          sender_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          message_type?: Database['public']['Enums']['chat_message_type']
+          room_id: string
+          sender_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          message_type?: Database['public']['Enums']['chat_message_type']
+          room_id?: string
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_messages_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_messages_sender_id_fkey'
+            columns: ['sender_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_room_participants: {
+        Row: {
+          added_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_room_participants_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_room_participants_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_room_reads: {
+        Row: {
+          last_read_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_room_reads_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_room_reads_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database['public']['Enums']['chat_room_kind']
+          order_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: Database['public']['Enums']['chat_room_kind']
+          order_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database['public']['Enums']['chat_room_kind']
+          order_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_rooms_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_rooms_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: true
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       change_requests: {
         Row: {
           comment: string
@@ -263,6 +454,7 @@ export type Database = {
           id: string
           order_id: string
           paid_at: string | null
+          sent_at: string | null
           status: Database['public']['Enums']['invoice_status']
           updated_at: string
         }
@@ -273,6 +465,7 @@ export type Database = {
           id?: string
           order_id: string
           paid_at?: string | null
+          sent_at?: string | null
           status?: Database['public']['Enums']['invoice_status']
           updated_at?: string
         }
@@ -283,6 +476,7 @@ export type Database = {
           id?: string
           order_id?: string
           paid_at?: string | null
+          sent_at?: string | null
           status?: Database['public']['Enums']['invoice_status']
           updated_at?: string
         }
@@ -296,6 +490,63 @@ export type Database = {
           },
         ]
       }
+      order_content_versions: {
+        Row: {
+          body_html: string
+          copywriter_id: string
+          created_at: string
+          id: string
+          meta_description: string
+          order_id: string
+          status: Database['public']['Enums']['order_content_status']
+          title: string
+          updated_at: string
+          version_number: number | null
+          word_count: number
+        }
+        Insert: {
+          body_html?: string
+          copywriter_id: string
+          created_at?: string
+          id?: string
+          meta_description?: string
+          order_id: string
+          status: Database['public']['Enums']['order_content_status']
+          title?: string
+          updated_at?: string
+          version_number?: number | null
+          word_count?: number
+        }
+        Update: {
+          body_html?: string
+          copywriter_id?: string
+          created_at?: string
+          id?: string
+          meta_description?: string
+          order_id?: string
+          status?: Database['public']['Enums']['order_content_status']
+          title?: string
+          updated_at?: string
+          version_number?: number | null
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'order_content_versions_copywriter_id_fkey'
+            columns: ['copywriter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'order_content_versions_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       orders: {
         Row: {
           copywriter_id: string | null
@@ -303,6 +554,7 @@ export type Database = {
           id: string
           price: number
           publish_date: string | null
+          published_url: string | null
           site_category: string
           site_contact_info: string | null
           site_countries: string[]
@@ -326,6 +578,7 @@ export type Database = {
           id?: string
           price: number
           publish_date?: string | null
+          published_url?: string | null
           site_category: string
           site_contact_info?: string | null
           site_countries?: string[]
@@ -349,6 +602,7 @@ export type Database = {
           id?: string
           price?: number
           publish_date?: string | null
+          published_url?: string | null
           site_category?: string
           site_contact_info?: string | null
           site_countries?: string[]
@@ -614,6 +868,10 @@ export type Database = {
         Args: never
         Returns: Database['public']['Enums']['user_role']
       }
+      is_chat_participant: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: boolean
+      }
       replace_site_countries_and_languages: {
         Args: {
           p_countries: string[]
@@ -625,8 +883,11 @@ export type Database = {
     }
     Enums: {
       change_request_status: 'open' | 'resolved' | 'dismissed'
+      chat_message_type: 'text' | 'system'
+      chat_room_kind: 'order' | 'direct' | 'group'
       invoice_status: 'pending' | 'paid' | 'overdue' | 'canceled'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
+      order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
         | 'in_progress'
@@ -764,8 +1025,11 @@ export const Constants = {
   public: {
     Enums: {
       change_request_status: ['open', 'resolved', 'dismissed'],
+      chat_message_type: ['text', 'system'],
+      chat_room_kind: ['order', 'direct', 'group'],
       invoice_status: ['pending', 'paid', 'overdue', 'canceled'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
+      order_content_status: ['draft', 'submitted'],
       order_status: [
         'new',
         'in_progress',

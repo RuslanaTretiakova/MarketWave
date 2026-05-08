@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
+import { ManagerDashboard } from '@/components/dashboard/manager-dashboard'
 import { SourcerDashboard } from '@/components/dashboard/sourcer-dashboard'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
+import { loadManagerDashboard } from '@/lib/dashboard/load-manager-dashboard'
 import { loadSourcerDashboard } from '@/lib/dashboard/load-sourcer-dashboard'
 import { loadDashboardStats } from '@/lib/dashboard/load-dashboard-stats'
 import { createClient } from '@/lib/supabase/server'
@@ -107,6 +109,11 @@ function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): 
           value: stats.pendingContentSend,
           hint: 'In-progress orders waiting for your content.',
         },
+        {
+          title: 'Needs revision',
+          value: stats.needsRevisionOrders,
+          hint: 'Client requested changes — edit and re-submit.',
+        },
         { title: 'Completed', value: stats.completedOrders, hint: 'Orders you have completed.' },
       ]
     case 'sourcer':
@@ -159,6 +166,16 @@ export default async function DashboardPage() {
     return (
       <SourcerDashboard
         data={sourcerData}
+        greetingName={profile?.full_name ?? user.user_metadata?.full_name ?? null}
+      />
+    )
+  }
+
+  if (role === 'manager') {
+    const managerData = await loadManagerDashboard(supabase)
+    return (
+      <ManagerDashboard
+        data={managerData}
         greetingName={profile?.full_name ?? user.user_metadata?.full_name ?? null}
       />
     )

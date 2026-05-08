@@ -91,7 +91,14 @@ try {
   must(usersPage.includes('notFound()'), 'Users page must notFound for non-admin')
 
   const nav = read('lib/app-nav.ts')
-  must(nav.includes("role !== 'admin'"), 'Nav should hide Users for non-admin')
+  // Users entry must only be reachable from the admin branch of getAppNavItems.
+  const usersInAdminOnly = /case 'admin':\s*\n\s*return\s*\[[^\]]*\busers\b[^\]]*\]/m.test(nav)
+  must(usersInAdminOnly, 'Nav should hide Users for non-admin')
+  // No other case should include the `users` constant in its returned array.
+  for (const r of ['client', 'manager', 'sourcer', 'copywriter']) {
+    const re = new RegExp(`case '${r}':\\s*\\n\\s*return\\s*\\[[^\\]]*\\busers\\b[^\\]]*\\]`, 'm')
+    must(!re.test(nav), `Nav for ${r} role should not include Users`)
+  }
   must(nav.includes('/settings/users'), 'Nav should include Users href for admin')
 
   const setPw = read('components/auth/set-password-form.tsx')
