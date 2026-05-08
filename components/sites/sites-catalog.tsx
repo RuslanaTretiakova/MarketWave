@@ -50,7 +50,11 @@ import {
 import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
 import { addSiteToCart } from '@/lib/sites/site-actions'
 import type { SiteAdminTransition } from '@/lib/sites/site-actions'
-import { SITE_STATUS_LABEL, SITE_STATUSES_ORDERED } from '@/lib/sites/site-status-labels'
+import {
+  SITE_STATUS_CHIP,
+  SITE_STATUS_LABEL,
+  SITE_STATUSES_ORDERED,
+} from '@/lib/sites/site-status-labels'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -73,16 +77,6 @@ const SITE_ROW_CELL_MUTED =
 
 const SITE_ROW_CELL_ACTIONS =
   'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/site-row:bg-muted/50 group-has-[[aria-expanded=true]]/site-row:bg-muted/50'
-
-const SITE_STATUS_CHIP: Record<Database['public']['Enums']['site_status'], string> = {
-  pending: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
-  needs_changes: 'bg-rose-500/12 text-rose-900 dark:text-rose-100',
-  active: 'bg-emerald-500/12 text-emerald-900 dark:text-emerald-100',
-  archived: 'bg-muted text-muted-foreground',
-  // legacy enum values — no longer used in workflow
-  approved: 'bg-sky-500/12 text-sky-900 dark:text-sky-100',
-  inactive: 'bg-muted text-muted-foreground',
-}
 
 function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
   return (

@@ -220,7 +220,7 @@ function ProfileSettingsForm({
   const bioDirty = bio !== (profile.bio ?? '')
 
   const profileSectionClass =
-    'rounded-2xl border border-border/60 bg-background p-section shadow-soft ring-1 ring-border/60'
+    'rounded-2xl border border-border/60 bg-white p-section shadow-soft ring-1 ring-border/60 dark:bg-background'
   const profileActionBtn = 'h-10 min-h-10 rounded-full text-sm'
   const saving = busy !== false
   const avatarPickBusy = saving || Boolean(previewUrl?.startsWith('blob:'))

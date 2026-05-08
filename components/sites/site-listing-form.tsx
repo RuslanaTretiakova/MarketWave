@@ -32,7 +32,7 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
       <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {title}
       </h3>
-      {children}
+      <div className="pt-inset">{children}</div>
     </section>
   )
 }
@@ -128,7 +128,7 @@ export function SiteListingForm({
           return
         }
         toast.success('Site created.')
-        router.push(`/sites/${res.siteId}`)
+        router.push('/sites')
         router.refresh()
         return
       }

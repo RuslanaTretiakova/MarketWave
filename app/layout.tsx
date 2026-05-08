@@ -9,7 +9,7 @@ import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
 
-/** Inline extension-marker stripping runs from `/strip-extension-dom-markers.js` (Loaded via `next/script` to avoid React `<script>` + innerHTML console warnings.) */
+/** Pre-hydration scripts are loaded from static files in `public/`. */
 
 const inter = Inter({
   variable: '--font-inter',
@@ -48,16 +48,8 @@ export default function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <Script
-          id="supabase-recovery-hash-redirect"
-          src="/supabase-recovery-hash-redirect.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          id="strip-extension-dom-markers"
-          src="/strip-extension-dom-markers.js"
-          strategy="beforeInteractive"
-        />
+        <Script src="/supabase-recovery-hash-redirect.js" strategy="beforeInteractive" />
+        <Script src="/strip-extension-dom-markers.js" strategy="beforeInteractive" />
       </head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthSessionHashHandler />

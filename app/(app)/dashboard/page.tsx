@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
+import { SourcerDashboard } from '@/components/dashboard/sourcer-dashboard'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
+import { loadSourcerDashboard } from '@/lib/dashboard/load-sourcer-dashboard'
 import { loadDashboardStats } from '@/lib/dashboard/load-dashboard-stats'
 import { createClient } from '@/lib/supabase/server'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
@@ -151,6 +153,17 @@ export default async function DashboardPage() {
   )
 
   const supabase = await createClient()
+
+  if (role === 'sourcer') {
+    const sourcerData = await loadSourcerDashboard(supabase, user.id)
+    return (
+      <SourcerDashboard
+        data={sourcerData}
+        greetingName={profile?.full_name ?? user.user_metadata?.full_name ?? null}
+      />
+    )
+  }
+
   const stats = await loadDashboardStats(supabase, role, user.id)
   const snapshots = buildSnapshots(stats)
 

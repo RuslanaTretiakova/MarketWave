@@ -19,7 +19,7 @@ function segmentLabel(segment: string): string {
     .join(' ')
 }
 
-function inferLabel(pathname: string, segment: string, index: number, segments: string[]): string {
+function inferLabel(pathname: string, segment: string, index: number): string {
   if (pathname.startsWith('/sites/')) {
     if (index === 1) return 'Site'
     if (index === 2 && segment === 'edit') return 'Edit'
@@ -51,9 +51,7 @@ function buildCrumbs(pathname: string, navItems: AppNavItem[]): Crumb[] {
   for (const [index, segment] of segments.entries()) {
     runningPath += `/${segment}`
     const label =
-      index === 0
-        ? navTitleForPath(runningPath, navItems)
-        : inferLabel(cleanPath, segment, index, segments)
+      index === 0 ? navTitleForPath(runningPath, navItems) : inferLabel(cleanPath, segment, index)
     crumbs.push({
       href: runningPath,
       label,

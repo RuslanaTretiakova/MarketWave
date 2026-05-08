@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { AppBreadcrumbs } from '@/components/app-shell/app-breadcrumbs'
 import { AppHeader } from '@/components/app-shell/app-header'
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
@@ -54,10 +53,7 @@ export function AppShell({ user, children }: { user: AppShellUser; children: Rea
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />
-        <main className="text-foreground px-block py-layout md:px-layout flex-1">
-          <AppBreadcrumbs navItems={navItems} />
-          {children}
-        </main>
+        <main className="text-foreground px-block py-layout md:px-layout flex-1">{children}</main>
       </div>
     </div>
   )
