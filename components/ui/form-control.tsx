@@ -68,6 +68,11 @@ export function FormControlSelect({
   disabled?: boolean
   name?: string
 }) {
+  const selectedOption = React.useMemo(
+    () => options.find((option) => option.value === value),
+    [options, value]
+  )
+
   const handleValueChange = React.useCallback(
     (nextValue: string | null) => {
       if (nextValue !== null) {
@@ -80,7 +85,9 @@ export function FormControlSelect({
   return (
     <Select value={value} onValueChange={handleValueChange} disabled={disabled} name={name}>
       <SelectTrigger id={id} className={cn(formControlSelectTriggerClassName, triggerClassName)}>
-        <SelectValue placeholder={placeholder ?? 'Select an option'} />
+        <SelectValue placeholder={placeholder ?? 'Select an option'}>
+          {selectedOption?.label}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent className={contentClassName}>
         {options.map((option) => (

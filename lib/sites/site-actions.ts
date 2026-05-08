@@ -415,10 +415,10 @@ export async function changeSiteStatus(params: {
   if ('error' in ctx) {
     return { ok: false, message: ctx.error }
   }
-  const { supabase, userId, role } = ctx
+  const { userId, role } = ctx
 
-  if (role !== 'admin') {
-    return { ok: false, message: 'Only an admin can change site status.' }
+  if (role !== 'admin' && role !== 'manager') {
+    return { ok: false, message: 'Only admin or manager can change site status.' }
   }
 
   const nowIso = new Date().toISOString()
@@ -450,19 +450,17 @@ export async function changeSiteStatus(params: {
       }
       break
     case 'unarchive':
+      // DB enforces archived → active
       patch = {
-        status: 'pending',
-        needs_changes_by: null,
-        needs_changes_at: null,
-        approved_by: null,
-        approved_at: null,
+        status: 'active',
       }
       break
     default:
       return { ok: false, message: 'Unknown transition.' }
   }
 
-  const { error } = await supabase.from('sites').update(patch).eq('id', params.siteId)
+  // Use service role for this mutation (RLS may block manager updates otherwise).
+  const { error } = await adminClient.from('sites').update(patch).eq('id', params.siteId)
 
   if (error) {
     await logSiteError({

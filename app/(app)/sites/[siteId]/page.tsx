@@ -1,14 +1,11 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SiteDetailToolbar } from '@/components/sites/site-detail-toolbar'
-import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
-import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,9 +119,6 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
     <div className="gap-layout mx-auto flex max-w-3xl flex-col">
       <div className="gap-block flex flex-wrap items-start justify-between">
         <div className="space-y-inset min-w-0">
-          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-            View site
-          </p>
           <h2 className="font-display text-foreground mt-inset text-xl font-semibold tracking-tight">
             {row.domain}
           </h2>
@@ -132,15 +126,6 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
             {row.categories?.name ?? 'Uncategorized'} · {SITE_STATUS_LABEL[row.status]}
           </p>
         </div>
-        <Link
-          href="/sites"
-          className={cn(
-            buttonVariants({ variant: 'outline', size: 'default' }),
-            'h-10 min-h-10 shrink-0 justify-center rounded-full'
-          )}
-        >
-          Catalog
-        </Link>
       </div>
 
       <SiteDetailToolbar

@@ -288,7 +288,7 @@ export function SitesCatalog({
 
   const canCreate = role === 'sourcer'
   const canUseCart = role === 'client'
-  const canAdminStatus = role === 'admin'
+  const canAdminStatus = role === 'admin' || role === 'manager'
 
   function openStatus(
     siteId: string,
@@ -391,22 +391,37 @@ export function SitesCatalog({
               />
             </form>
             {role !== 'client' ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 min-h-10 rounded-full px-4"
-                onClick={() => setFiltersOpen((v) => !v)}
-                aria-expanded={filtersOpen}
-                aria-controls="sites-catalog-filters"
-              >
-                <Filter className="size-4" aria-hidden />
-                Filters
-                {filtersOpen ? (
-                  <ChevronUp className="size-4 opacity-70" aria-hidden />
-                ) : (
-                  <ChevronDown className="size-4 opacity-70" aria-hidden />
-                )}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 min-h-10 rounded-full px-4"
+                  onClick={() => setFiltersOpen((v) => !v)}
+                  aria-expanded={filtersOpen}
+                  aria-controls="sites-catalog-filters"
+                >
+                  <Filter className="size-4" aria-hidden />
+                  Filters
+                  {filtersOpen ? (
+                    <ChevronUp className="size-4 opacity-70" aria-hidden />
+                  ) : (
+                    <ChevronDown className="size-4 opacity-70" aria-hidden />
+                  )}
+                </Button>
+                {filtersActive ? (
+                  <Link
+                    href="/sites"
+                    scroll={false}
+                    className={cn(
+                      buttonVariants({ variant: 'outline', size: 'default' }),
+                      'h-10 min-h-10 rounded-full px-4'
+                    )}
+                  >
+                    <RotateCcw className="size-4" aria-hidden />
+                    Clear filters
+                  </Link>
+                ) : null}
+              </>
             ) : null}
           </div>
         </div>
@@ -696,13 +711,13 @@ export function SitesCatalog({
                                     <DropdownMenuContent align="end" className="min-w-48">
                                       <DropdownMenuGroup>
                                         <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                          Change status
+                                          Review actions
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         {siteAdminTransitions(row.status).map((t) => (
                                           <DropdownMenuItem
                                             key={t}
-                                            onSelect={() =>
+                                            onClick={() =>
                                               openStatus(row.id, row.domain, row.status, t)
                                             }
                                           >
@@ -808,12 +823,12 @@ export function SitesCatalog({
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                      Change status
+                                      Review actions
                                     </DropdownMenuLabel>
                                     {siteAdminTransitions(row.status).map((t) => (
                                       <DropdownMenuItem
                                         key={t}
-                                        onSelect={() =>
+                                        onClick={() =>
                                           openStatus(row.id, row.domain, row.status, t)
                                         }
                                       >

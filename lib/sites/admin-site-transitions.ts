@@ -23,13 +23,13 @@ export function siteAdminTransitions(status: SiteStatus): SiteAdminTransition[] 
 export function siteAdminTransitionMenuLabel(t: SiteAdminTransition): string {
   switch (t) {
     case 'needs_changes':
-      return 'Request changes'
+      return 'Needs changes'
     case 'approve':
       return 'Approve'
     case 'archive':
-      return 'Archive'
+      return 'Archive site'
     case 'unarchive':
-      return 'Unarchive'
+      return 'Unarchive site'
     default:
       return t
   }
