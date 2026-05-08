@@ -10,6 +10,8 @@ export type InvoiceStatus = Database['public']['Enums']['invoice_status']
 export type InvoiceListRow = {
   id: string
   order_id: string
+  billing_month: string | null
+  invoice_group_id: string | null
   status: InvoiceStatus
   amount: number
   due_date: string | null
@@ -71,7 +73,7 @@ export async function loadInvoicesPage(
     const client = role === 'admin' || role === 'manager' ? adminClient : supabase
     let q = client.from('invoices').select(
       `
-        id, order_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
+        id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
         order:orders!inner(site_domain, user_id)
       `,
       { count: 'exact' }
@@ -98,7 +100,7 @@ export async function loadInvoicesPage(
         .from('invoices')
         .select(
           `
-          id, order_id, status, amount, due_date, paid_at, created_at, updated_at,
+          id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, created_at, updated_at,
           order:orders!inner(site_domain, user_id)
         `,
           { count: 'exact' }
@@ -126,6 +128,8 @@ export async function loadInvoicesPage(
     type InvRow = {
       id: string
       order_id: string
+      billing_month: string | null
+      invoice_group_id: string | null
       status: InvoiceStatus
       amount: number
       due_date: string | null
@@ -158,6 +162,8 @@ export async function loadInvoicesPage(
       return {
         id: r.id,
         order_id: r.order_id,
+        billing_month: r.billing_month,
+        invoice_group_id: r.invoice_group_id,
         status: r.status,
         amount: r.amount,
         due_date: r.due_date,
@@ -195,7 +201,7 @@ export async function loadInvoiceDetail(
     .from('invoices')
     .select(
       `
-      id, order_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
+      id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
       order:orders!inner(
         site_domain, user_id, status, published_url, publish_date, price
       )
@@ -209,7 +215,7 @@ export async function loadInvoiceDetail(
       .from('invoices')
       .select(
         `
-        id, order_id, status, amount, due_date, paid_at, created_at, updated_at,
+        id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, created_at, updated_at,
         order:orders!inner(
           site_domain, user_id, status, published_url, publish_date, price
         )
@@ -231,6 +237,8 @@ export async function loadInvoiceDetail(
   type Joined = {
     id: string
     order_id: string
+    billing_month: string | null
+    invoice_group_id: string | null
     status: InvoiceStatus
     amount: number
     due_date: string | null
@@ -265,6 +273,8 @@ export async function loadInvoiceDetail(
   return {
     id: row.id,
     order_id: row.order_id,
+    billing_month: row.billing_month,
+    invoice_group_id: row.invoice_group_id,
     status: row.status,
     amount: row.amount,
     due_date: row.due_date,

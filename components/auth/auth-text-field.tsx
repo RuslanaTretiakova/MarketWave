@@ -32,8 +32,8 @@ export function AuthTextField({
   ...inputProps
 }: AuthTextFieldProps) {
   return (
-    <div className="space-y-inset">
-      <div className="gap-inset flex min-h-5 items-center justify-between">
+    <div className="space-y-inset" suppressHydrationWarning>
+      <div className="gap-inset flex min-h-5 items-center justify-between" suppressHydrationWarning>
         <Label htmlFor={labelId} className="text-foreground text-sm font-semibold">
           {label}
         </Label>

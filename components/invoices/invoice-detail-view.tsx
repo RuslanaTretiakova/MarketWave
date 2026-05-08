@@ -162,6 +162,11 @@ export function InvoiceDetailView({
             <DetailRow label="Client" value={invoice.client_name ?? '—'} />
             <DetailRow label="Email" value={invoice.client_email ?? '—'} />
             <DetailRow label="Created" value={formatDateTimeUtc(invoice.created_at)} />
+            <DetailRow
+              label="Billing month"
+              value={invoice.billing_month ? invoice.billing_month.slice(0, 7) : '—'}
+            />
+            <DetailRow label="Group ID" value={invoice.invoice_group_id ?? '—'} />
             {invoice.sent_at && (
               <DetailRow label="Last sent" value={formatDateTimeUtc(invoice.sent_at)} />
             )}

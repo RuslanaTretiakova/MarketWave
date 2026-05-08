@@ -35,6 +35,9 @@ export type OrderDetail = {
   status: OrderStatus
   price: number
   publish_date: string | null
+  anchor_text: string | null
+  target_url: string | null
+  client_notes: string | null
   published_url: string | null
   created_at: string
   updated_at: string
@@ -120,6 +123,9 @@ export async function loadOrderDetail(
     status: order.status,
     price: order.price,
     publish_date: order.publish_date,
+    anchor_text: order.anchor_text,
+    target_url: order.target_url,
+    client_notes: order.client_notes,
     published_url: order.published_url,
     created_at: order.created_at,
     updated_at: order.updated_at,

@@ -193,12 +193,15 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         {loading ? 'Signing in…' : 'Sign in'}
       </AuthPrimaryButton>
       {showTestLoginPanel ? (
-        <div className="bg-muted/40 flex flex-col rounded-lg border border-sky-500/30 px-3 py-3">
-          <div className="flex items-center gap-2">
+        <div
+          className="bg-muted/40 flex flex-col rounded-lg border border-sky-500/30 px-3 py-3"
+          suppressHydrationWarning
+        >
+          <div className="flex items-center gap-2" suppressHydrationWarning>
             <FlaskConical className="size-4 text-sky-600 dark:text-sky-300" aria-hidden />
             <p className="text-foreground text-sm font-medium">Quick test login</p>
           </div>
-          <div className="mt-2 flex items-center gap-2 overflow-x-auto">
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto" suppressHydrationWarning>
             {testRoles.map((role) => (
               <button
                 key={role}

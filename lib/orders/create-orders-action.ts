@@ -73,7 +73,7 @@ export async function createOrdersFromCart(): Promise<
     const { data: cartItems, error: cartErr } = await supabase
       .from('cart_items')
       .select(
-        'id, site_id, publish_date, sites(id, domain, price, dr, status, link_type, requirements, description, contact_info, keywords_relevance, organic_keywords_count, organic_traffic_count, categories(name), site_countries(country), site_languages(language))'
+        'id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, sites(id, domain, price, dr, status, link_type, requirements, description, contact_info, keywords_relevance, organic_keywords_count, organic_traffic_count, categories(name), site_countries(country), site_languages(language))'
       )
       .order('created_at', { ascending: true })
 
@@ -144,6 +144,10 @@ export async function createOrdersFromCart(): Promise<
         site_id: site.id,
         price: site.price,
         publish_date: item.publish_date ?? null,
+        publish_month: item.publish_month ?? null,
+        anchor_text: item.anchor_text ?? null,
+        target_url: item.target_url ?? null,
+        client_notes: item.client_notes ?? null,
         status: 'new',
         site_domain: site.domain,
         site_dr: site.dr,

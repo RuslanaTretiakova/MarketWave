@@ -14,11 +14,10 @@ function ReadOnlyContent({ html }: { html: string }) {
       immediatelyRender: false,
       content: html || '<p></p>',
       extensions: [
-        StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
+        StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: false }),
         Link.configure({
           openOnClick: true,
           autolink: false,
-          protocols: ['http', 'https', 'mailto'],
           HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
         }),
       ],

@@ -207,3 +207,59 @@ export async function sendInvoiceEmail(
   revalidateInvoice(invoiceId, invoice.order_id)
   return { ok: true, sentAt }
 }
+
+export async function generateMonthlyInvoiceGroups(
+  month: string
+): Promise<{ ok: true; grouped: number } | { ok: false; message: string }> {
+  const auth = await requireInvoiceManager()
+  if (!auth.ok) return auth
+
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    return { ok: false, message: 'Month must use YYYY-MM format.' }
+  }
+  const billingMonth = `${month}-01`
+
+  const { data: invoices, error } = await adminClient
+    .from('invoices')
+    .select('id, order_id, status, order:orders!inner(user_id, status, publish_date)')
+    .in('status', ['pending', 'overdue'])
+  if (error) return { ok: false, message: error.message ?? 'Could not load invoices.' }
+
+  type InvoiceCandidate = {
+    id: string
+    order_id: string
+    status: Database['public']['Enums']['invoice_status']
+    order: {
+      user_id: string
+      status: Database['public']['Enums']['order_status']
+      publish_date: string | null
+    } | null
+  }
+  const rows = (invoices ?? []) as unknown as InvoiceCandidate[]
+
+  const buckets = new Map<string, string[]>()
+  for (const row of rows) {
+    if (!row.order) continue
+    if (row.order.status !== 'published' && row.order.status !== 'completed') continue
+    const sourceMonth = (row.order.publish_date ?? billingMonth).slice(0, 7)
+    if (sourceMonth !== month) continue
+    const key = `${row.order.user_id}:${sourceMonth}`
+    const list = buckets.get(key) ?? []
+    list.push(row.id)
+    buckets.set(key, list)
+  }
+
+  let grouped = 0
+  for (const ids of buckets.values()) {
+    const groupId = crypto.randomUUID()
+    const { error: patchError } = await adminClient
+      .from('invoices')
+      .update({ billing_month: billingMonth, invoice_group_id: groupId })
+      .in('id', ids)
+    if (patchError) return { ok: false, message: patchError.message ?? 'Could not group invoices.' }
+    grouped += ids.length
+  }
+
+  revalidatePath('/invoices')
+  return { ok: true, grouped }
+}

@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList,
+  DollarSign,
   Globe,
   LayoutDashboard,
   MessageSquare,
@@ -30,6 +31,7 @@ const cart: AppNavItem = { href: '/cart', label: 'Cart', Icon: ShoppingCart }
 const users: AppNavItem = { href: '/settings/users', label: 'Users', Icon: Users }
 const categories: AppNavItem = { href: '/settings/categories', label: 'Categories', Icon: Tags }
 const chats: AppNavItem = { href: '/chats', label: 'Chats', Icon: MessageSquare }
+const earnings: AppNavItem = { href: '/earnings', label: 'Earnings', Icon: DollarSign }
 
 /** All items — kept for backwards-compat and active-state helpers. */
 export const APP_NAV_ITEMS: AppNavItem[] = [
@@ -41,6 +43,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   users,
   categories,
   chats,
+  earnings,
 ]
 
 /** Role-filtered nav items shown in the app sidebar. */
@@ -49,11 +52,11 @@ export function getAppNavItems(role: AppNavRole): AppNavItem[] {
     case 'client':
       return [dashboard, profile, sites, cart, orders, invoices, chats]
     case 'admin':
-      return [dashboard, profile, users, categories, sites, orders, invoices, chats]
+      return [dashboard, profile, users, categories, sites, orders, invoices, chats, earnings]
     case 'manager':
-      return [dashboard, profile, sites, orders, invoices, chats]
+      return [dashboard, profile, sites, orders, invoices, chats, earnings]
     case 'sourcer':
-      return [dashboard, profile, sites]
+      return [dashboard, profile, sites, earnings]
     case 'copywriter':
       return [dashboard, profile, orders, chats]
     default:

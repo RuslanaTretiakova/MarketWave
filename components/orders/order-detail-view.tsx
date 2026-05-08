@@ -5,11 +5,11 @@ import { MessageSquare } from 'lucide-react'
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 
+import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { AssignCopywriterSelect } from '@/components/orders/assign-copywriter-select'
 import { ChangeRequestsList } from '@/components/orders/change-requests-list'
 import { CopywriterContentEditor } from '@/components/orders/copywriter-content-editor'
 import { OrderContentViewer } from '@/components/orders/order-content-viewer'
-import { OrderStatusActions } from '@/components/orders/order-status-actions'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cancelInvoice, markInvoiceOverdue, markInvoicePaid } from '@/lib/invoices/invoice-actions'
@@ -156,13 +156,25 @@ export function OrderDetailView({
               <MessageSquare className="size-4" /> Open chat
             </Link>
           )}
-          <OrderStatusActions
+          <OrderActionsMenu
+            context={{
+              role,
+              status: order.status,
+              userId,
+              orderUserId: order.user_id,
+              copywriterId: order.copywriter_id,
+              invoiceId: order.invoice?.id ?? null,
+              invoiceStatus: order.invoice?.status ?? null,
+            }}
             orderId={order.id}
-            status={order.status}
-            role={role}
-            userId={userId}
-            orderUserId={order.user_id}
-            copywriterId={order.copywriter_id}
+            detailHref={`/orders/${order.id}`}
+            invoiceHref={order.invoice ? `/invoices/${order.invoice.id}` : undefined}
+            copywriterOptions={copywriterOptions}
+            initialPublishDate={order.publish_date}
+            initialAnchorText={order.anchor_text}
+            initialTargetUrl={order.target_url}
+            initialClientNotes={order.client_notes}
+            triggerVariant="button"
           />
         </div>
       </div>
@@ -184,6 +196,23 @@ export function OrderDetailView({
               <DetailRow label="Countries" value={order.site_countries.join(', ') || null} />
               <DetailRow label="Languages" value={order.site_languages.join(', ') || null} />
               <DetailRow label="Publish date" value={order.publish_date ?? '—'} />
+              <DetailRow label="Anchor text" value={order.anchor_text} />
+              <DetailRow
+                label="Target URL"
+                value={
+                  order.target_url ? (
+                    <a
+                      href={order.target_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary break-all hover:underline"
+                    >
+                      {order.target_url}
+                    </a>
+                  ) : null
+                }
+              />
+              <DetailRow label="Client notes" value={order.client_notes} />
               <DetailRow
                 label="Published URL"
                 value={

@@ -71,27 +71,39 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          anchor_text: string | null
           cart_id: string
+          client_notes: string | null
           created_at: string
           id: string
           publish_date: string | null
+          publish_month: string | null
           site_id: string
+          target_url: string | null
           updated_at: string
         }
         Insert: {
+          anchor_text?: string | null
           cart_id: string
+          client_notes?: string | null
           created_at?: string
           id?: string
           publish_date?: string | null
+          publish_month?: string | null
           site_id: string
+          target_url?: string | null
           updated_at?: string
         }
         Update: {
+          anchor_text?: string | null
           cart_id?: string
+          client_notes?: string | null
           created_at?: string
           id?: string
           publish_date?: string | null
+          publish_month?: string | null
           site_id?: string
+          target_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -320,6 +332,7 @@ export type Database = {
       }
       chat_rooms: {
         Row: {
+          channel: Database['public']['Enums']['chat_channel_type']
           created_at: string
           created_by: string | null
           id: string
@@ -329,6 +342,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          channel?: Database['public']['Enums']['chat_channel_type']
           created_at?: string
           created_by?: string | null
           id?: string
@@ -338,6 +352,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          channel?: Database['public']['Enums']['chat_channel_type']
           created_at?: string
           created_by?: string | null
           id?: string
@@ -449,7 +464,9 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          billing_month: string | null
           created_at: string
+          invoice_group_id: string | null
           due_date: string | null
           id: string
           order_id: string
@@ -460,7 +477,9 @@ export type Database = {
         }
         Insert: {
           amount: number
+          billing_month?: string | null
           created_at?: string
+          invoice_group_id?: string | null
           due_date?: string | null
           id?: string
           order_id: string
@@ -471,7 +490,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          billing_month?: string | null
           created_at?: string
+          invoice_group_id?: string | null
           due_date?: string | null
           id?: string
           order_id?: string
@@ -484,7 +505,7 @@ export type Database = {
           {
             foreignKeyName: 'invoices_order_id_fkey'
             columns: ['order_id']
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: 'orders'
             referencedColumns: ['id']
           },
@@ -549,11 +570,14 @@ export type Database = {
       }
       orders: {
         Row: {
+          anchor_text: string | null
+          client_notes: string | null
           copywriter_id: string | null
           created_at: string
           id: string
           price: number
           publish_date: string | null
+          publish_month: string | null
           published_url: string | null
           site_category: string
           site_contact_info: string | null
@@ -569,15 +593,19 @@ export type Database = {
           site_organic_traffic_count: number | null
           site_requirements: string | null
           status: Database['public']['Enums']['order_status']
+          target_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anchor_text?: string | null
+          client_notes?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price: number
           publish_date?: string | null
+          publish_month?: string | null
           published_url?: string | null
           site_category: string
           site_contact_info?: string | null
@@ -593,15 +621,19 @@ export type Database = {
           site_organic_traffic_count?: number | null
           site_requirements?: string | null
           status?: Database['public']['Enums']['order_status']
+          target_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anchor_text?: string | null
+          client_notes?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price?: number
           publish_date?: string | null
+          publish_month?: string | null
           published_url?: string | null
           site_category?: string
           site_contact_info?: string | null
@@ -617,6 +649,7 @@ export type Database = {
           site_organic_traffic_count?: number | null
           site_requirements?: string | null
           status?: Database['public']['Enums']['order_status']
+          target_url?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -685,6 +718,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sourcer_earnings: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          earned_amount: number
+          earning_month: string
+          id: string
+          invoice_id: string | null
+          order_id: string
+          paid_at: string | null
+          payout_reference: string | null
+          payout_status: string
+          site_id: string | null
+          sourcer_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount: number
+          earning_month: string
+          id?: string
+          invoice_id?: string | null
+          order_id: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount?: number
+          earning_month?: string
+          id?: string
+          invoice_id?: string | null
+          order_id?: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'sourcer_earnings_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: true
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_sourcer_id_fkey'
+            columns: ['sourcer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       public_rate_limit_events: {
         Row: {
@@ -883,6 +993,7 @@ export type Database = {
     }
     Enums: {
       change_request_status: 'open' | 'resolved' | 'dismissed'
+      chat_channel_type: 'standard' | 'support' | 'sales'
       chat_message_type: 'text' | 'system'
       chat_room_kind: 'order' | 'direct' | 'group'
       invoice_status: 'pending' | 'paid' | 'overdue' | 'canceled'
@@ -1025,6 +1136,7 @@ export const Constants = {
   public: {
     Enums: {
       change_request_status: ['open', 'resolved', 'dismissed'],
+      chat_channel_type: ['standard', 'support', 'sales'],
       chat_message_type: ['text', 'system'],
       chat_room_kind: ['order', 'direct', 'group'],
       invoice_status: ['pending', 'paid', 'overdue', 'canceled'],

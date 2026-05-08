@@ -180,6 +180,9 @@ export function InvoicesList({
                     Due date
                   </th>
                   <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
+                    Billing month
+                  </th>
+                  <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
                     Sent
                   </th>
                   <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
@@ -222,6 +225,9 @@ export function InvoicesList({
                     </td>
                     <td className="text-muted-foreground px-section py-block hidden sm:table-cell">
                       {row.due_date ?? '—'}
+                    </td>
+                    <td className="text-muted-foreground px-section py-block hidden md:table-cell">
+                      {row.billing_month ? row.billing_month.slice(0, 7) : '—'}
                     </td>
                     <td className="text-muted-foreground px-section py-block hidden md:table-cell">
                       {formatDateUtc(row.sent_at)}

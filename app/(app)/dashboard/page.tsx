@@ -82,6 +82,16 @@ function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): 
           value: stats.pendingInvoices,
           hint: 'Invoices awaiting payment confirmation.',
         },
+        {
+          title: 'Paid revenue',
+          value: `$${stats.totalRevenuePaid.toFixed(2)}`,
+          hint: `${stats.paidInvoices} paid invoices · ${stats.publishedOrders} published orders.`,
+        },
+        {
+          title: 'Active conversations',
+          value: stats.activeChatRooms,
+          hint: 'Rooms currently available across teams and clients.',
+        },
       ]
     case 'manager':
       return [
@@ -114,7 +124,17 @@ function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): 
           value: stats.needsRevisionOrders,
           hint: 'Client requested changes — edit and re-submit.',
         },
+        {
+          title: 'Sent for review',
+          value: stats.contentSentOrders,
+          hint: 'Drafts submitted and currently waiting for client review.',
+        },
         { title: 'Completed', value: stats.completedOrders, hint: 'Orders you have completed.' },
+        {
+          title: 'Approval rate',
+          value: stats.approvalRatePercent === null ? '—' : `${stats.approvalRatePercent}%`,
+          hint: 'Completed vs sent-for-review outcomes.',
+        },
       ]
     case 'sourcer':
       return [

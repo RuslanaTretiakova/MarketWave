@@ -63,6 +63,7 @@ export default async function OrdersPage(props: { searchParams: Promise<SearchPa
   return (
     <OrdersList
       role={profile.role}
+      userId={user.id}
       rows={rows}
       totalCount={totalCount}
       page={page}

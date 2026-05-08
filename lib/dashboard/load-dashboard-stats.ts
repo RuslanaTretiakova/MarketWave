@@ -26,6 +26,10 @@ export type AdminStats = {
   sitesInReview: number
   openChangeRequests: number
   pendingInvoices: number
+  paidInvoices: number
+  totalRevenuePaid: number
+  publishedOrders: number
+  activeChatRooms: number
 }
 
 export type ManagerStats = {
@@ -42,6 +46,8 @@ export type CopywriterStats = {
   pendingContentSend: number
   needsRevisionOrders: number
   completedOrders: number
+  contentSentOrders: number
+  approvalRatePercent: number | null
 }
 
 export type SourcerStats = {
@@ -91,7 +97,7 @@ export async function loadDashboardStats(
   }
 
   if (role === 'copywriter') {
-    const [assigned, pendingSend, needsRevision, completed] = await Promise.all([
+    const [assigned, pendingSend, needsRevision, completed, contentSent] = await Promise.all([
       supabase
         .from('orders')
         .select('id', { count: 'exact', head: true })
@@ -112,33 +118,54 @@ export async function loadDashboardStats(
         .select('id', { count: 'exact', head: true })
         .eq('copywriter_id', userId)
         .eq('status', 'completed'),
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('copywriter_id', userId)
+        .eq('status', 'content_sent'),
     ])
+    const sentCount = contentSent.count ?? 0
+    const completedCount = completed.count ?? 0
+    const approvalRatePercent =
+      sentCount + completedCount > 0
+        ? Math.round((completedCount / (sentCount + completedCount)) * 1000) / 10
+        : null
     return {
       kind: 'copywriter',
       assignedOrders: assigned.count ?? 0,
       pendingContentSend: pendingSend.count ?? 0,
       needsRevisionOrders: needsRevision.count ?? 0,
-      completedOrders: completed.count ?? 0,
+      completedOrders: completedCount,
+      contentSentOrders: sentCount,
+      approvalRatePercent,
     }
   }
 
   if (role === 'admin') {
-    const [active, awaiting, inReview, openCR, pendingInv] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .in('status', ACTIVE_ORDER_STATUSES),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'new'),
-      supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase
-        .from('change_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'open'),
-      supabase
-        .from('invoices')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending'),
-    ])
+    const [active, awaiting, inReview, openCR, pendingInv, paidInv, publishedOrders, activeRooms] =
+      await Promise.all([
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ACTIVE_ORDER_STATUSES),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+        supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase
+          .from('change_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'open'),
+        supabase
+          .from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase.from('invoices').select('amount').eq('status', 'paid'),
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'published'),
+        supabase.from('chat_rooms').select('id', { count: 'exact', head: true }),
+      ])
+    const totalRevenuePaid = (paidInv.data ?? []).reduce((sum, inv) => sum + Number(inv.amount), 0)
     return {
       kind: 'admin',
       totalActiveOrders: active.count ?? 0,
@@ -146,6 +173,10 @@ export async function loadDashboardStats(
       sitesInReview: inReview.count ?? 0,
       openChangeRequests: openCR.count ?? 0,
       pendingInvoices: pendingInv.count ?? 0,
+      paidInvoices: (paidInv.data ?? []).length,
+      totalRevenuePaid,
+      publishedOrders: publishedOrders.count ?? 0,
+      activeChatRooms: activeRooms.count ?? 0,
     }
   }
 

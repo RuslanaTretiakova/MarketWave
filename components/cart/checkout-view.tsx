@@ -46,6 +46,12 @@ export function CheckoutView({ items, total }: { items: CartItemRow[]; total: nu
               <th className="text-muted-foreground px-section py-block text-left font-medium">
                 Publish date
               </th>
+              <th className="text-muted-foreground px-section py-block text-left font-medium">
+                Publication month
+              </th>
+              <th className="text-muted-foreground px-section py-block text-left font-medium">
+                Anchor text
+              </th>
               <th className="text-muted-foreground px-section py-block text-right font-medium">
                 Price
               </th>
@@ -60,6 +66,16 @@ export function CheckoutView({ items, total }: { items: CartItemRow[]; total: nu
                 </td>
                 <td className="text-muted-foreground px-section py-block">
                   {item.publish_date ?? <span className="italic">Not set</span>}
+                </td>
+                <td className="text-muted-foreground px-section py-block">
+                  {item.publish_month ? (
+                    item.publish_month.slice(0, 7)
+                  ) : (
+                    <span className="italic">Not set</span>
+                  )}
+                </td>
+                <td className="text-muted-foreground px-section py-block">
+                  {item.anchor_text ?? <span className="italic">Not set</span>}
                 </td>
                 <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
                   ${item.site_price.toFixed(2)}

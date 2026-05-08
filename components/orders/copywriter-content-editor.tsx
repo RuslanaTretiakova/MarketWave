@@ -220,11 +220,10 @@ export function CopywriterContentEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
+      StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: false }),
       Link.configure({
         openOnClick: false,
         autolink: false,
-        protocols: ['http', 'https', 'mailto'],
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
     ],

@@ -8,6 +8,7 @@ import type { Database } from '@/lib/supabase/types'
 
 type UserRole = Database['public']['Enums']['user_role']
 type OrderStatus = Database['public']['Enums']['order_status']
+type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 async function getSessionContext(): Promise<
   | { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: UserRole }
@@ -222,5 +223,131 @@ export async function cancelOrder(
   }
 
   revalidateOrder(orderId)
+  return { ok: true }
+}
+
+function normalizeOptionalText(value: string | null | undefined, maxLen: number): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return trimmed.slice(0, maxLen)
+}
+
+function normalizeOptionalUrl(
+  input: string | null | undefined
+): { ok: true; url: string | null } | { ok: false; message: string } {
+  if (input === null || input === undefined) return { ok: true, url: null }
+  const trimmed = input.trim()
+  if (!trimmed) return { ok: true, url: null }
+  if (trimmed.length > 2048) return { ok: false, message: 'URL must be 2048 characters or fewer.' }
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    return { ok: false, message: 'Enter a valid URL including https://' }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, message: 'URL must use http or https.' }
+  }
+  return { ok: true, url: parsed.toString() }
+}
+
+export async function updateOrderFields(input: {
+  orderId: string
+  publishDate?: string | null
+  anchorText?: string | null
+  targetUrl?: string | null
+  clientNotes?: string | null
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+
+  const { data: order, error: loadErr } = await adminClient
+    .from('orders')
+    .select('id, user_id, status')
+    .eq('id', input.orderId)
+    .maybeSingle()
+  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
+
+  const isOwnClientNew =
+    ctx.role === 'client' && order.user_id === ctx.userId && order.status === 'new'
+  const isAdmin = ctx.role === 'admin'
+  if (!isOwnClientNew && !isAdmin) {
+    return { ok: false, message: 'You cannot edit this order.' }
+  }
+
+  if (input.publishDate !== undefined && input.publishDate !== null && input.publishDate !== '') {
+    const dateStr = input.publishDate.trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return { ok: false, message: 'Publish date must be a valid date (YYYY-MM-DD).' }
+    }
+  }
+
+  const url = normalizeOptionalUrl(input.targetUrl)
+  if (!url.ok) return url
+
+  const patch: OrderUpdate = {}
+  if (input.publishDate !== undefined) {
+    patch.publish_date = input.publishDate ? input.publishDate.trim() : null
+  }
+  if (input.anchorText !== undefined)
+    patch.anchor_text = normalizeOptionalText(input.anchorText, 500)
+  if (input.targetUrl !== undefined) patch.target_url = url.url
+  if (input.clientNotes !== undefined)
+    patch.client_notes = normalizeOptionalText(input.clientNotes, 4000)
+
+  if (Object.keys(patch).length === 0) {
+    return { ok: false, message: 'Nothing to update.' }
+  }
+
+  const { error } = await adminClient.from('orders').update(patch).eq('id', input.orderId)
+  if (error) return { ok: false, message: error.message ?? 'Could not update order.' }
+
+  revalidateOrder(input.orderId)
+  return { ok: true }
+}
+
+export async function overrideOrderStatus(
+  orderId: string,
+  status: OrderStatus
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+  if (ctx.role !== 'admin') {
+    return { ok: false, message: 'Only admins can override order status.' }
+  }
+
+  const { supabase } = ctx
+  const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+  if (error)
+    return { ok: false, message: mapPostgresError(error.message ?? 'Could not update order.') }
+
+  revalidateOrder(orderId)
+  return { ok: true }
+}
+
+export async function deleteOrder(
+  orderId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+  if (ctx.role !== 'admin') {
+    return { ok: false, message: 'Only admins can delete orders.' }
+  }
+
+  const { data: order, error: loadErr } = await adminClient
+    .from('orders')
+    .select('id, status')
+    .eq('id', orderId)
+    .maybeSingle()
+  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
+  if (order.status !== 'new' && order.status !== 'canceled') {
+    return { ok: false, message: 'Only new or canceled orders can be deleted.' }
+  }
+
+  const { error } = await adminClient.from('orders').delete().eq('id', orderId)
+  if (error) return { ok: false, message: error.message ?? 'Could not delete order.' }
+
+  revalidatePath('/orders')
   return { ok: true }
 }

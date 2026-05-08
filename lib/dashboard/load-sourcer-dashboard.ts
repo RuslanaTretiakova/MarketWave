@@ -10,10 +10,9 @@ export const SOURCER_PIPELINE_STAGES: {
   shortLabel: string
 }[] = [
   { status: 'pending', label: 'Pending', shortLabel: 'New' },
-  { status: 'approved', label: 'Approved', shortLabel: 'Approved' },
   { status: 'needs_changes', label: 'Needs changes', shortLabel: 'Changes' },
-  { status: 'inactive', label: 'Inactive', shortLabel: 'Inactive' },
   { status: 'active', label: 'Live', shortLabel: 'Live' },
+  { status: 'archived', label: 'Archived', shortLabel: 'Archived' },
 ]
 
 export type SourcerRecentSubmission = {
@@ -90,10 +89,9 @@ export async function loadSourcerDashboard(
     sitesPendingReview,
     nonArchived,
     pipelinePending,
-    pipelineApproved,
     pipelineNeedsChanges,
-    pipelineInactive,
     pipelineActive,
+    pipelineArchived,
     recentResult,
     createdAtRows,
     activeThisMonth,
@@ -144,13 +142,6 @@ export async function loadSourcerDashboard(
       .from('sites')
       .select('id', { count: 'exact', head: true })
       .eq('sourcer_id', userId)
-      .eq('status', 'approved')
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .then((r) => ({ count: r.count })),
-    supabase
-      .from('sites')
-      .select('id', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
       .eq('status', 'needs_changes')
       .gte('created_at', thirtyDaysAgo.toISOString())
       .then((r) => ({ count: r.count })),
@@ -158,14 +149,14 @@ export async function loadSourcerDashboard(
       .from('sites')
       .select('id', { count: 'exact', head: true })
       .eq('sourcer_id', userId)
-      .eq('status', 'inactive')
+      .eq('status', 'active')
       .gte('created_at', thirtyDaysAgo.toISOString())
       .then((r) => ({ count: r.count })),
     supabase
       .from('sites')
       .select('id', { count: 'exact', head: true })
       .eq('sourcer_id', userId)
-      .eq('status', 'active')
+      .eq('status', 'archived')
       .gte('created_at', thirtyDaysAgo.toISOString())
       .then((r) => ({ count: r.count })),
     supabase
@@ -235,10 +226,9 @@ export async function loadSourcerDashboard(
 
   const pipelineCounts = new Map<SiteStatus, number>([
     ['pending', pipelinePending.count ?? 0],
-    ['approved', pipelineApproved.count ?? 0],
     ['needs_changes', pipelineNeedsChanges.count ?? 0],
-    ['inactive', pipelineInactive.count ?? 0],
     ['active', pipelineActive.count ?? 0],
+    ['archived', pipelineArchived.count ?? 0],
   ])
 
   const pipeline = SOURCER_PIPELINE_STAGES.map((s) => ({

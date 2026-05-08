@@ -1,9 +1,8 @@
 'use client'
-
-import Link from 'next/link'
 import { ClipboardList } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 
+import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Card } from '@/components/ui/card'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
@@ -31,6 +30,7 @@ function buildHref(
 
 export function OrdersList({
   role,
+  userId,
   rows,
   totalCount,
   page,
@@ -40,6 +40,7 @@ export function OrdersList({
   copywriterOptions,
 }: {
   role: UserRole
+  userId: string
   rows: OrderListRow[]
   totalCount: number
   page: number
@@ -163,6 +164,9 @@ export function OrdersList({
                   <th className="text-muted-foreground px-section py-block hidden text-left font-medium sm:table-cell">
                     Created
                   </th>
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -172,12 +176,7 @@ export function OrdersList({
                     className="border-border hover:bg-muted/30 border-b last:border-b-0"
                   >
                     <td className="px-section py-block">
-                      <Link
-                        href={`/orders/${row.id}`}
-                        className="text-foreground font-medium hover:underline"
-                      >
-                        {row.site_domain}
-                      </Link>
+                      <p className="text-foreground font-medium">{row.site_domain}</p>
                       <p className="text-muted-foreground text-xs">{row.site_category}</p>
                     </td>
                     {showClientColumn && (
@@ -203,6 +202,20 @@ export function OrdersList({
                     </td>
                     <td className="text-muted-foreground px-section py-block hidden sm:table-cell">
                       {new Date(row.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-section py-block text-right">
+                      <OrderActionsMenu
+                        context={{
+                          role,
+                          status: row.status,
+                          userId,
+                          orderUserId: row.user_id,
+                          copywriterId: row.copywriter_id,
+                        }}
+                        orderId={row.id}
+                        detailHref={`/orders/${row.id}`}
+                        copywriterOptions={copywriterOptions}
+                      />
                     </td>
                   </tr>
                 ))}

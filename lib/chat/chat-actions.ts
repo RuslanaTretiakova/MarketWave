@@ -151,6 +151,46 @@ export async function addParticipant(
   return { ok: true }
 }
 
+export async function createChannelRoom(input: {
+  channel: Database['public']['Enums']['chat_channel_type']
+  title: string
+  participantIds: string[]
+}): Promise<{ ok: true; roomId: string } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+  if (auth.role !== 'admin' && auth.role !== 'manager') {
+    return { ok: false, message: 'Only admins and managers can create channel rooms.' }
+  }
+  if (input.channel !== 'support' && input.channel !== 'sales' && input.channel !== 'standard') {
+    return { ok: false, message: 'Invalid channel.' }
+  }
+  const title = input.title.trim()
+  if (!title) return { ok: false, message: 'Room title is required.' }
+  if (title.length > 120)
+    return { ok: false, message: 'Room title must be 120 characters or fewer.' }
+
+  const participantIds = [...new Set([auth.userId, ...input.participantIds.filter(Boolean)])]
+
+  const { data: room, error } = await adminClient
+    .from('chat_rooms')
+    .insert({
+      kind: 'group',
+      channel: input.channel,
+      title,
+      created_by: auth.userId,
+    })
+    .select('id')
+    .maybeSingle()
+  if (error || !room) return { ok: false, message: error?.message ?? 'Could not create room.' }
+
+  const rows = participantIds.map((id) => ({ room_id: room.id, user_id: id }))
+  const { error: pErr } = await adminClient.from('chat_room_participants').insert(rows)
+  if (pErr) return { ok: false, message: pErr.message ?? 'Could not add participants.' }
+
+  revalidatePath('/chats')
+  return { ok: true, roomId: room.id }
+}
+
 /**
  * Generates a signed upload URL that the browser can PUT a file to. Returns the
  * `path` you must include in subsequent `sendMessage({ attachments: [...] })`.

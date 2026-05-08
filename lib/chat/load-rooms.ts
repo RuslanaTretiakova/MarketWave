@@ -37,7 +37,7 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
   const [roomsResult, messagesResult, readsResult, participantsResult] = await Promise.all([
     adminClient
       .from('chat_rooms')
-      .select('id, kind, title, order_id, updated_at, order:orders(site_domain)')
+      .select('id, kind, channel, title, order_id, updated_at, order:orders(site_domain)')
       .in('id', roomIds),
     adminClient
       .from('chat_messages')
@@ -58,6 +58,7 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
   type RoomRow = {
     id: string
     kind: Database['public']['Enums']['chat_room_kind']
+    channel: Database['public']['Enums']['chat_channel_type']
     title: string | null
     order_id: string | null
     updated_at: string
@@ -126,7 +127,12 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
     return {
       id: r.id,
       kind: r.kind,
-      channel: inferClientChatChannel({ kind: r.kind, title: r.title, orderId: r.order_id }),
+      channel: inferClientChatChannel({
+        channel: r.channel,
+        kind: r.kind,
+        title: r.title,
+        orderId: r.order_id,
+      }),
       title: r.title,
       order_id: r.order_id,
       order_site_domain: r.order?.site_domain ?? null,
