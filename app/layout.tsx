@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Fraunces, Inter, Roboto_Mono } from 'next/font/google'
-import Script from 'next/script'
 
 import { metadataKeywords, SITE_NAME, SITE_TAGLINE } from '@/lib/brand'
 
@@ -8,8 +7,6 @@ import { AuthSessionHashHandler } from '@/components/auth/auth-session-hash-hand
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
-
-/** Pre-hydration scripts are loaded from static files in `public/`. */
 
 const inter = Inter({
   variable: '--font-inter',
@@ -47,18 +44,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <Script
-          suppressHydrationWarning
-          src="/supabase-recovery-hash-redirect.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          suppressHydrationWarning
-          src="/strip-extension-dom-markers.js"
-          strategy="beforeInteractive"
-        />
-      </head>
+      <head></head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthSessionHashHandler />
         {children}
