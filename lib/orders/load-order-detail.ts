@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { adminClient } from '@/lib/supabase/admin'
+import { loadOrderContent, type OrderContentBundle } from '@/lib/orders/load-order-content'
 import type { Database } from '@/lib/supabase/types'
 
 export type UserRole = Database['public']['Enums']['user_role']
@@ -34,6 +35,10 @@ export type OrderDetail = {
   status: OrderStatus
   price: number
   publish_date: string | null
+  anchor_text: string | null
+  target_url: string | null
+  client_notes: string | null
+  published_url: string | null
   created_at: string
   updated_at: string
   site_domain: string
@@ -50,6 +55,7 @@ export type OrderDetail = {
   site_organic_traffic_count: number | null
   invoice: OrderInvoice | null
   change_requests: OrderChangeRequest[]
+  content: OrderContentBundle
   client_name: string | null
   client_email: string | null
   copywriter_name: string | null
@@ -81,6 +87,9 @@ export async function loadOrderDetail(
     .select('id, comment, status, user_id, created_at, updated_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: false })
+
+  // Load article content (RLS-scoped per role: drafts hidden from client)
+  const content = await loadOrderContent(supabase, orderId)
 
   let client_name: string | null = null
   let client_email: string | null = null
@@ -114,6 +123,10 @@ export async function loadOrderDetail(
     status: order.status,
     price: order.price,
     publish_date: order.publish_date,
+    anchor_text: order.anchor_text,
+    target_url: order.target_url,
+    client_notes: order.client_notes,
+    published_url: order.published_url,
     created_at: order.created_at,
     updated_at: order.updated_at,
     site_domain: order.site_domain,
@@ -130,6 +143,7 @@ export async function loadOrderDetail(
     site_organic_traffic_count: order.site_organic_traffic_count,
     invoice: invoiceData ?? null,
     change_requests: (changeRequestsData ?? []) as OrderChangeRequest[],
+    content,
     client_name,
     client_email,
     copywriter_name,

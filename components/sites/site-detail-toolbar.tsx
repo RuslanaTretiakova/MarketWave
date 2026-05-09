@@ -2,26 +2,13 @@
 
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { MoreHorizontal, ShoppingCart } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SiteChangeStatusDialog } from '@/components/sites/site-change-status-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  siteAdminTransitionMenuLabel,
-  siteAdminTransitions,
-} from '@/lib/sites/admin-site-transitions'
+import { siteAdminTransitions } from '@/lib/sites/admin-site-transitions'
 import { addSiteToCart } from '@/lib/sites/site-actions'
-import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -44,9 +31,7 @@ export function SiteDetailToolbar({
   sourcerId: string | null
 }) {
   const [pending, startTransition] = useTransition()
-  const [statusDialog, setStatusDialog] = useState<{
-    transition: SiteAdminTransition | null
-  } | null>(null)
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
   const canEdit =
     role === 'admin' || (role === 'sourcer' && sourcerId === userId && status !== 'archived')
@@ -60,12 +45,8 @@ export function SiteDetailToolbar({
         toast.error(res.message)
         return
       }
-      toast.success(`${domain} added to cart.`)
+      toast.success(`Added to cart: ${domain}`)
     })
-  }
-
-  function openStatus(transition: SiteAdminTransition) {
-    setStatusDialog({ transition })
   }
 
   return (
@@ -74,11 +55,9 @@ export function SiteDetailToolbar({
         siteId={siteId}
         domainLabel={domain}
         currentStatus={status}
-        open={statusDialog !== null && statusDialog.transition !== null}
-        onOpenChange={(open) => {
-          if (!open) setStatusDialog(null)
-        }}
-        transition={statusDialog?.transition ?? null}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        transitions={siteAdminTransitions(status)}
       />
 
       <div className="gap-block mb-layout flex flex-wrap items-center">
@@ -116,32 +95,15 @@ export function SiteDetailToolbar({
             Edit
           </Link>
         ) : null}
-        {role === 'admin' ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              type="button"
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'default' }),
-                'h-10 min-h-10 justify-center gap-2 rounded-full'
-              )}
-            >
-              <MoreHorizontal className="size-4" aria-hidden />
-              Change status
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-48">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                  Admin actions
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {siteAdminTransitions(status).map((t) => (
-                  <DropdownMenuItem key={t} onSelect={() => openStatus(t)}>
-                    {siteAdminTransitionMenuLabel(status, t)}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {role === 'admin' || role === 'manager' ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 min-h-10 justify-center rounded-full"
+            onClick={() => setStatusDialogOpen(true)}
+          >
+            Change status
+          </Button>
         ) : null}
       </div>
     </>

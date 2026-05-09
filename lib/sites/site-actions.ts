@@ -103,6 +103,7 @@ export type SiteListingPayload = {
   keywords_relevance?: string | null
   organic_keywords_count: number
   organic_traffic_count: number
+  top_countries?: string | null
   countriesCsv: string
   languagesCsv: string
   sourcer_id?: string | null
@@ -194,6 +195,7 @@ export async function createSite(
     keywords_relevance: input.keywords_relevance?.trim() || null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
+    top_countries: input.top_countries?.trim() || null,
   }
 
   const { data: inserted, error: insErr } = await supabase
@@ -341,6 +343,7 @@ export async function updateSite(
     keywords_relevance: input.keywords_relevance?.trim() || null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
+    top_countries: input.top_countries?.trim() || null,
   }
 
   if (role === 'admin') {
@@ -358,9 +361,9 @@ export async function updateSite(
 
     patch.sourcer_id = targetSourcerId
 
-    // If admin reassigns sourcer, reset status to pending_review and clear audit fields
+    // If admin reassigns sourcer, reset status to pending and clear audit fields
     if (targetSourcerId !== existing.sourcer_id) {
-      patch.status = 'pending_review'
+      patch.status = 'pending'
       patch.needs_changes_by = null
       patch.needs_changes_at = null
       patch.approved_by = null
@@ -402,7 +405,7 @@ export async function updateSite(
   return { ok: true }
 }
 
-export type SiteAdminTransition = 'needs_changes' | 'approve' | 'activate' | 'archive'
+export type SiteAdminTransition = 'needs_changes' | 'approve' | 'archive' | 'unarchive'
 
 export async function changeSiteStatus(params: {
   siteId: string
@@ -412,10 +415,10 @@ export async function changeSiteStatus(params: {
   if ('error' in ctx) {
     return { ok: false, message: ctx.error }
   }
-  const { supabase, userId, role } = ctx
+  const { userId, role } = ctx
 
-  if (role !== 'admin') {
-    return { ok: false, message: 'Only an admin can change site status.' }
+  if (role !== 'admin' && role !== 'manager') {
+    return { ok: false, message: 'Only admin or manager can change site status.' }
   }
 
   const nowIso = new Date().toISOString()
@@ -434,16 +437,11 @@ export async function changeSiteStatus(params: {
       break
     case 'approve':
       patch = {
-        status: 'approved',
+        status: 'active',
         approved_by: userId,
         approved_at: nowIso,
         needs_changes_by: null,
         needs_changes_at: null,
-      }
-      break
-    case 'activate':
-      patch = {
-        status: 'active',
       }
       break
     case 'archive':
@@ -451,11 +449,18 @@ export async function changeSiteStatus(params: {
         status: 'archived',
       }
       break
+    case 'unarchive':
+      // DB enforces archived → active
+      patch = {
+        status: 'active',
+      }
+      break
     default:
       return { ok: false, message: 'Unknown transition.' }
   }
 
-  const { error } = await supabase.from('sites').update(patch).eq('id', params.siteId)
+  // Use service role for this mutation (RLS may block manager updates otherwise).
+  const { error } = await adminClient.from('sites').update(patch).eq('id', params.siteId)
 
   if (error) {
     await logSiteError({

@@ -9,6 +9,8 @@ export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   canceled: 'Canceled',
 }
 
+export const INVOICE_STATUSES_ORDERED: InvoiceStatus[] = ['pending', 'overdue', 'paid', 'canceled']
+
 export const INVOICE_STATUS_CHIP: Record<InvoiceStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   paid: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',

@@ -8,7 +8,11 @@ import { toast } from 'sonner'
 import { CartItemRow } from '@/components/cart/cart-item-row'
 import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { removeCartItem, updateCartItemPublishDate } from '@/lib/cart/cart-actions'
+import {
+  removeCartItem,
+  updateCartItemDetails,
+  updateCartItemPublishDate,
+} from '@/lib/cart/cart-actions'
 import type { CartItemRow as CartItemRowType } from '@/lib/cart/load-cart'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +32,21 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
   function handlePublishDateChange(id: string, date: string | null) {
     startTransition(async () => {
       const res = await updateCartItemPublishDate(id, date)
+      if (!res.ok) toast.error(res.message)
+    })
+  }
+
+  function handleDetailsChange(
+    id: string,
+    details: {
+      publishMonth?: string | null
+      anchorText?: string | null
+      targetUrl?: string | null
+      clientNotes?: string | null
+    }
+  ) {
+    startTransition(async () => {
+      const res = await updateCartItemDetails({ itemId: id, ...details })
       if (!res.ok) toast.error(res.message)
     })
   }
@@ -58,6 +77,7 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
             item={item}
             onRemove={handleRemove}
             onPublishDateChange={handlePublishDateChange}
+            onDetailsChange={handleDetailsChange}
             pending={pending}
           />
         ))}

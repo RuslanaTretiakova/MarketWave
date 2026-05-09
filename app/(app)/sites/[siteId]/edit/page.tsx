@@ -1,11 +1,8 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SiteListingForm } from '@/components/sites/site-listing-form'
 import type { SiteFormSourcerOption } from '@/components/sites/site-listing-form'
-import { buttonVariants } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
-import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,15 +101,6 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
             Saving updates listing data. Sourcer edits reset review status to Pending.
           </p>
         </div>
-        <Link
-          href={`/sites/${siteId}`}
-          className={cn(
-            buttonVariants({ variant: 'outline', size: 'default' }),
-            'h-10 min-h-10 shrink-0 justify-center rounded-full'
-          )}
-        >
-          View site
-        </Link>
       </div>
 
       <SiteListingForm
@@ -134,6 +122,7 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
           keywords_relevance: site.keywords_relevance ?? '',
           organic_keywords_count: site.organic_keywords_count ?? 0,
           organic_traffic_count: site.organic_traffic_count ?? 0,
+          top_countries: site.top_countries ?? '',
           countriesCsv,
           languagesCsv,
           sourcer_id: site.sourcer_id ?? '',

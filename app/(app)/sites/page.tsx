@@ -15,7 +15,7 @@ export const metadata = {
 
 type SiteStatus = Database['public']['Enums']['site_status']
 type LinkType = Database['public']['Enums']['link_type']
-const SUPPORTED_STATUS_FILTERS: SiteStatus[] = ['pending_review', 'active', 'inactive']
+const SUPPORTED_STATUS_FILTERS: SiteStatus[] = ['pending', 'needs_changes', 'active', 'archived']
 
 type SearchParams = {
   page?: string | string[]
@@ -82,13 +82,6 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
   }
 
   const status = parseSiteStatus(statusRaw?.trim())
-  // #region agent log
-  console.log('[debug:sites-page] parsed-status', {
-    rawStatus: statusRaw?.trim() ?? null,
-    parsedStatus: status ?? null,
-    allowedStatuses: SUPPORTED_STATUS_FILTERS,
-  })
-  // #endregion
   const country = countryRaw?.trim() || undefined
   const language = languageRaw?.trim() || undefined
   const linkType = parseLinkType(linkTypeRaw?.trim())

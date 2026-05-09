@@ -50,7 +50,11 @@ import {
 import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
 import { addSiteToCart } from '@/lib/sites/site-actions'
 import type { SiteAdminTransition } from '@/lib/sites/site-actions'
-import { SITE_STATUS_LABEL, SITE_STATUSES_ORDERED } from '@/lib/sites/site-status-labels'
+import {
+  SITE_STATUS_CHIP,
+  SITE_STATUS_LABEL,
+  SITE_STATUSES_ORDERED,
+} from '@/lib/sites/site-status-labels'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -73,21 +77,6 @@ const SITE_ROW_CELL_MUTED =
 
 const SITE_ROW_CELL_ACTIONS =
   'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/site-row:bg-muted/50 group-has-[[aria-expanded=true]]/site-row:bg-muted/50'
-
-const SITE_STATUS_CHIP: Record<Database['public']['Enums']['site_status'], string> = {
-  active: 'bg-emerald-500/12 text-emerald-900 dark:text-emerald-100',
-  archived: 'bg-muted text-muted-foreground',
-  approved: 'bg-sky-500/12 text-sky-900 dark:text-sky-100',
-  inactive: 'bg-muted text-muted-foreground',
-  needs_changes: 'bg-rose-500/12 text-rose-900 dark:text-rose-100',
-  pending_review: 'bg-amber-500/12 text-amber-900 dark:text-amber-100',
-}
-
-const SUPPORTED_STATUS_FILTERS: Database['public']['Enums']['site_status'][] = [
-  'pending_review',
-  'active',
-  'inactive',
-]
 
 function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
   return (
@@ -189,9 +178,7 @@ export function SitesCatalog({
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
-    return SITE_STATUSES_ORDERED.filter(
-      (s) => SUPPORTED_STATUS_FILTERS.includes(s) && s !== 'inactive'
-    )
+    return SITE_STATUSES_ORDERED
   }, [role])
   const categoryFilterOptions = useMemo(
     () => [
@@ -274,7 +261,7 @@ export function SitesCatalog({
         toast.error(res.message)
         return
       }
-      toast.success(`${domain} added to cart.`)
+      toast.success(`Added to cart: ${domain}`)
     })
   }, [])
 
@@ -295,7 +282,7 @@ export function SitesCatalog({
 
   const canCreate = role === 'sourcer'
   const canUseCart = role === 'client'
-  const canAdminStatus = role === 'admin'
+  const canAdminStatus = role === 'admin' || role === 'manager'
 
   function openStatus(
     siteId: string,
@@ -398,22 +385,37 @@ export function SitesCatalog({
               />
             </form>
             {role !== 'client' ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 min-h-10 rounded-full px-4"
-                onClick={() => setFiltersOpen((v) => !v)}
-                aria-expanded={filtersOpen}
-                aria-controls="sites-catalog-filters"
-              >
-                <Filter className="size-4" aria-hidden />
-                Filters
-                {filtersOpen ? (
-                  <ChevronUp className="size-4 opacity-70" aria-hidden />
-                ) : (
-                  <ChevronDown className="size-4 opacity-70" aria-hidden />
-                )}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 min-h-10 rounded-full px-4"
+                  onClick={() => setFiltersOpen((v) => !v)}
+                  aria-expanded={filtersOpen}
+                  aria-controls="sites-catalog-filters"
+                >
+                  <Filter className="size-4" aria-hidden />
+                  Filters
+                  {filtersOpen ? (
+                    <ChevronUp className="size-4 opacity-70" aria-hidden />
+                  ) : (
+                    <ChevronDown className="size-4 opacity-70" aria-hidden />
+                  )}
+                </Button>
+                {filtersActive ? (
+                  <Link
+                    href="/sites"
+                    scroll={false}
+                    className={cn(
+                      buttonVariants({ variant: 'outline', size: 'default' }),
+                      'h-10 min-h-10 rounded-full px-4'
+                    )}
+                  >
+                    <RotateCcw className="size-4" aria-hidden />
+                    Clear filters
+                  </Link>
+                ) : null}
+              </>
             ) : null}
           </div>
         </div>
@@ -703,17 +705,17 @@ export function SitesCatalog({
                                     <DropdownMenuContent align="end" className="min-w-48">
                                       <DropdownMenuGroup>
                                         <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                          Change status
+                                          Review actions
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         {siteAdminTransitions(row.status).map((t) => (
                                           <DropdownMenuItem
                                             key={t}
-                                            onSelect={() =>
+                                            onClick={() =>
                                               openStatus(row.id, row.domain, row.status, t)
                                             }
                                           >
-                                            {siteAdminTransitionMenuLabel(row.status, t)}
+                                            {siteAdminTransitionMenuLabel(t)}
                                           </DropdownMenuItem>
                                         ))}
                                       </DropdownMenuGroup>
@@ -815,16 +817,16 @@ export function SitesCatalog({
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                      Change status
+                                      Review actions
                                     </DropdownMenuLabel>
                                     {siteAdminTransitions(row.status).map((t) => (
                                       <DropdownMenuItem
                                         key={t}
-                                        onSelect={() =>
+                                        onClick={() =>
                                           openStatus(row.id, row.domain, row.status, t)
                                         }
                                       >
-                                        {siteAdminTransitionMenuLabel(row.status, t)}
+                                        {siteAdminTransitionMenuLabel(t)}
                                       </DropdownMenuItem>
                                     ))}
                                   </>

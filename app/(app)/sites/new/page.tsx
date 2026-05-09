@@ -1,7 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { SiteListingForm } from '@/components/sites/site-listing-form'
 import { createClient } from '@/lib/supabase/server'
 
@@ -40,22 +47,17 @@ export default async function NewSitePage() {
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <div className="gap-block flex flex-col items-start">
-        <nav aria-label="Breadcrumb" className="text-muted-foreground text-xs">
-          <ol className="gap-inset flex items-center">
-            <li>
-              <Link
-                href="/sites"
-                className="hover:text-foreground transition-colors hover:underline"
-              >
-                Sites
-              </Link>
-            </li>
-            <li aria-hidden>
-              <ChevronRight className="size-3.5 opacity-70" />
-            </li>
-            <li className="text-foreground font-medium">Create site</li>
-          </ol>
-        </nav>
+        <Breadcrumb>
+          <BreadcrumbList className="text-xs">
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href="/sites" />}>Sites</BreadcrumbLink>
+              <BreadcrumbSeparator />
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Create site</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div className="space-y-inset min-w-0">
           <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
             Create site

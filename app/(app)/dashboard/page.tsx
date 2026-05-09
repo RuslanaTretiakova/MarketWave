@@ -1,9 +1,13 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
+import { ManagerDashboard } from '@/components/dashboard/manager-dashboard'
+import { SourcerDashboard } from '@/components/dashboard/sourcer-dashboard'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { SITE_NAME } from '@/lib/brand'
+import { loadManagerDashboard } from '@/lib/dashboard/load-manager-dashboard'
+import { loadSourcerDashboard } from '@/lib/dashboard/load-sourcer-dashboard'
 import { loadDashboardStats } from '@/lib/dashboard/load-dashboard-stats'
 import { createClient } from '@/lib/supabase/server'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
@@ -78,6 +82,16 @@ function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): 
           value: stats.pendingInvoices,
           hint: 'Invoices awaiting payment confirmation.',
         },
+        {
+          title: 'Paid revenue',
+          value: `$${stats.totalRevenuePaid.toFixed(2)}`,
+          hint: `${stats.paidInvoices} paid invoices · ${stats.publishedOrders} published orders.`,
+        },
+        {
+          title: 'Active conversations',
+          value: stats.activeChatRooms,
+          hint: 'Rooms currently available across teams and clients.',
+        },
       ]
     case 'manager':
       return [
@@ -105,7 +119,22 @@ function buildSnapshots(stats: Awaited<ReturnType<typeof loadDashboardStats>>): 
           value: stats.pendingContentSend,
           hint: 'In-progress orders waiting for your content.',
         },
+        {
+          title: 'Needs revision',
+          value: stats.needsRevisionOrders,
+          hint: 'Client requested changes — edit and re-submit.',
+        },
+        {
+          title: 'Sent for review',
+          value: stats.contentSentOrders,
+          hint: 'Drafts submitted and currently waiting for client review.',
+        },
         { title: 'Completed', value: stats.completedOrders, hint: 'Orders you have completed.' },
+        {
+          title: 'Approval rate',
+          value: stats.approvalRatePercent === null ? '—' : `${stats.approvalRatePercent}%`,
+          hint: 'Completed vs sent-for-review outcomes.',
+        },
       ]
     case 'sourcer':
       return [
@@ -151,6 +180,27 @@ export default async function DashboardPage() {
   )
 
   const supabase = await createClient()
+
+  if (role === 'sourcer') {
+    const sourcerData = await loadSourcerDashboard(supabase, user.id)
+    return (
+      <SourcerDashboard
+        data={sourcerData}
+        greetingName={profile?.full_name ?? user.user_metadata?.full_name ?? null}
+      />
+    )
+  }
+
+  if (role === 'manager') {
+    const managerData = await loadManagerDashboard(supabase)
+    return (
+      <ManagerDashboard
+        data={managerData}
+        greetingName={profile?.full_name ?? user.user_metadata?.full_name ?? null}
+      />
+    )
+  }
+
   const stats = await loadDashboardStats(supabase, role, user.id)
   const snapshots = buildSnapshots(stats)
 

@@ -43,7 +43,10 @@ export async function assignCopywriter(
 
   const { error } = await adminClient
     .from('orders')
-    .update({ copywriter_id: copywriterId })
+    .update({
+      copywriter_id: copywriterId,
+      ...(copywriterId ? { status: 'in_progress' } : {}),
+    })
     .eq('id', orderId)
 
   if (error) return { ok: false, message: error.message ?? 'Could not assign copywriter.' }

@@ -1,11 +1,11 @@
 'use client'
-
-import Link from 'next/link'
 import { ClipboardList } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 
+import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Card } from '@/components/ui/card'
+import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import type { OrderListRow, OrderStatus, UserRole } from '@/lib/orders/load-orders'
 import {
@@ -17,11 +17,12 @@ import { cn } from '@/lib/utils'
 
 function buildHref(
   pathname: string,
-  params: { page?: number; q?: string; status?: string }
+  params: { page?: number; q?: string; status?: string; copywriter?: string }
 ): string {
   const sp = new URLSearchParams()
   if (params.q) sp.set('q', params.q)
   if (params.status) sp.set('status', params.status)
+  if (params.copywriter) sp.set('copywriter', params.copywriter)
   if (params.page && params.page > 1) sp.set('page', String(params.page))
   const qs = sp.toString()
   return qs ? `${pathname}?${qs}` : pathname
@@ -29,33 +30,47 @@ function buildHref(
 
 export function OrdersList({
   role,
+  userId,
   rows,
   totalCount,
   page,
   q,
   status,
+  copywriterId,
+  copywriterOptions,
 }: {
   role: UserRole
+  userId: string
   rows: OrderListRow[]
   totalCount: number
   page: number
   q: string
   status?: OrderStatus
+  copywriterId?: string
+  copywriterOptions?: CopywriterOption[]
 }) {
   const pathname = usePathname()
   const router = useRouter()
 
   const showClientColumn = role === 'admin' || role === 'manager'
+  const showCopywriterFilter =
+    (role === 'admin' || role === 'manager') && (copywriterOptions?.length ?? 0) > 0
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const query = (fd.get('q') as string)?.trim() ?? ''
-    router.push(buildHref(pathname, { q: query, status }))
+    router.push(buildHref(pathname, { q: query, status, copywriter: copywriterId }))
   }
 
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    router.push(buildHref(pathname, { q, status: e.target.value || undefined }))
+    router.push(
+      buildHref(pathname, { q, status: e.target.value || undefined, copywriter: copywriterId })
+    )
+  }
+
+  function handleCopywriterChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    router.push(buildHref(pathname, { q, status, copywriter: e.target.value || undefined }))
   }
 
   return (
@@ -67,8 +82,8 @@ export function OrdersList({
         </p>
       </div>
 
-      <div className="gap-block flex flex-col sm:flex-row">
-        <form onSubmit={handleSearch} className="gap-inset flex flex-1">
+      <div className="gap-block flex flex-col sm:flex-row sm:flex-wrap">
+        <form onSubmit={handleSearch} className="gap-inset flex min-w-[220px] flex-1">
           <input
             name="q"
             type="search"
@@ -95,6 +110,20 @@ export function OrdersList({
             </option>
           ))}
         </select>
+        {showCopywriterFilter && (
+          <select
+            value={copywriterId ?? ''}
+            onChange={handleCopywriterChange}
+            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+          >
+            <option value="">All copywriters</option>
+            {(copywriterOptions ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.full_name ?? c.email ?? c.id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -103,7 +132,9 @@ export function OrdersList({
           <div className="space-y-inset">
             <p className="text-foreground font-semibold">No orders found</p>
             <p className="text-muted-foreground text-sm">
-              {q || status ? 'Try adjusting your filters.' : 'Orders will appear here once placed.'}
+              {q || status || copywriterId
+                ? 'Try adjusting your filters.'
+                : 'Orders will appear here once placed.'}
             </p>
           </div>
         </Card>
@@ -133,6 +164,9 @@ export function OrdersList({
                   <th className="text-muted-foreground px-section py-block hidden text-left font-medium sm:table-cell">
                     Created
                   </th>
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -142,12 +176,7 @@ export function OrdersList({
                     className="border-border hover:bg-muted/30 border-b last:border-b-0"
                   >
                     <td className="px-section py-block">
-                      <Link
-                        href={`/orders/${row.id}`}
-                        className="text-foreground font-medium hover:underline"
-                      >
-                        {row.site_domain}
-                      </Link>
+                      <p className="text-foreground font-medium">{row.site_domain}</p>
                       <p className="text-muted-foreground text-xs">{row.site_category}</p>
                     </td>
                     {showClientColumn && (
@@ -174,6 +203,20 @@ export function OrdersList({
                     <td className="text-muted-foreground px-section py-block hidden sm:table-cell">
                       {new Date(row.created_at).toLocaleDateString()}
                     </td>
+                    <td className="px-section py-block text-right">
+                      <OrderActionsMenu
+                        context={{
+                          role,
+                          status: row.status,
+                          userId,
+                          orderUserId: row.user_id,
+                          copywriterId: row.copywriter_id,
+                        }}
+                        orderId={row.id}
+                        detailHref={`/orders/${row.id}`}
+                        copywriterOptions={copywriterOptions}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -183,7 +226,7 @@ export function OrdersList({
             page={page}
             pageSize={SETTINGS_TABLE_PAGE_SIZE}
             totalCount={totalCount}
-            buildHref={(p) => buildHref(pathname, { q, status, page: p })}
+            buildHref={(p) => buildHref(pathname, { q, status, copywriter: copywriterId, page: p })}
           />
         </Card>
       )}

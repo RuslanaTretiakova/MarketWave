@@ -510,4 +510,86 @@
     flex-direction: column;
     justify-content: center;
   }
+
+  /* ─── Article content (TipTap editor + read-only viewer) ───────────────────── */
+  .article-content {
+    color: hsl(var(--foreground));
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+  .article-content > * + * {
+    margin-top: 0.85em;
+  }
+  .article-content h2 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 1.5em;
+  }
+  .article-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-top: 1.2em;
+  }
+  .article-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1em;
+  }
+  .article-content p {
+    margin: 0;
+  }
+  .article-content ul,
+  .article-content ol {
+    padding-left: 1.5rem;
+  }
+  .article-content ul {
+    list-style: disc;
+  }
+  .article-content ol {
+    list-style: decimal;
+  }
+  .article-content li + li {
+    margin-top: 0.25em;
+  }
+  .article-content a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .article-content blockquote {
+    border-left: 3px solid hsl(var(--border));
+    padding-left: 1rem;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+  .article-content code {
+    background-color: hsl(var(--muted));
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+  .article-content pre {
+    background-color: hsl(var(--muted));
+    border-radius: 0.5rem;
+    padding: 0.85rem 1rem;
+    overflow-x: auto;
+  }
+  .article-content pre code {
+    background: transparent;
+    padding: 0;
+  }
+  .article-content strong {
+    font-weight: 600;
+  }
+  /* TipTap empty placeholder hint */
+  .article-content .ProseMirror p.is-editor-empty:first-child::before {
+    color: hsl(var(--muted-foreground));
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
 }

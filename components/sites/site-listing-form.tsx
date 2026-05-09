@@ -32,7 +32,7 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
       <h3 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {title}
       </h3>
-      {children}
+      <div className="pt-inset">{children}</div>
     </section>
   )
 }
@@ -69,6 +69,7 @@ export function SiteListingForm({
       keywords_relevance: initial?.keywords_relevance ?? '',
       organic_keywords_count: initial?.organic_keywords_count ?? 0,
       organic_traffic_count: initial?.organic_traffic_count ?? 0,
+      top_countries: initial?.top_countries ?? '',
       countriesCsv: initial?.countriesCsv ?? '',
       languagesCsv: initial?.languagesCsv ?? '',
       sourcer_id: initial?.sourcer_id ?? '',
@@ -108,6 +109,7 @@ export function SiteListingForm({
       keywords_relevance: form.keywords_relevance || null,
       organic_keywords_count: Number(form.organic_keywords_count),
       organic_traffic_count: Number(form.organic_traffic_count),
+      top_countries: form.top_countries || null,
       countriesCsv: form.countriesCsv,
       languagesCsv: form.languagesCsv,
       sourcer_id:
@@ -126,7 +128,7 @@ export function SiteListingForm({
           return
         }
         toast.success('Site created.')
-        router.push(`/sites/${res.siteId}`)
+        router.push('/sites')
         router.refresh()
         return
       }
@@ -286,6 +288,15 @@ export function SiteListingForm({
               onChange={(e) => setForm((f) => ({ ...f, languagesCsv: e.target.value }))}
               placeholder="en, es"
               required
+            />
+          </div>
+          <div className="gap-inset flex flex-col lg:col-span-2">
+            <Label htmlFor="top_countries">Top countries</Label>
+            <FormControlInput
+              id="top_countries"
+              value={form.top_countries}
+              onChange={(e) => setForm((f) => ({ ...f, top_countries: e.target.value }))}
+              placeholder="Primary target countries, e.g. US, GB"
             />
           </div>
         </div>

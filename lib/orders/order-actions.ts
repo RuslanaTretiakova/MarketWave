@@ -8,6 +8,7 @@ import type { Database } from '@/lib/supabase/types'
 
 type UserRole = Database['public']['Enums']['user_role']
 type OrderStatus = Database['public']['Enums']['order_status']
+type OrderUpdate = Database['public']['Tables']['orders']['Update']
 
 async function getSessionContext(): Promise<
   | { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: UserRole }
@@ -64,35 +65,6 @@ export async function startOrder(
   }
 
   const res = await updateOrderStatus(orderId, 'in_progress')
-  if (res.ok) revalidateOrder(orderId)
-  return res
-}
-
-export async function markContentSent(
-  orderId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const ctx = await getSessionContext()
-  if ('error' in ctx) return { ok: false, message: ctx.error }
-  if (ctx.role !== 'copywriter') {
-    return { ok: false, message: 'Only copywriters can mark content as sent.' }
-  }
-
-  // Verify this copywriter is assigned to the order
-  const { data: order, error: loadErr } = await adminClient
-    .from('orders')
-    .select('id, copywriter_id, status')
-    .eq('id', orderId)
-    .maybeSingle()
-
-  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
-  if (order.copywriter_id !== ctx.userId) {
-    return { ok: false, message: 'You are not assigned to this order.' }
-  }
-  if (order.status !== 'in_progress') {
-    return { ok: false, message: 'Order must be in progress to mark content sent.' }
-  }
-
-  const res = await updateOrderStatus(orderId, 'content_sent')
   if (res.ok) revalidateOrder(orderId)
   return res
 }
@@ -189,8 +161,27 @@ export async function resumeOrder(
   return res
 }
 
+function normalizePublishedUrl(
+  input: string
+): { ok: true; url: string } | { ok: false; message: string } {
+  const trimmed = input.trim()
+  if (!trimmed) return { ok: false, message: 'A published URL is required.' }
+  if (trimmed.length > 2048) return { ok: false, message: 'URL must be 2048 characters or fewer.' }
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    return { ok: false, message: 'Enter a valid URL including https://' }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, message: 'URL must use http or https.' }
+  }
+  return { ok: true, url: parsed.toString() }
+}
+
 export async function markPublished(
-  orderId: string
+  orderId: string,
+  publishedUrl: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getSessionContext()
   if ('error' in ctx) return { ok: false, message: ctx.error }
@@ -198,7 +189,10 @@ export async function markPublished(
     return { ok: false, message: 'Only admins and managers can mark orders as published.' }
   }
 
-  const res = await updateOrderStatus(orderId, 'published')
+  const urlCheck = normalizePublishedUrl(publishedUrl)
+  if (!urlCheck.ok) return urlCheck
+
+  const res = await updateOrderStatus(orderId, 'published', { published_url: urlCheck.url })
   if (res.ok) revalidateOrder(orderId)
   return res
 }
@@ -229,5 +223,131 @@ export async function cancelOrder(
   }
 
   revalidateOrder(orderId)
+  return { ok: true }
+}
+
+function normalizeOptionalText(value: string | null | undefined, maxLen: number): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return trimmed.slice(0, maxLen)
+}
+
+function normalizeOptionalUrl(
+  input: string | null | undefined
+): { ok: true; url: string | null } | { ok: false; message: string } {
+  if (input === null || input === undefined) return { ok: true, url: null }
+  const trimmed = input.trim()
+  if (!trimmed) return { ok: true, url: null }
+  if (trimmed.length > 2048) return { ok: false, message: 'URL must be 2048 characters or fewer.' }
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    return { ok: false, message: 'Enter a valid URL including https://' }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, message: 'URL must use http or https.' }
+  }
+  return { ok: true, url: parsed.toString() }
+}
+
+export async function updateOrderFields(input: {
+  orderId: string
+  publishDate?: string | null
+  anchorText?: string | null
+  targetUrl?: string | null
+  clientNotes?: string | null
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+
+  const { data: order, error: loadErr } = await adminClient
+    .from('orders')
+    .select('id, user_id, status')
+    .eq('id', input.orderId)
+    .maybeSingle()
+  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
+
+  const isOwnClientNew =
+    ctx.role === 'client' && order.user_id === ctx.userId && order.status === 'new'
+  const isAdmin = ctx.role === 'admin'
+  if (!isOwnClientNew && !isAdmin) {
+    return { ok: false, message: 'You cannot edit this order.' }
+  }
+
+  if (input.publishDate !== undefined && input.publishDate !== null && input.publishDate !== '') {
+    const dateStr = input.publishDate.trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return { ok: false, message: 'Publish date must be a valid date (YYYY-MM-DD).' }
+    }
+  }
+
+  const url = normalizeOptionalUrl(input.targetUrl)
+  if (!url.ok) return url
+
+  const patch: OrderUpdate = {}
+  if (input.publishDate !== undefined) {
+    patch.publish_date = input.publishDate ? input.publishDate.trim() : null
+  }
+  if (input.anchorText !== undefined)
+    patch.anchor_text = normalizeOptionalText(input.anchorText, 500)
+  if (input.targetUrl !== undefined) patch.target_url = url.url
+  if (input.clientNotes !== undefined)
+    patch.client_notes = normalizeOptionalText(input.clientNotes, 4000)
+
+  if (Object.keys(patch).length === 0) {
+    return { ok: false, message: 'Nothing to update.' }
+  }
+
+  const { error } = await adminClient.from('orders').update(patch).eq('id', input.orderId)
+  if (error) return { ok: false, message: error.message ?? 'Could not update order.' }
+
+  revalidateOrder(input.orderId)
+  return { ok: true }
+}
+
+export async function overrideOrderStatus(
+  orderId: string,
+  status: OrderStatus
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+  if (ctx.role !== 'admin') {
+    return { ok: false, message: 'Only admins can override order status.' }
+  }
+
+  const { supabase } = ctx
+  const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+  if (error)
+    return { ok: false, message: mapPostgresError(error.message ?? 'Could not update order.') }
+
+  revalidateOrder(orderId)
+  return { ok: true }
+}
+
+export async function deleteOrder(
+  orderId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const ctx = await getSessionContext()
+  if ('error' in ctx) return { ok: false, message: ctx.error }
+  if (ctx.role !== 'admin') {
+    return { ok: false, message: 'Only admins can delete orders.' }
+  }
+
+  const { data: order, error: loadErr } = await adminClient
+    .from('orders')
+    .select('id, status')
+    .eq('id', orderId)
+    .maybeSingle()
+  if (loadErr || !order) return { ok: false, message: 'Order not found.' }
+  if (order.status !== 'new' && order.status !== 'canceled') {
+    return { ok: false, message: 'Only new or canceled orders can be deleted.' }
+  }
+
+  const { error } = await adminClient.from('orders').delete().eq('id', orderId)
+  if (error) return { ok: false, message: error.message ?? 'Could not delete order.' }
+
+  revalidatePath('/orders')
   return { ok: true }
 }

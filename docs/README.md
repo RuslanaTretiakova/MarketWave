@@ -12,6 +12,7 @@ Start with **[docs/ai/AGENTS.md](ai/AGENTS.md)** for stack pins, Supabase client
 | [skills.md](skills.md)                         | Index for **`docs/ai/claude/skills/`** (Claude library; Cursor rules use same paths) + repo overrides |
 | [planning-checklist.md](planning-checklist.md) | Checklist before features/refactors                                                                   |
 | [auth.md](auth.md)                             | Auth token lifecycle, RBAC roles, RLS policy matrix, and auth error logging                           |
+| [client-role.md](client-role.md)               | Client responsibilities, permissions, workflow boundaries, invoices, and chat channels                |
 | [audit-backlog.md](audit-backlog.md)           | Prioritized refactors from audits (updated as you fix items)                                          |
 
 Claude skill library: [`ai/claude/skills/`](ai/claude/skills/) (per-skill `SKILL.md` files).

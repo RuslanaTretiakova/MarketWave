@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { AppBreadcrumbs } from '@/components/app-shell/app-breadcrumbs'
 import { AppHeader } from '@/components/app-shell/app-header'
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
@@ -10,9 +11,22 @@ import { getAppNavItems } from '@/lib/app-nav'
 
 const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
 
-export function AppShell({ user, children }: { user: AppShellUser; children: ReactNode }) {
+export function AppShell({
+  user,
+  chatUnreadCount = 0,
+  children,
+}: {
+  user: AppShellUser
+  chatUnreadCount?: number
+  children: ReactNode
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const navItems = useMemo(() => getAppNavItems(user.role), [user.role])
+  const navBadges = useMemo<Record<string, number>>(() => {
+    const map: Record<string, number> = {}
+    if (chatUnreadCount > 0) map['/chats'] = chatUnreadCount
+    return map
+  }, [chatUnreadCount])
 
   useEffect(() => {
     let cancelled = false
@@ -45,15 +59,24 @@ export function AppShell({ user, children }: { user: AppShellUser; children: Rea
 
   return (
     <div className="bg-app-shell-canvas flex min-h-screen">
-      <AppSidebar className="hidden md:flex" collapsed={sidebarCollapsed} navItems={navItems} />
+      <AppSidebar
+        className="hidden md:flex"
+        collapsed={sidebarCollapsed}
+        navItems={navItems}
+        navBadges={navBadges}
+      />
       <div className="bg-app-shell-canvas flex min-w-0 flex-1 flex-col">
         <AppHeader
           user={user}
           navItems={navItems}
+          navBadges={navBadges}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />
-        <main className="text-foreground px-block py-layout md:px-layout flex-1">{children}</main>
+        <main className="text-foreground px-block py-layout md:px-layout flex-1">
+          <AppBreadcrumbs navItems={navItems} />
+          {children}
+        </main>
       </div>
     </div>
   )

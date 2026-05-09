@@ -18,11 +18,13 @@ import { cn } from '@/lib/utils'
 export function AppHeader({
   user,
   navItems,
+  navBadges,
   sidebarCollapsed,
   onToggleSidebarCollapsed,
 }: {
   user: AppShellUser
   navItems: AppNavItem[]
+  navBadges?: Record<string, number>
   sidebarCollapsed: boolean
   onToggleSidebarCollapsed: () => void
 }) {
@@ -60,6 +62,7 @@ export function AppHeader({
               className="min-h-0"
               collapsed={false}
               items={navItems}
+              navBadges={navBadges}
               onNavigate={() => setMenuOpen(false)}
             />
           </SheetContent>

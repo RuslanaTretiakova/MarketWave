@@ -49,11 +49,13 @@ export function AppSidebarNavPanel({
   className,
   collapsed,
   items,
+  navBadges,
   onNavigate,
 }: {
   className?: string
   collapsed?: boolean
   items: AppNavItem[]
+  navBadges?: Record<string, number>
   onNavigate?: () => void
 }) {
   const isCollapsed = collapsed === true
@@ -62,7 +64,12 @@ export function AppSidebarNavPanel({
       <div
         className={cn('shrink-0', isCollapsed ? 'py-inset px-2' : 'px-block py-inset md:px-layout')}
       >
-        <AppNavLinks collapsed={isCollapsed} items={items} onNavigate={onNavigate} />
+        <AppNavLinks
+          collapsed={isCollapsed}
+          items={items}
+          navBadges={navBadges}
+          onNavigate={onNavigate}
+        />
       </div>
       <div className="flex-1" aria-hidden />
       <SidebarLogoutFooter collapsed={isCollapsed} />
@@ -74,11 +81,13 @@ export function AppNavLinks({
   className,
   collapsed,
   items,
+  navBadges,
   onNavigate,
 }: {
   className?: string
   collapsed?: boolean
   items: AppNavItem[]
+  navBadges?: Record<string, number>
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
@@ -87,6 +96,7 @@ export function AppNavLinks({
     <nav className={cn('gap-block flex flex-col', className)}>
       {items.map(({ href, label, Icon }) => {
         const active = isAppNavItemActive(pathname, href, items)
+        const badge = navBadges?.[href] ?? 0
         return (
           <Link
             key={href}
@@ -94,7 +104,7 @@ export function AppNavLinks({
             title={collapsed ? label : undefined}
             onClick={onNavigate}
             className={cn(
-              'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar flex h-10 w-full items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar relative flex h-10 w-full items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               collapsed ? 'px-inset justify-center' : 'px-block',
               active
                 ? 'border-sidebar-border bg-sidebar-item-active text-sidebar-accent-foreground shadow-sm'
@@ -103,6 +113,17 @@ export function AppNavLinks({
           >
             <Icon className="size-6 shrink-0 opacity-95" aria-hidden />
             <span className={cn('text-sm', collapsed ? 'sr-only' : '')}>{label}</span>
+            {badge > 0 && (
+              <span
+                aria-label={`${badge} unread`}
+                className={cn(
+                  'bg-primary text-primary-foreground inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold tabular-nums',
+                  collapsed ? 'absolute top-1 right-1' : 'ml-auto'
+                )}
+              >
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
           </Link>
         )
       })}
@@ -114,10 +135,12 @@ export function AppSidebar({
   className,
   collapsed,
   navItems,
+  navBadges,
 }: {
   className?: string
   collapsed?: boolean
   navItems: AppNavItem[]
+  navBadges?: Record<string, number>
 }) {
   const isCollapsed = collapsed === true
 
@@ -143,7 +166,7 @@ export function AppSidebar({
           logoClassName="[&_.logo-wordmark]:text-sidebar-foreground [&_span.text-primary]:text-sidebar-primary"
         />
       </div>
-      <AppSidebarNavPanel collapsed={isCollapsed} items={navItems} />
+      <AppSidebarNavPanel collapsed={isCollapsed} items={navItems} navBadges={navBadges} />
     </aside>
   )
 }

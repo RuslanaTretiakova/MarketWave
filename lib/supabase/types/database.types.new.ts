@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.5'
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_invite_rate_events: {
@@ -96,27 +71,39 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          anchor_text: string | null
           cart_id: string
+          client_notes: string | null
           created_at: string
           id: string
           publish_date: string | null
+          publish_month: string | null
           site_id: string
+          target_url: string | null
           updated_at: string
         }
         Insert: {
+          anchor_text?: string | null
           cart_id: string
+          client_notes?: string | null
           created_at?: string
           id?: string
           publish_date?: string | null
+          publish_month?: string | null
           site_id: string
+          target_url?: string | null
           updated_at?: string
         }
         Update: {
+          anchor_text?: string | null
           cart_id?: string
+          client_notes?: string | null
           created_at?: string
           id?: string
           publish_date?: string | null
+          publish_month?: string | null
           site_id?: string
+          target_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -168,23 +155,228 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          created_by: string | null
           id: number
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name: string
           slug: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: number
           name?: string
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'categories_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_attachments_message_id_fkey'
+            columns: ['message_id']
+            isOneToOne: false
+            referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          message_type: Database['public']['Enums']['chat_message_type']
+          room_id: string
+          sender_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          message_type?: Database['public']['Enums']['chat_message_type']
+          room_id: string
+          sender_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          message_type?: Database['public']['Enums']['chat_message_type']
+          room_id?: string
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_messages_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_messages_sender_id_fkey'
+            columns: ['sender_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_room_participants: {
+        Row: {
+          added_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_room_participants_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_room_participants_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_room_reads: {
+        Row: {
+          last_read_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_room_reads_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'chat_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_room_reads_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          channel: Database['public']['Enums']['chat_channel_type']
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database['public']['Enums']['chat_room_kind']
+          order_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database['public']['Enums']['chat_channel_type']
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: Database['public']['Enums']['chat_room_kind']
+          order_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database['public']['Enums']['chat_channel_type']
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database['public']['Enums']['chat_room_kind']
+          order_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_rooms_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_rooms_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: true
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
       }
       change_requests: {
         Row: {
@@ -272,31 +464,40 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          billing_month: string | null
           created_at: string
+          invoice_group_id: string | null
           due_date: string | null
           id: string
           order_id: string
           paid_at: string | null
+          sent_at: string | null
           status: Database['public']['Enums']['invoice_status']
           updated_at: string
         }
         Insert: {
           amount: number
+          billing_month?: string | null
           created_at?: string
+          invoice_group_id?: string | null
           due_date?: string | null
           id?: string
           order_id: string
           paid_at?: string | null
+          sent_at?: string | null
           status?: Database['public']['Enums']['invoice_status']
           updated_at?: string
         }
         Update: {
           amount?: number
+          billing_month?: string | null
           created_at?: string
+          invoice_group_id?: string | null
           due_date?: string | null
           id?: string
           order_id?: string
           paid_at?: string | null
+          sent_at?: string | null
           status?: Database['public']['Enums']['invoice_status']
           updated_at?: string
         }
@@ -304,7 +505,64 @@ export type Database = {
           {
             foreignKeyName: 'invoices_order_id_fkey'
             columns: ['order_id']
-            isOneToOne: true
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      order_content_versions: {
+        Row: {
+          body_html: string
+          copywriter_id: string
+          created_at: string
+          id: string
+          meta_description: string
+          order_id: string
+          status: Database['public']['Enums']['order_content_status']
+          title: string
+          updated_at: string
+          version_number: number | null
+          word_count: number
+        }
+        Insert: {
+          body_html?: string
+          copywriter_id: string
+          created_at?: string
+          id?: string
+          meta_description?: string
+          order_id: string
+          status: Database['public']['Enums']['order_content_status']
+          title?: string
+          updated_at?: string
+          version_number?: number | null
+          word_count?: number
+        }
+        Update: {
+          body_html?: string
+          copywriter_id?: string
+          created_at?: string
+          id?: string
+          meta_description?: string
+          order_id?: string
+          status?: Database['public']['Enums']['order_content_status']
+          title?: string
+          updated_at?: string
+          version_number?: number | null
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'order_content_versions_copywriter_id_fkey'
+            columns: ['copywriter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'order_content_versions_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
             referencedRelation: 'orders'
             referencedColumns: ['id']
           },
@@ -312,11 +570,15 @@ export type Database = {
       }
       orders: {
         Row: {
+          anchor_text: string | null
+          client_notes: string | null
           copywriter_id: string | null
           created_at: string
           id: string
           price: number
           publish_date: string | null
+          publish_month: string | null
+          published_url: string | null
           site_category: string
           site_contact_info: string | null
           site_countries: string[]
@@ -331,15 +593,20 @@ export type Database = {
           site_organic_traffic_count: number | null
           site_requirements: string | null
           status: Database['public']['Enums']['order_status']
+          target_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anchor_text?: string | null
+          client_notes?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price: number
           publish_date?: string | null
+          publish_month?: string | null
+          published_url?: string | null
           site_category: string
           site_contact_info?: string | null
           site_countries?: string[]
@@ -354,15 +621,20 @@ export type Database = {
           site_organic_traffic_count?: number | null
           site_requirements?: string | null
           status?: Database['public']['Enums']['order_status']
+          target_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anchor_text?: string | null
+          client_notes?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price?: number
           publish_date?: string | null
+          publish_month?: string | null
+          published_url?: string | null
           site_category?: string
           site_contact_info?: string | null
           site_countries?: string[]
@@ -377,6 +649,7 @@ export type Database = {
           site_organic_traffic_count?: number | null
           site_requirements?: string | null
           status?: Database['public']['Enums']['order_status']
+          target_url?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -445,6 +718,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sourcer_earnings: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          earned_amount: number
+          earning_month: string
+          id: string
+          invoice_id: string | null
+          order_id: string
+          paid_at: string | null
+          payout_reference: string | null
+          payout_status: string
+          site_id: string | null
+          sourcer_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount: number
+          earning_month: string
+          id?: string
+          invoice_id?: string | null
+          order_id: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount?: number
+          earning_month?: string
+          id?: string
+          invoice_id?: string | null
+          order_id?: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'sourcer_earnings_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: true
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_sourcer_id_fkey'
+            columns: ['sourcer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       public_rate_limit_events: {
         Row: {
@@ -522,7 +872,7 @@ export type Database = {
           created_at: string
           description: string | null
           domain: string
-          dr: number | null
+          dr: number
           id: string
           keywords_relevance: string | null
           link_type: Database['public']['Enums']['link_type']
@@ -535,6 +885,7 @@ export type Database = {
           sourcer_id: string | null
           sourcer_notes: string | null
           status: Database['public']['Enums']['site_status']
+          top_countries: string | null
           updated_at: string
         }
         Insert: {
@@ -545,7 +896,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           domain: string
-          dr?: number | null
+          dr: number
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
@@ -558,6 +909,7 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
+          top_countries?: string | null
           updated_at?: string
         }
         Update: {
@@ -568,7 +920,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           domain?: string
-          dr?: number | null
+          dr?: number
           id?: string
           keywords_relevance?: string | null
           link_type?: Database['public']['Enums']['link_type']
@@ -581,6 +933,7 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
+          top_countries?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -625,6 +978,10 @@ export type Database = {
         Args: never
         Returns: Database['public']['Enums']['user_role']
       }
+      is_chat_participant: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: boolean
+      }
       replace_site_countries_and_languages: {
         Args: {
           p_countries: string[]
@@ -636,8 +993,12 @@ export type Database = {
     }
     Enums: {
       change_request_status: 'open' | 'resolved' | 'dismissed'
+      chat_channel_type: 'standard' | 'support' | 'sales'
+      chat_message_type: 'text' | 'system'
+      chat_room_kind: 'order' | 'direct' | 'group'
       invoice_status: 'pending' | 'paid' | 'overdue' | 'canceled'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
+      order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
         | 'in_progress'
@@ -647,13 +1008,7 @@ export type Database = {
         | 'published'
         | 'completed'
         | 'canceled'
-      site_status:
-        | 'active'
-        | 'inactive'
-        | 'pending_review'
-        | 'needs_changes'
-        | 'approved'
-        | 'archived'
+      site_status: 'active' | 'inactive' | 'pending' | 'needs_changes' | 'approved' | 'archived'
       user_role: 'client' | 'admin' | 'sourcer' | 'manager' | 'copywriter'
     }
     CompositeTypes: {
@@ -778,14 +1133,15 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       change_request_status: ['open', 'resolved', 'dismissed'],
+      chat_channel_type: ['standard', 'support', 'sales'],
+      chat_message_type: ['text', 'system'],
+      chat_room_kind: ['order', 'direct', 'group'],
       invoice_status: ['pending', 'paid', 'overdue', 'canceled'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
+      order_content_status: ['draft', 'submitted'],
       order_status: [
         'new',
         'in_progress',
@@ -796,14 +1152,7 @@ export const Constants = {
         'completed',
         'canceled',
       ],
-      site_status: [
-        'active',
-        'inactive',
-        'pending_review',
-        'needs_changes',
-        'approved',
-        'archived',
-      ],
+      site_status: ['active', 'inactive', 'pending', 'needs_changes', 'approved', 'archived'],
       user_role: ['client', 'admin', 'sourcer', 'manager', 'copywriter'],
     },
   },

@@ -15,12 +15,12 @@ import {
 import {
   approveContent,
   cancelOrder,
-  markContentSent,
   markPublished,
   requestChanges,
   resumeOrder,
   startOrder,
 } from '@/lib/orders/order-actions'
+import { submitContent } from '@/lib/orders/content-actions'
 import type { OrderStatus, UserRole } from '@/lib/orders/load-order-detail'
 
 type ConfirmDialog = { kind: 'cancel' } | { kind: 'publish' } | { kind: 'request_changes' } | null
@@ -43,6 +43,7 @@ export function OrderStatusActions({
   const [pending, startTransition] = useTransition()
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null)
   const [changeComment, setChangeComment] = useState('')
+  const [publishedUrl, setPublishedUrl] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
 
   const isStaff = role === 'admin' || role === 'manager'
@@ -60,6 +61,7 @@ export function OrderStatusActions({
         toast.success('Order updated.')
         setConfirmDialog(null)
         setChangeComment('')
+        setPublishedUrl('')
       }
     })
   }
@@ -69,8 +71,13 @@ export function OrderStatusActions({
   }, [orderId])
 
   const handleConfirmPublish = useCallback(() => {
-    runAction(() => markPublished(orderId))
-  }, [orderId])
+    const url = publishedUrl.trim()
+    if (!url) {
+      setActionError('Please enter the published URL.')
+      return
+    }
+    runAction(() => markPublished(orderId, url))
+  }, [orderId, publishedUrl])
 
   const handleConfirmRequestChanges = useCallback(() => {
     if (!changeComment.trim()) {
@@ -96,16 +103,16 @@ export function OrderStatusActions({
     )
   }
 
-  if (isAssignedCopywriter && status === 'in_progress') {
+  if (isAssignedCopywriter && (status === 'in_progress' || status === 'needs_changes')) {
     actions.push(
       <Button
-        key="content-sent"
+        key="content-submit"
         type="button"
         variant="cta"
-        onClick={() => runAction(() => markContentSent(orderId))}
+        onClick={() => runAction(() => submitContent(orderId))}
         disabled={pending}
       >
-        Mark content sent
+        {status === 'needs_changes' ? 'Re-submit for review' : 'Submit for review'}
       </Button>
     )
   }
@@ -217,21 +224,56 @@ export function OrderStatusActions({
       {/* Publish confirm dialog */}
       <Dialog
         open={confirmDialog?.kind === 'publish'}
-        onOpenChange={(o) => !o && setConfirmDialog(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setConfirmDialog(null)
+            setPublishedUrl('')
+            setActionError(null)
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark as published</DialogTitle>
             <DialogDescription>
-              Confirm that the content has been published on the site. The order will move to
-              published status.
+              Paste the live URL where the content was published. This will be shared with the
+              client and the order will move to published status.
             </DialogDescription>
           </DialogHeader>
+          <label className="gap-inset flex flex-col text-sm">
+            <span className="text-foreground font-medium">Published URL</span>
+            <input
+              type="url"
+              required
+              autoFocus
+              value={publishedUrl}
+              onChange={(e) => setPublishedUrl(e.target.value)}
+              placeholder="https://example.com/post"
+              maxLength={2048}
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 rounded-md border px-3 text-sm"
+            />
+          </label>
+          {actionError && (
+            <p className="text-destructive text-sm" role="alert">
+              {actionError}
+            </p>
+          )}
           <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setConfirmDialog(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDialog(null)
+                setPublishedUrl('')
+                setActionError(null)
+              }}
+            >
               Cancel
             </Button>
-            <Button variant="cta" onClick={handleConfirmPublish} disabled={pending}>
+            <Button
+              variant="cta"
+              onClick={handleConfirmPublish}
+              disabled={pending || !publishedUrl.trim()}
+            >
               Confirm
             </Button>
           </DialogFooter>

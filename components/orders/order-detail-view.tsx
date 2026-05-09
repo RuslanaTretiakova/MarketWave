@@ -1,11 +1,15 @@
 'use client'
 
+import Link from 'next/link'
+import { MessageSquare } from 'lucide-react'
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 
+import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { AssignCopywriterSelect } from '@/components/orders/assign-copywriter-select'
 import { ChangeRequestsList } from '@/components/orders/change-requests-list'
-import { OrderStatusActions } from '@/components/orders/order-status-actions'
+import { CopywriterContentEditor } from '@/components/orders/copywriter-content-editor'
+import { OrderContentViewer } from '@/components/orders/order-content-viewer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cancelInvoice, markInvoiceOverdue, markInvoicePaid } from '@/lib/invoices/invoice-actions'
@@ -62,40 +66,42 @@ function InvoicePanel({
           <DetailRow label="Paid at" value={new Date(invoice.paid_at).toLocaleString()} />
         )}
       </dl>
-      {role === 'admin' && invoice.status !== 'paid' && invoice.status !== 'canceled' && (
-        <div className="gap-inset flex flex-wrap">
-          <Button
-            type="button"
-            size="sm"
-            variant="cta"
-            onClick={() => runAction(() => markInvoicePaid(invoice.id))}
-            disabled={pending}
-          >
-            Mark as paid
-          </Button>
-          {(invoice.status === 'pending' || invoice.status === 'overdue') && (
+      {(role === 'admin' || role === 'manager') &&
+        invoice.status !== 'paid' &&
+        invoice.status !== 'canceled' && (
+          <div className="gap-inset flex flex-wrap">
             <Button
               type="button"
               size="sm"
-              variant="outline"
-              onClick={() => runAction(() => markInvoiceOverdue(invoice.id))}
-              disabled={pending || invoice.status === 'overdue'}
+              variant="cta"
+              onClick={() => runAction(() => markInvoicePaid(invoice.id))}
+              disabled={pending}
             >
-              Mark overdue
+              Mark as paid
             </Button>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="text-muted-foreground"
-            onClick={() => runAction(() => cancelInvoice(invoice.id))}
-            disabled={pending}
-          >
-            Cancel invoice
-          </Button>
-        </div>
-      )}
+            {(invoice.status === 'pending' || invoice.status === 'overdue') && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => runAction(() => markInvoiceOverdue(invoice.id))}
+                disabled={pending || invoice.status === 'overdue'}
+              >
+                Mark overdue
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => runAction(() => cancelInvoice(invoice.id))}
+              disabled={pending}
+            >
+              Cancel invoice
+            </Button>
+          </div>
+        )}
     </div>
   )
 }
@@ -105,13 +111,19 @@ export function OrderDetailView({
   role,
   userId,
   copywriterOptions,
+  chatRoomId,
 }: {
   order: OrderDetail
   role: UserRole
   userId: string
   copywriterOptions?: CopywriterOption[]
+  chatRoomId?: string | null
 }) {
   const isStaff = role === 'admin' || role === 'manager'
+  const isAssignedCopywriter = role === 'copywriter' && userId === order.copywriter_id
+  const canEditContent =
+    isAssignedCopywriter && (order.status === 'in_progress' || order.status === 'needs_changes')
+  const submittedVersions = order.content.submitted
 
   return (
     <div className="space-y-layout mx-auto max-w-4xl">
@@ -135,14 +147,34 @@ export function OrderDetailView({
             </span>
           </div>
         </div>
-        <div className="shrink-0">
-          <OrderStatusActions
+        <div className="gap-inset flex shrink-0 flex-wrap">
+          {chatRoomId && (
+            <Link
+              href={`/chats/${chatRoomId}`}
+              className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
+            >
+              <MessageSquare className="size-4" /> Open chat
+            </Link>
+          )}
+          <OrderActionsMenu
+            context={{
+              role,
+              status: order.status,
+              userId,
+              orderUserId: order.user_id,
+              copywriterId: order.copywriter_id,
+              invoiceId: order.invoice?.id ?? null,
+              invoiceStatus: order.invoice?.status ?? null,
+            }}
             orderId={order.id}
-            status={order.status}
-            role={role}
-            userId={userId}
-            orderUserId={order.user_id}
-            copywriterId={order.copywriter_id}
+            detailHref={`/orders/${order.id}`}
+            invoiceHref={order.invoice ? `/invoices/${order.invoice.id}` : undefined}
+            copywriterOptions={copywriterOptions}
+            initialPublishDate={order.publish_date}
+            initialAnchorText={order.anchor_text}
+            initialTargetUrl={order.target_url}
+            initialClientNotes={order.client_notes}
+            triggerVariant="button"
           />
         </div>
       </div>
@@ -164,6 +196,38 @@ export function OrderDetailView({
               <DetailRow label="Countries" value={order.site_countries.join(', ') || null} />
               <DetailRow label="Languages" value={order.site_languages.join(', ') || null} />
               <DetailRow label="Publish date" value={order.publish_date ?? '—'} />
+              <DetailRow label="Anchor text" value={order.anchor_text} />
+              <DetailRow
+                label="Target URL"
+                value={
+                  order.target_url ? (
+                    <a
+                      href={order.target_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary break-all hover:underline"
+                    >
+                      {order.target_url}
+                    </a>
+                  ) : null
+                }
+              />
+              <DetailRow label="Client notes" value={order.client_notes} />
+              <DetailRow
+                label="Published URL"
+                value={
+                  order.published_url ? (
+                    <a
+                      href={order.published_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary break-all hover:underline"
+                    >
+                      {order.published_url}
+                    </a>
+                  ) : null
+                }
+              />
               <DetailRow label="Placed" value={new Date(order.created_at).toLocaleDateString()} />
               {isStaff && order.client_name && (
                 <DetailRow label="Client" value={order.client_name} />
@@ -197,6 +261,45 @@ export function OrderDetailView({
               </dl>
             </Card>
           )}
+
+          {/* Article content */}
+          <Card className="p-section space-y-block">
+            <div className="gap-block flex flex-wrap items-center justify-between">
+              <h3 className="text-foreground text-base font-semibold">Article content</h3>
+              {submittedVersions.length > 0 && (
+                <span className="text-muted-foreground text-xs">
+                  {submittedVersions.length}{' '}
+                  {submittedVersions.length === 1 ? 'submission' : 'submissions'}
+                </span>
+              )}
+            </div>
+
+            {canEditContent ? (
+              <>
+                <CopywriterContentEditor
+                  orderId={order.id}
+                  status={order.status}
+                  initialDraft={order.content.draft}
+                />
+                {submittedVersions.length > 0 && (
+                  <div className="border-border pt-block space-y-block border-t">
+                    <h4 className="text-foreground text-sm font-semibold">Previously submitted</h4>
+                    <OrderContentViewer versions={submittedVersions} />
+                  </div>
+                )}
+              </>
+            ) : submittedVersions.length > 0 ? (
+              <OrderContentViewer versions={submittedVersions} />
+            ) : isAssignedCopywriter ? (
+              <p className="text-muted-foreground text-sm italic">
+                Content editing opens once the order moves to In progress.
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-sm italic">
+                Copywriter has not submitted content yet.
+              </p>
+            )}
+          </Card>
 
           {/* Change requests */}
           <Card className="p-section space-y-block">

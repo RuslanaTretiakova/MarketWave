@@ -6,6 +6,10 @@ export type CartItemRow = {
   id: string
   site_id: string
   publish_date: string | null
+  publish_month: string | null
+  anchor_text: string | null
+  target_url: string | null
+  client_notes: string | null
   created_at: string
   site_domain: string
   site_price: number
@@ -19,6 +23,10 @@ type RawCartItem = {
   id: string
   site_id: string
   publish_date: string | null
+  publish_month: string | null
+  anchor_text: string | null
+  target_url: string | null
+  client_notes: string | null
   created_at: string
   sites: {
     id: string
@@ -36,6 +44,10 @@ function mapRow(raw: RawCartItem): CartItemRow {
     id: raw.id,
     site_id: raw.site_id,
     publish_date: raw.publish_date,
+    publish_month: raw.publish_month,
+    anchor_text: raw.anchor_text,
+    target_url: raw.target_url,
+    client_notes: raw.client_notes,
     created_at: raw.created_at,
     site_domain: raw.sites?.domain ?? '',
     site_price: raw.sites?.price ?? 0,
@@ -50,7 +62,7 @@ export async function loadCart(supabase: SupabaseClient<Database>): Promise<Cart
   const { data, error } = await supabase
     .from('cart_items')
     .select(
-      'id, site_id, publish_date, created_at, sites(id, domain, price, dr, status, link_type, categories(name))'
+      'id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, created_at, sites(id, domain, price, dr, status, link_type, categories(name))'
     )
     .order('created_at', { ascending: true })
 
