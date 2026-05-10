@@ -2,6 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 
+import {
+  canArchiveChat,
+  canEditChatMetadata,
+  canSendMessages,
+  canUnarchiveChat,
+} from '@/lib/chat/chat-rules'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -41,6 +47,73 @@ async function isParticipant(roomId: string, userId: string): Promise<boolean> {
   return Boolean(data)
 }
 
+type RoomMeta = {
+  id: string
+  kind: Database['public']['Enums']['chat_room_kind']
+  channel: Database['public']['Enums']['chat_channel_type']
+  status: Database['public']['Enums']['chat_room_status']
+  system_managed: boolean
+}
+
+async function loadRoomMeta(roomId: string): Promise<RoomMeta | null> {
+  const { data } = await adminClient
+    .from('chat_rooms')
+    .select('id, kind, channel, status, system_managed')
+    .eq('id', roomId)
+    .maybeSingle()
+  if (!data) return null
+  return data as RoomMeta
+}
+
+function defaultChannelTitle(channel: Database['public']['Enums']['chat_channel_type']): string {
+  const d = new Date()
+  const day = d.toISOString().slice(0, 10)
+  if (channel === 'support') return `Support · ${day}`
+  if (channel === 'sales') return `Sales · ${day}`
+  return `Chat · ${day}`
+}
+
+async function participantDisplayNames(ids: string[]): Promise<Map<string, string | null>> {
+  if (ids.length === 0) return new Map()
+  const { data } = await adminClient.from('profiles').select('id, full_name').in('id', ids)
+  const m = new Map<string, string | null>()
+  for (const row of data ?? []) {
+    m.set(row.id, row.full_name)
+  }
+  return m
+}
+
+function titleFromParticipantNames(names: (string | null)[]): string {
+  const parts = names
+    .map((n) => (n ?? '').trim())
+    .filter(Boolean)
+    .slice(0, 4)
+  if (parts.length === 0) return 'Conversation'
+  const extra = names.filter(Boolean).length > 4 ? '…' : ''
+  return `${parts.join(', ')}${extra}`
+}
+
+async function assertCanMutateStandardRoom(
+  auth: { userId: string; role: UserRole },
+  meta: RoomMeta,
+  opts: { requireActive?: boolean } = {}
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!canEditChatMetadata(meta.channel)) {
+    return { ok: false, message: 'Action forbidden: only Standard chats can be changed.' }
+  }
+  if (meta.system_managed && auth.role !== 'admin') {
+    return { ok: false, message: 'Action forbidden: this chat is managed by the system.' }
+  }
+  if (opts.requireActive && !canSendMessages(meta.status)) {
+    return { ok: false, message: 'This chat is archived.' }
+  }
+  const member = await isParticipant(meta.id, auth.userId)
+  if (!member && auth.role !== 'admin') {
+    return { ok: false, message: 'You are not a participant of this room.' }
+  }
+  return { ok: true }
+}
+
 export type SendMessageInput = {
   roomId: string
   body: string
@@ -59,6 +132,12 @@ export async function sendMessage(
   }
   if (body.length > MAX_BODY) {
     return { ok: false, message: `Message must be ${MAX_BODY} characters or fewer.` }
+  }
+
+  const meta = await loadRoomMeta(input.roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+  if (!canSendMessages(meta.status)) {
+    return { ok: false, message: 'Messaging is disabled for archived chats.' }
   }
 
   const ok = await isParticipant(input.roomId, auth.userId)
@@ -95,7 +174,6 @@ export async function sendMessage(
     }
   }
 
-  // Bump room updated_at for fast room-list ordering.
   await adminClient
     .from('chat_rooms')
     .update({ updated_at: new Date().toISOString() })
@@ -135,8 +213,20 @@ export async function addParticipant(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const auth = await requireSession()
   if (!auth.ok) return auth
-  if (auth.role !== 'admin' && auth.role !== 'manager') {
-    return { ok: false, message: 'Only admins and managers can add participants.' }
+
+  const meta = await loadRoomMeta(roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+  if (!canSendMessages(meta.status)) {
+    return { ok: false, message: 'This chat is archived.' }
+  }
+
+  let allowed = auth.role === 'admin' || auth.role === 'manager'
+  if (!allowed) {
+    const gate = await assertCanMutateStandardRoom(auth, meta, { requireActive: true })
+    allowed = gate.ok
+  }
+  if (!allowed) {
+    return { ok: false, message: 'You cannot add participants to this chat.' }
   }
 
   const { error } = await adminClient
@@ -148,12 +238,13 @@ export async function addParticipant(
   }
 
   revalidatePath(`/chats/${roomId}`)
+  revalidatePath('/chats')
   return { ok: true }
 }
 
 export async function createChannelRoom(input: {
   channel: Database['public']['Enums']['chat_channel_type']
-  title: string
+  title?: string
   participantIds: string[]
 }): Promise<{ ok: true; roomId: string } | { ok: false; message: string }> {
   const auth = await requireSession()
@@ -164,8 +255,9 @@ export async function createChannelRoom(input: {
   if (input.channel !== 'support' && input.channel !== 'sales' && input.channel !== 'standard') {
     return { ok: false, message: 'Invalid channel.' }
   }
-  const title = input.title.trim()
-  if (!title) return { ok: false, message: 'Room title is required.' }
+
+  const trimmed = (input.title ?? '').trim()
+  const title = trimmed || defaultChannelTitle(input.channel)
   if (title.length > 120)
     return { ok: false, message: 'Room title must be 120 characters or fewer.' }
 
@@ -178,6 +270,8 @@ export async function createChannelRoom(input: {
       channel: input.channel,
       title,
       created_by: auth.userId,
+      system_managed: false,
+      status: 'active',
     })
     .select('id')
     .maybeSingle()
@@ -191,10 +285,176 @@ export async function createChannelRoom(input: {
   return { ok: true, roomId: room.id }
 }
 
-/**
- * Generates a signed upload URL that the browser can PUT a file to. Returns the
- * `path` you must include in subsequent `sendMessage({ attachments: [...] })`.
- */
+export async function createStandardGroupChat(input: {
+  title?: string
+  participantIds: string[]
+}): Promise<{ ok: true; roomId: string } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+
+  const ids = [...new Set([auth.userId, ...input.participantIds.filter(Boolean)])]
+  if (ids.length < 2) {
+    return { ok: false, message: 'Select at least one other participant.' }
+  }
+
+  let title = (input.title ?? '').trim()
+  if (!title) {
+    const nameMap = await participantDisplayNames(ids)
+    title = titleFromParticipantNames(ids.map((id) => nameMap.get(id) ?? null))
+  }
+  if (title.length > 120) {
+    return { ok: false, message: 'Title must be 120 characters or fewer.' }
+  }
+
+  const { data: room, error } = await adminClient
+    .from('chat_rooms')
+    .insert({
+      kind: 'group',
+      channel: 'standard',
+      title,
+      created_by: auth.userId,
+      system_managed: false,
+      status: 'active',
+    })
+    .select('id')
+    .maybeSingle()
+
+  if (error || !room) return { ok: false, message: error?.message ?? 'Could not create chat.' }
+
+  const rows = ids.map((id) => ({ room_id: room.id, user_id: id }))
+  const { error: pErr } = await adminClient.from('chat_room_participants').insert(rows)
+  if (pErr) return { ok: false, message: pErr.message ?? 'Could not add participants.' }
+
+  revalidatePath('/chats')
+  return { ok: true, roomId: room.id }
+}
+
+export async function updateChatRoom(input: {
+  roomId: string
+  title?: string
+  participantIds?: string[]
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+
+  const meta = await loadRoomMeta(input.roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+
+  const gate = await assertCanMutateStandardRoom(auth, meta, { requireActive: true })
+  if (!gate.ok) return gate
+
+  if (input.title !== undefined) {
+    const t = input.title.trim()
+    if (!t) return { ok: false, message: 'Title cannot be empty.' }
+    if (t.length > 120) return { ok: false, message: 'Title must be 120 characters or fewer.' }
+    const { error } = await adminClient
+      .from('chat_rooms')
+      .update({ title: t })
+      .eq('id', input.roomId)
+    if (error) return { ok: false, message: error.message ?? 'Could not update title.' }
+  }
+
+  if (input.participantIds !== undefined) {
+    const next = [...new Set(input.participantIds.filter(Boolean))]
+    if (!next.includes(auth.userId)) {
+      return { ok: false, message: 'You must remain a participant.' }
+    }
+    if (next.length < 2) {
+      return { ok: false, message: 'A chat needs at least two participants.' }
+    }
+
+    const { data: current } = await adminClient
+      .from('chat_room_participants')
+      .select('user_id')
+      .eq('room_id', input.roomId)
+
+    const curSet = new Set((current ?? []).map((r) => r.user_id))
+    const nextSet = new Set(next)
+    const toRemove = [...curSet].filter((id) => !nextSet.has(id))
+    const toAdd = [...nextSet].filter((id) => !curSet.has(id))
+
+    if (toRemove.length > 0) {
+      const { error: delErr } = await adminClient
+        .from('chat_room_participants')
+        .delete()
+        .eq('room_id', input.roomId)
+        .in('user_id', toRemove)
+      if (delErr) return { ok: false, message: delErr.message ?? 'Could not update participants.' }
+    }
+    if (toAdd.length > 0) {
+      const { error: insErr } = await adminClient
+        .from('chat_room_participants')
+        .insert(toAdd.map((user_id) => ({ room_id: input.roomId, user_id })))
+      if (insErr) return { ok: false, message: insErr.message ?? 'Could not update participants.' }
+    }
+  }
+
+  await adminClient
+    .from('chat_rooms')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', input.roomId)
+
+  revalidatePath('/chats')
+  revalidatePath(`/chats/${input.roomId}`)
+  return { ok: true }
+}
+
+export async function archiveChat(
+  roomId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+
+  const meta = await loadRoomMeta(roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+  if (!canArchiveChat(meta.channel, meta.status, meta.system_managed)) {
+    return { ok: false, message: 'Action forbidden: only active Standard chats can be archived.' }
+  }
+
+  const member = await isParticipant(roomId, auth.userId)
+  if (!member && auth.role !== 'admin') {
+    return { ok: false, message: 'You are not a participant of this room.' }
+  }
+
+  const { error } = await adminClient
+    .from('chat_rooms')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+
+  if (error) return { ok: false, message: error.message ?? 'Could not archive chat.' }
+  revalidatePath('/chats')
+  revalidatePath(`/chats/${roomId}`)
+  return { ok: true }
+}
+
+export async function unarchiveChat(
+  roomId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+
+  const meta = await loadRoomMeta(roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+  if (!canUnarchiveChat(meta.channel, meta.status)) {
+    return { ok: false, message: 'Action forbidden: only archived Standard chats can be restored.' }
+  }
+
+  const member = await isParticipant(roomId, auth.userId)
+  if (!member && auth.role !== 'admin') {
+    return { ok: false, message: 'You are not a participant of this room.' }
+  }
+
+  const { error } = await adminClient
+    .from('chat_rooms')
+    .update({ status: 'active', updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+
+  if (error) return { ok: false, message: error.message ?? 'Could not restore chat.' }
+  revalidatePath('/chats')
+  revalidatePath(`/chats/${roomId}`)
+  return { ok: true }
+}
+
 export async function createAttachmentUploadUrl(
   roomId: string,
   fileName: string
@@ -203,6 +463,12 @@ export async function createAttachmentUploadUrl(
 > {
   const auth = await requireSession()
   if (!auth.ok) return auth
+
+  const meta = await loadRoomMeta(roomId)
+  if (!meta) return { ok: false, message: 'Chat not found.' }
+  if (!canSendMessages(meta.status)) {
+    return { ok: false, message: 'Uploads are disabled for archived chats.' }
+  }
 
   const ok = await isParticipant(roomId, auth.userId)
   if (!ok && auth.role !== 'admin') {
@@ -228,14 +494,12 @@ export async function createAttachmentUploadUrl(
   }
 }
 
-/** Generates a short-lived download URL for an existing attachment object. */
 export async function getAttachmentDownloadUrl(
   storagePath: string
 ): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
   const auth = await requireSession()
   if (!auth.ok) return auth
 
-  // The first path segment is the room id; verify membership before signing.
   const roomId = storagePath.split('/')[0]
   const ok = await isParticipant(roomId, auth.userId)
   if (!ok && auth.role !== 'admin') {

@@ -87,6 +87,21 @@ Do **not** reintroduce patterns the linter flags in favor of built-in scale or v
 
 Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.); `@theme` aliases use the parentheses form above. Prefer `--accent-teal-strong` with `bg-(--accent-teal-strong)` / `text-(--accent-teal-strong)` for the deep teal headline and logo tint (do not use `--marketing-teal-deep` in utilities — Tailwind’s CSS emitter can mishandle it on Windows).
 
+**Page container max-widths:**
+
+| Page type                         | Max-width   | Examples                                            |
+| --------------------------------- | ----------- | --------------------------------------------------- |
+| List / data-table pages           | `max-w-6xl` | OrdersList, InvoicesList, EarningsView              |
+| Detail / form pages               | `max-w-4xl` | OrderDetailView, InvoiceDetailView, SiteListingForm |
+| Narrow form / checkout            | `max-w-2xl` | ProfileView, CheckoutView                           |
+| Card-shell full-column components | none        | SitesCatalog, UsersManagement, CategoriesManagement |
+
+Card-shell components (those that own their own border/bg container) do not add a max-width — the parent layout column constrains them.
+
+**Page heading component:** use `<PageHeader>` from `components/ui/page-header.tsx` for all authenticated page titles. Props: `title` (required), `description` (text subtitle), `meta` (below-title slot for badges/chips), `action` (right-side slot for primary actions). Do **not** write the `<h2 className="text-2xl font-semibold tracking-tight">` + `<p className="text-muted-foreground …">` pattern inline.
+
+**Filter bar inputs:** use `<FilterInput>` and `<FilterSelect>` from `components/ui/filter-bar.tsx` for search/filter controls. These apply the same `h-10 rounded-full` pill style as `FormControlInput`. Use native `<select>` via `FilterSelect` (not the Base-UI `Select`) so `onChange` triggers immediate URL navigation without a submit step.
+
 ## Code style
 
 - Prettier + ESLint run on commit (lint-staged) and on push (pre-push hook)

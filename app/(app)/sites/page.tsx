@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { SitesCatalog } from '@/components/sites/sites-catalog'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { searchParamFirstString } from '@/lib/pagination/search-param-first-string'
+import { isSitesCatalogFilterAbsent } from '@/lib/sites/sites-catalog-filter'
 import { loadSitesCatalogPage } from '@/lib/sites/load-sites-catalog'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -30,15 +31,16 @@ type SearchParams = {
 }
 
 function parseSiteStatus(raw: string | undefined): SiteStatus | undefined {
-  if (!raw || raw.trim() === '') return undefined
-  const value = raw as SiteStatus
+  if (isSitesCatalogFilterAbsent(raw)) return undefined
+  const value = raw!.trim() as SiteStatus
   return SUPPORTED_STATUS_FILTERS.includes(value) ? value : undefined
 }
 
 function parseLinkType(raw: string | undefined): LinkType | undefined {
-  if (!raw || raw.trim() === '') return undefined
+  if (isSitesCatalogFilterAbsent(raw)) return undefined
+  const t = raw!.trim()
   const allowed: LinkType[] = ['dofollow', 'nofollow', 'sponsored', 'ugc']
-  return allowed.includes(raw as LinkType) ? (raw as LinkType) : undefined
+  return allowed.includes(t as LinkType) ? (t as LinkType) : undefined
 }
 
 export default async function SitesPage(props: { searchParams: Promise<SearchParams> }) {
@@ -76,15 +78,15 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
   const pageParsed = Math.max(1, Math.floor(Number(pageRaw)) || 1)
 
   let categoryId: number | undefined
-  if (categoryRaw !== undefined && categoryRaw.trim() !== '') {
-    const n = Number(categoryRaw)
+  if (categoryRaw !== undefined && !isSitesCatalogFilterAbsent(categoryRaw)) {
+    const n = Number(categoryRaw.trim())
     if (Number.isFinite(n) && n > 0) categoryId = Math.floor(n)
   }
 
-  const status = parseSiteStatus(statusRaw?.trim())
+  const status = parseSiteStatus(statusRaw)
   const country = countryRaw?.trim() || undefined
   const language = languageRaw?.trim() || undefined
-  const linkType = parseLinkType(linkTypeRaw?.trim())
+  const linkType = parseLinkType(linkTypeRaw)
 
   let priceMin: number | undefined
   if (priceMinRaw !== undefined && priceMinRaw.trim() !== '') {

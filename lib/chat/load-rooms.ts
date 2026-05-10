@@ -1,5 +1,5 @@
 import { adminClient } from '@/lib/supabase/admin'
-import { inferClientChatChannel } from '@/lib/chat/channel'
+import { inferClientChatChannel, type ClientChatChannel } from '@/lib/chat/channel'
 import type { ChatParticipant, ChatRoomSummary } from '@/lib/chat/types'
 import type { Database } from '@/lib/supabase/types'
 
@@ -11,12 +11,30 @@ function isMissingChatSchema(message: string): boolean {
   )
 }
 
+export type ChatListSortMode = 'activity' | 'created'
+
+export type ChatListFilters = {
+  participantId?: string
+  channel?: ClientChatChannel | 'all'
+  status?: Database['public']['Enums']['chat_room_status'] | 'all'
+  /** Inclusive start (YYYY-MM-DD) — compares to room `created_at` date in UTC */
+  createdFrom?: string
+  /** Inclusive end (YYYY-MM-DD) */
+  createdTo?: string
+  sort?: ChatListSortMode
+}
+
 /**
  * Load every chat room the given user participates in, joined with the latest message
  * and computed unread count. Uses the service-role client behind a participation gate
  * so we can produce ordered/paginated results without RLS-driven recursion.
  */
-export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> {
+export async function loadChatRooms(
+  userId: string,
+  filters: ChatListFilters = {}
+): Promise<ChatRoomSummary[]> {
+  const sort: ChatListSortMode = filters.sort ?? 'activity'
+
   // 1. Find the rooms this user belongs to.
   const { data: membership, error: memErr } = await adminClient
     .from('chat_room_participants')
@@ -24,7 +42,6 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
     .eq('user_id', userId)
 
   if (memErr) {
-    // Before chat migrations are applied, fail soft so the app shell still renders.
     if (isMissingChatSchema(memErr.message ?? '')) return []
     console.error('[chat/load-rooms] membership', memErr.message)
     return []
@@ -37,7 +54,9 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
   const [roomsResult, messagesResult, readsResult, participantsResult] = await Promise.all([
     adminClient
       .from('chat_rooms')
-      .select('id, kind, channel, title, order_id, updated_at, order:orders(site_domain)')
+      .select(
+        'id, kind, channel, title, order_id, updated_at, created_at, status, system_managed, order:orders(site_domain)'
+      )
       .in('id', roomIds),
     adminClient
       .from('chat_messages')
@@ -55,6 +74,12 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
       .in('room_id', roomIds),
   ])
 
+  if (roomsResult.error) {
+    if (isMissingChatSchema(roomsResult.error.message ?? '')) return []
+    console.error('[chat/load-rooms] rooms', roomsResult.error.message)
+    return []
+  }
+
   type RoomRow = {
     id: string
     kind: Database['public']['Enums']['chat_room_kind']
@@ -62,6 +87,9 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
     title: string | null
     order_id: string | null
     updated_at: string
+    created_at: string
+    status: Database['public']['Enums']['chat_room_status']
+    system_managed: boolean
     order: { site_domain: string } | null
   }
   type MsgRow = {
@@ -98,7 +126,6 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
   const readByRoom = new Map<string, string>()
   for (const r of reads) readByRoom.set(r.room_id, r.last_read_at)
 
-  // Unread = messages in this room sent by another user after the user's last_read_at.
   const unreadByRoom = new Map<string, number>()
   for (const m of messages) {
     if (m.sender_id === userId) continue
@@ -124,18 +151,22 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
 
   const summaries: ChatRoomSummary[] = rooms.map((r) => {
     const last = lastMessageByRoom.get(r.id)
+    const channel = inferClientChatChannel({
+      channel: r.channel,
+      kind: r.kind,
+      title: r.title,
+      orderId: r.order_id,
+    })
     return {
       id: r.id,
       kind: r.kind,
-      channel: inferClientChatChannel({
-        channel: r.channel,
-        kind: r.kind,
-        title: r.title,
-        orderId: r.order_id,
-      }),
+      channel,
+      status: r.status ?? 'active',
+      system_managed: r.system_managed ?? false,
       title: r.title,
       order_id: r.order_id,
       order_site_domain: r.order?.site_domain ?? null,
+      created_at: r.created_at ?? r.updated_at,
       last_message_body: last?.body ?? null,
       last_message_at: last?.created_at ?? null,
       last_message_sender_id: last?.sender_id ?? null,
@@ -145,18 +176,83 @@ export async function loadChatRooms(userId: string): Promise<ChatRoomSummary[]> 
     }
   })
 
-  // Sort by latest activity (last message > updated_at fallback)
-  summaries.sort((a, b) => {
-    const ta = a.last_message_at ?? a.updated_at
-    const tb = b.last_message_at ?? b.updated_at
-    return new Date(tb).getTime() - new Date(ta).getTime()
-  })
+  let out = summaries
 
-  return summaries
+  if (filters.participantId) {
+    const pid = filters.participantId
+    out = out.filter((s) => s.participants.some((p) => p.user_id === pid))
+  }
+
+  if (filters.channel && filters.channel !== 'all') {
+    out = out.filter((s) => s.channel === filters.channel)
+  }
+
+  if (filters.status && filters.status !== 'all') {
+    out = out.filter((s) => s.status === filters.status)
+  }
+
+  if (filters.createdFrom) {
+    const fromMs = Date.parse(filters.createdFrom + 'T00:00:00.000Z')
+    out = out.filter((s) => new Date(s.created_at).getTime() >= fromMs)
+  }
+  if (filters.createdTo) {
+    const toMs = Date.parse(filters.createdTo + 'T23:59:59.999Z')
+    out = out.filter((s) => new Date(s.created_at).getTime() <= toMs)
+  }
+
+  if (sort === 'created') {
+    out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  } else {
+    out.sort((a, b) => {
+      const ta = a.last_message_at ?? a.updated_at
+      const tb = b.last_message_at ?? b.updated_at
+      return new Date(tb).getTime() - new Date(ta).getTime()
+    })
+  }
+
+  return out
 }
 
 /** Total unread across all rooms for the given user (used for nav badge). */
 export async function loadTotalUnreadCount(userId: string): Promise<number> {
   const rooms = await loadChatRooms(userId)
   return rooms.reduce((sum, r) => sum + r.unread_count, 0)
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Build filters from URL search params (`/chats` and `/chats/[id]` sidebars). */
+export function chatListFiltersFromSearchParams(sp: {
+  with?: string | string[]
+  channel?: string | string[]
+  status?: string | string[]
+  from?: string | string[]
+  to?: string | string[]
+  sort?: string | string[]
+}): ChatListFilters {
+  const one = (v: string | string[] | undefined): string | undefined =>
+    Array.isArray(v) ? v[0] : v
+
+  const filters: ChatListFilters = {}
+  const withId = one(sp.with)
+  if (withId && UUID_RE.test(withId)) filters.participantId = withId
+
+  const ch = one(sp.channel)
+  if (ch === 'standard' || ch === 'support' || ch === 'sales') filters.channel = ch
+  if (ch === 'all') filters.channel = 'all'
+
+  const st = one(sp.status)
+  if (st === 'active' || st === 'archived') filters.status = st
+  if (st === 'all') filters.status = 'all'
+
+  const from = one(sp.from)
+  if (from && ISO_DATE_RE.test(from)) filters.createdFrom = from
+  const to = one(sp.to)
+  if (to && ISO_DATE_RE.test(to)) filters.createdTo = to
+
+  const sort = one(sp.sort)
+  if (sort === 'created' || sort === 'activity') filters.sort = sort
+
+  return filters
 }

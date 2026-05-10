@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { Receipt } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   INVOICE_STATUS_CHIP,
   INVOICE_STATUS_LABEL,
@@ -16,6 +19,8 @@ import type { InvoiceListRow, InvoiceStatus } from '@/lib/invoices/load-invoices
 import type { Database } from '@/lib/supabase/types'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { cn } from '@/lib/utils'
+
+const SEARCH_DEBOUNCE_MS = 320
 
 function formatDateUtc(iso: string | null): string {
   if (!iso) return '—'
@@ -63,6 +68,41 @@ export function InvoicesList({
   const [localFrom, setLocalFrom] = useState(dueFrom ?? '')
   const [localTo, setLocalTo] = useState(dueTo ?? '')
 
+  useEffect(() => {
+    function onPopState() {
+      const sp = new URLSearchParams(window.location.search)
+      setLocalQ(sp.get('q') ?? '')
+      setLocalFrom(sp.get('dueFrom') ?? '')
+      setLocalTo(sp.get('dueTo') ?? '')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  useEffect(() => {
+    const trimmed = localQ.trim()
+    if (trimmed === q.trim()) return
+    const id = window.setTimeout(() => {
+      const next = localQ.trim()
+      if (next === q.trim()) return
+      router.replace(
+        buildHref(pathname, {
+          q: next || undefined,
+          status,
+          dueFrom,
+          dueTo,
+        }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [localQ, q, pathname, router, status, dueFrom, dueTo])
+
+  function clearSearch() {
+    setLocalQ('')
+    router.replace(buildHref(pathname, { status, dueFrom, dueTo }), { scroll: false })
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     router.push(
@@ -88,61 +128,60 @@ export function InvoicesList({
 
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
-      <div>
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">Invoices</h2>
-        <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-          {role === 'client'
+      <PageHeader
+        title="Invoices"
+        description={
+          role === 'client'
             ? 'View and download invoices for your orders.'
-            : 'View, filter, and manage every invoice across the platform.'}
-        </p>
-      </div>
+            : 'View, filter, and manage every invoice across the platform.'
+        }
+      />
 
       <form onSubmit={handleSubmit} className="gap-block flex flex-col sm:flex-row sm:flex-wrap">
         <div className="gap-inset flex min-w-[220px] flex-1">
-          <input
+          <FilterInput
             name="q"
             type="search"
             value={localQ}
             onChange={(e) => setLocalQ(e.target.value)}
             placeholder="Search by domain…"
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 flex-1 rounded-md border px-3 text-sm"
+            className="flex-1"
+            autoComplete="off"
           />
-          <button
-            type="submit"
-            className="border-border bg-background text-foreground h-9 rounded-md border px-4 text-sm font-medium"
-          >
+          {localQ ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              Clear
+            </Button>
+          ) : null}
+          <Button variant="outline" size="sm" type="submit">
             Apply
-          </button>
+          </Button>
         </div>
-        <select
-          value={status ?? ''}
-          onChange={handleStatusChange}
-          className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-        >
+        <FilterSelect value={status ?? ''} onChange={handleStatusChange}>
           <option value="">All statuses</option>
           {INVOICE_STATUSES_ORDERED.map((s) => (
             <option key={s} value={s}>
               {INVOICE_STATUS_LABEL[s]}
             </option>
           ))}
-        </select>
+        </FilterSelect>
         <label className="gap-inset flex items-center text-sm">
           <span className="text-muted-foreground">Due from</span>
-          <input
+          <FilterInput
             type="date"
             value={localFrom}
             onChange={(e) => setLocalFrom(e.target.value)}
-            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
           />
         </label>
         <label className="gap-inset flex items-center text-sm">
           <span className="text-muted-foreground">to</span>
-          <input
-            type="date"
-            value={localTo}
-            onChange={(e) => setLocalTo(e.target.value)}
-            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-          />
+          <FilterInput type="date" value={localTo} onChange={(e) => setLocalTo(e.target.value)} />
         </label>
       </form>
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 
@@ -28,12 +29,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
-      <div>
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground mt-inset max-w-2xl text-sm leading-relaxed">
-          Organization profile, notifications, and integrations — extend as your rollout grows.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Organization profile, notifications, and integrations — extend as your rollout grows."
+      />
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>

@@ -62,6 +62,7 @@ function mergeOrgUserRow(profile: ProfileRow, authUser: User | undefined): OrgUs
     company_name: profile.company_name ?? null,
     phone: profile.phone ?? null,
     created_at: profile.created_at ?? null,
+    account_manager_id: profile.account_manager_id ?? null,
   }
 }
 

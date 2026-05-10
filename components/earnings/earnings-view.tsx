@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 import { markEarningPaid } from '@/lib/earnings/earnings-actions'
 import type { SourcerEarningsSummary } from '@/lib/earnings/load-earnings'
 
@@ -27,12 +28,10 @@ export function EarningsView({
 
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
-      <div>
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">{title}</h2>
-        <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-          Earnings are calculated from published/completed orders for sourcer-submitted sites.
-        </p>
-      </div>
+      <PageHeader
+        title={title}
+        description="Earnings are calculated from published/completed orders for sourcer-submitted sites."
+      />
 
       <div className="gap-block grid sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-section">

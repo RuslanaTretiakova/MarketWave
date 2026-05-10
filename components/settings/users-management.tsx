@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import {
   Filter,
   Mail,
-  MoreHorizontal,
   Plus,
   RotateCcw,
   Search,
@@ -35,6 +34,7 @@ import type { OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 import type { OrgUserRowJson } from '@/lib/org-users/types'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,10 +99,10 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
 
 function chipClasses(active: boolean) {
   return cn(
-    'rounded-full border px-2.5 text-xs capitalize transition-colors min-h-10 py-2 sm:min-h-0 sm:py-1',
+    'rounded-full border px-2.5 text-xs font-medium capitalize transition-colors min-h-10 py-2 sm:min-h-0 sm:py-1',
     active
-      ? 'border-primary bg-primary-soft text-primary-ink'
-      : 'border-border/60 bg-background hover:bg-muted'
+      ? 'border-primary bg-primary-soft text-primary-ink hover:bg-primary-soft hover:text-primary-ink'
+      : 'border-border/60 bg-background text-foreground hover:bg-muted hover:text-foreground'
   )
 }
 
@@ -444,6 +444,8 @@ export function UsersManagement({
                 <Button
                   key={key}
                   type="button"
+                  variant="outline"
+                  aria-pressed={roleFilter === key}
                   className={chipClasses(roleFilter === key)}
                   onClick={() => {
                     router.push(buildListHref({ page: 1, role: key }), { scroll: false })
@@ -457,6 +459,8 @@ export function UsersManagement({
                 <Button
                   key={key}
                   type="button"
+                  variant="outline"
+                  aria-pressed={statusFilter === key}
                   className={chipClasses(statusFilter === key)}
                   onClick={() => {
                     router.push(buildListHref({ page: 1, status: key }), { scroll: false })
@@ -590,17 +594,10 @@ export function UsersManagement({
                           >
                             <DropdownMenu>
                               <DropdownMenuTrigger
-                                type="button"
                                 disabled={disabledRow}
-                                aria-label={`Manage ${name}`}
-                                className={cn(
-                                  buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                  'rounded-full opacity-80 hover:opacity-100'
-                                )}
-                              >
-                                <MoreHorizontal className="size-4" aria-hidden />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="min-w-44">
+                                render={<TableRowActionsTrigger label={`Manage ${name}`} />}
+                              />
+                              <DropdownMenuContent align="end" className="min-w-48">
                                 <DropdownMenuGroup>
                                   <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
                                     Manage
@@ -702,17 +699,10 @@ export function UsersManagement({
                             <div data-row-actions onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger
-                                  type="button"
                                   disabled={disabledRow}
-                                  aria-label={`Manage ${name}`}
-                                  className={cn(
-                                    buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                    'rounded-full opacity-80 hover:opacity-100'
-                                  )}
-                                >
-                                  <MoreHorizontal className="size-4" aria-hidden />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="min-w-44">
+                                  render={<TableRowActionsTrigger label={`Manage ${name}`} />}
+                                />
+                                <DropdownMenuContent align="end" className="min-w-48">
                                   <DropdownMenuGroup>
                                     <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
                                       Manage

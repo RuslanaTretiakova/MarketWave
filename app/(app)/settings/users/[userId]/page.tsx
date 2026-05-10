@@ -6,6 +6,7 @@ import {
   loadOrgUserAssignmentCountsForAdmin,
   loadOrgUserRowForAdmin,
 } from '@/lib/org-users/load-org-users'
+import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +48,12 @@ export default async function SettingsUserDetailPage(props: {
     notFound()
   }
 
+  const { data: managerOptions } = await adminClient
+    .from('profiles')
+    .select('id, full_name, email')
+    .eq('role', 'manager')
+    .order('full_name', { ascending: true })
+
   let copywriterCandidates
   try {
     const result = await loadOrgCopywriterCandidatesForAdmin()
@@ -65,6 +72,7 @@ export default async function SettingsUserDetailPage(props: {
       currentUserId={user.id}
       copywriterCandidates={copywriterCandidates}
       counts={counts}
+      managerOptions={managerOptions ?? []}
     />
   )
 }

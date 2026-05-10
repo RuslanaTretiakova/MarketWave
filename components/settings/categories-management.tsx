@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MoreHorizontal, Pencil, Plus, RotateCcw, Search, Tags } from 'lucide-react'
+import { Pencil, Plus, RotateCcw, Search, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/lib/categories/category-admin-actions'
@@ -14,6 +14,7 @@ import {
 } from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -305,16 +306,11 @@ export function CategoriesManagement({
                         >
                           <DropdownMenu>
                             <DropdownMenuTrigger
-                              type="button"
-                              aria-label={`Manage category ${row.name}`}
-                              className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'rounded-full opacity-80 hover:opacity-100'
-                              )}
-                            >
-                              <MoreHorizontal className="size-4" aria-hidden />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-44">
+                              render={
+                                <TableRowActionsTrigger label={`Manage category ${row.name}`} />
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="min-w-48">
                               <DropdownMenuGroup>
                                 <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
                                   Manage
@@ -354,16 +350,11 @@ export function CategoriesManagement({
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger
-                              type="button"
-                              aria-label={`Manage category ${row.name}`}
-                              className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'rounded-full opacity-80 hover:opacity-100'
-                              )}
-                            >
-                              <MoreHorizontal className="size-4" aria-hidden />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-44">
+                              render={
+                                <TableRowActionsTrigger label={`Manage category ${row.name}`} />
+                              }
+                            />
+                            <DropdownMenuContent align="end" className="min-w-48">
                               <DropdownMenuGroup>
                                 <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
                                   Manage

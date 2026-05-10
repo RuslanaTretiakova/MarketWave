@@ -330,6 +330,39 @@ export type Database = {
           },
         ]
       }
+      chat_message_reads: {
+        Row: {
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_reads_message_id_fkey'
+            columns: ['message_id']
+            isOneToOne: false
+            referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_message_reads_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       chat_rooms: {
         Row: {
           channel: Database['public']['Enums']['chat_channel_type']
@@ -337,7 +370,10 @@ export type Database = {
           created_by: string | null
           id: string
           kind: Database['public']['Enums']['chat_room_kind']
+          onboarding_for_user_id: string | null
           order_id: string | null
+          status: Database['public']['Enums']['chat_room_status']
+          system_managed: boolean
           title: string | null
           updated_at: string
         }
@@ -347,7 +383,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           kind: Database['public']['Enums']['chat_room_kind']
+          onboarding_for_user_id?: string | null
           order_id?: string | null
+          status?: Database['public']['Enums']['chat_room_status']
+          system_managed?: boolean
           title?: string | null
           updated_at?: string
         }
@@ -357,7 +396,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           kind?: Database['public']['Enums']['chat_room_kind']
+          onboarding_for_user_id?: string | null
           order_id?: string | null
+          status?: Database['public']['Enums']['chat_room_status']
+          system_managed?: boolean
           title?: string | null
           updated_at?: string
         }
@@ -365,6 +407,13 @@ export type Database = {
           {
             foreignKeyName: 'chat_rooms_created_by_fkey'
             columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_rooms_onboarding_for_user_id_fkey'
+            columns: ['onboarding_for_user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -679,6 +728,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_manager_id: string | null
           avatar_url: string | null
           bio: string | null
           company_name: string | null
@@ -692,6 +742,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_manager_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           company_name?: string | null
@@ -705,6 +756,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_manager_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           company_name?: string | null
@@ -717,7 +769,15 @@ export type Database = {
           role?: Database['public']['Enums']['user_role']
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'profiles_account_manager_id_fkey'
+            columns: ['account_manager_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       sourcer_earnings: {
         Row: {
@@ -996,6 +1056,7 @@ export type Database = {
       chat_channel_type: 'standard' | 'support' | 'sales'
       chat_message_type: 'text' | 'system'
       chat_room_kind: 'order' | 'direct' | 'group'
+      chat_room_status: 'active' | 'archived'
       invoice_status: 'pending' | 'paid' | 'overdue' | 'canceled'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
       order_content_status: 'draft' | 'submitted'
@@ -1139,6 +1200,7 @@ export const Constants = {
       chat_channel_type: ['standard', 'support', 'sales'],
       chat_message_type: ['text', 'system'],
       chat_room_kind: ['order', 'direct', 'group'],
+      chat_room_status: ['active', 'archived'],
       invoice_status: ['pending', 'paid', 'overdue', 'canceled'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
       order_content_status: ['draft', 'submitted'],

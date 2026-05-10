@@ -13,6 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  menuActionDialogContentClassName,
+  menuActionDialogTitleClassName,
+} from '@/components/ui/menu-action-dialog'
 import { siteAdminTransitionMenuLabel } from '@/lib/sites/admin-site-transitions'
 import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 import { changeSiteStatus } from '@/lib/sites/site-actions'
@@ -98,14 +102,25 @@ export function SiteChangeStatusDialog({
     })
   }
 
+  const description = (
+    <>
+      <span className="block">
+        <strong className="text-foreground">{domainLabel}</strong>
+      </span>
+      {activeTransition ? <span className="mt-2 block">{DISCLAIMER[activeTransition]}</span> : null}
+    </>
+  )
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent aria-describedby="site-status-disclaimer">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription id="site-status-disclaimer">
-            <span className="text-foreground font-medium">{domainLabel}</span>
-          </DialogDescription>
+      <DialogContent
+        showCloseButton={!pending}
+        aria-describedby="site-status-disclaimer"
+        className={menuActionDialogContentClassName}
+      >
+        <DialogHeader className="gap-2">
+          <DialogTitle className={menuActionDialogTitleClassName}>{title}</DialogTitle>
+          <DialogDescription id="site-status-disclaimer">{description}</DialogDescription>
         </DialogHeader>
 
         {showPicker ? (
@@ -128,18 +143,19 @@ export function SiteChangeStatusDialog({
           </div>
         ) : null}
 
-        {activeTransition ? (
-          <p className="text-muted-foreground text-sm">{DISCLAIMER[activeTransition]}</p>
-        ) : null}
-
         {error ? (
           <p className="text-destructive text-sm" role="alert">
             {error}
           </p>
         ) : null}
 
-        <DialogFooter className="gap-inset">
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+        <DialogFooter className="gap-2 sm:gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => handleOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button
@@ -148,7 +164,7 @@ export function SiteChangeStatusDialog({
             disabled={pending || !activeTransition}
             onClick={submit}
           >
-            Confirm
+            {pending ? 'Confirming…' : 'Confirm'}
           </Button>
         </DialogFooter>
       </DialogContent>

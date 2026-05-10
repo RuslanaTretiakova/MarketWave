@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { MoreHorizontal } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+
+import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
+import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 
 import { assignCopywriter } from '@/lib/orders/assign-copywriter-action'
 import { submitContent } from '@/lib/orders/content-actions'
@@ -31,15 +33,7 @@ import {
   sendInvoiceEmail,
 } from '@/lib/invoices/invoice-actions'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
-import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,20 +122,18 @@ export function OrderActionsMenu({
       <DropdownMenu>
         <DropdownMenuTrigger
           type="button"
-          aria-label="Order actions"
-          className={cn(
-            triggerVariant === 'icon'
-              ? cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-full')
-              : cn(buttonVariants({ variant: 'outline', size: 'sm' }))
-          )}
+          className={
+            triggerVariant === 'button'
+              ? cn(buttonVariants({ variant: 'outline', size: 'sm' }))
+              : undefined
+          }
+          render={
+            triggerVariant === 'icon' ? <TableRowActionsTrigger label="Order actions" /> : undefined
+          }
         >
-          {triggerVariant === 'icon' ? (
-            <MoreHorizontal className="size-4" aria-hidden />
-          ) : (
-            'Actions'
-          )}
+          {triggerVariant === 'button' ? 'Actions' : null}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-52">
+        <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
               Order
@@ -325,27 +317,18 @@ export function OrderActionsMenu({
         </p>
       )}
 
-      <Dialog open={dialog === 'cancel_order'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel order</DialogTitle>
-            <DialogDescription>This action cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => runAction(() => cancelOrder(orderId), 'Order canceled.')}
-            >
-              Confirm cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MenuActionDialog
+        open={dialog === 'cancel_order'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title="Cancel order"
+        description="This action cannot be undone."
+        confirmVariant="destructive"
+        confirmLabel="Confirm cancel"
+        busy={pending}
+        onConfirm={() => runAction(() => cancelOrder(orderId), 'Order canceled.')}
+      />
 
-      <Dialog
+      <MenuActionDialog
         open={dialog === 'request_changes'}
         onOpenChange={(open) => {
           if (!open) {
@@ -354,12 +337,9 @@ export function OrderActionsMenu({
             setError(null)
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request changes</DialogTitle>
-            <DialogDescription>Add revision notes for the copywriter.</DialogDescription>
-          </DialogHeader>
+        title="Request changes"
+        description="Add revision notes for the copywriter."
+        middle={
           <textarea
             value={changeComment}
             onChange={(event) => setChangeComment(event.target.value)}
@@ -368,24 +348,17 @@ export function OrderActionsMenu({
             className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
             placeholder="Describe what should be changed..."
           />
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="cta"
-              disabled={pending || !changeComment.trim()}
-              onClick={() =>
-                runAction(() => requestChanges(orderId, changeComment), 'Change request sent.')
-              }
-            >
-              Send back
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Sending…' : 'Send back'}
+        confirmDisabled={!changeComment.trim()}
+        busy={pending}
+        onConfirm={() =>
+          runAction(() => requestChanges(orderId, changeComment), 'Change request sent.')
+        }
+      />
 
-      <Dialog
+      <MenuActionDialog
         open={dialog === 'publish'}
         onOpenChange={(open) => {
           if (!open) {
@@ -394,37 +367,27 @@ export function OrderActionsMenu({
             setError(null)
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mark published</DialogTitle>
-            <DialogDescription>Provide the public URL of the published page.</DialogDescription>
-          </DialogHeader>
+        title="Mark published"
+        description="Provide the public URL of the published page."
+        middle={
           <input
             type="url"
             value={publishedUrl}
             onChange={(event) => setPublishedUrl(event.target.value)}
             placeholder="https://example.com/post"
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 rounded-md border px-3 text-sm"
+            className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-md border px-3 text-sm"
           />
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="cta"
-              disabled={pending || !publishedUrl.trim()}
-              onClick={() =>
-                runAction(() => markPublished(orderId, publishedUrl), 'Order marked published.')
-              }
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Confirming…' : 'Confirm'}
+        confirmDisabled={!publishedUrl.trim()}
+        busy={pending}
+        onConfirm={() =>
+          runAction(() => markPublished(orderId, publishedUrl), 'Order marked published.')
+        }
+      />
 
-      <Dialog
+      <MenuActionDialog
         open={dialog === 'assign_copywriter'}
         onOpenChange={(open) => {
           if (!open) {
@@ -432,16 +395,13 @@ export function OrderActionsMenu({
             setCopywriterId(context.copywriterId ?? '')
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign copywriter</DialogTitle>
-            <DialogDescription>Choose a copywriter for this order.</DialogDescription>
-          </DialogHeader>
+        title="Assign copywriter"
+        description="Choose a copywriter for this order."
+        middle={
           <select
             value={copywriterId}
             onChange={(event) => setCopywriterId(event.target.value)}
-            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+            className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
           >
             <option value="">Unassigned</option>
             {(copywriterOptions ?? []).map((option) => (
@@ -450,31 +410,25 @@ export function OrderActionsMenu({
               </option>
             ))}
           </select>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="cta"
-              onClick={() =>
-                runAction(
-                  () => assignCopywriter(orderId, copywriterId || null),
-                  copywriterId ? 'Copywriter assigned.' : 'Copywriter unassigned.'
-                )
-              }
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Saving…' : 'Save'}
+        busy={pending}
+        onConfirm={() =>
+          runAction(
+            () => assignCopywriter(orderId, copywriterId || null),
+            copywriterId ? 'Copywriter assigned.' : 'Copywriter unassigned.'
+          )
+        }
+      />
 
-      <Dialog open={dialog === 'edit_order'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit order</DialogTitle>
-            <DialogDescription>Update order-level details and requirements.</DialogDescription>
-          </DialogHeader>
+      <MenuActionDialog
+        open={dialog === 'edit_order'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title="Edit order"
+        description="Update order-level details and requirements."
+        contentClassName="max-w-lg"
+        middle={
           <div className="gap-inset flex flex-col">
             <label className="gap-1 text-sm">
               <span className="text-muted-foreground">Publish date</span>
@@ -482,7 +436,7 @@ export function OrderActionsMenu({
                 type="date"
                 value={publishDate}
                 onChange={(event) => setPublishDate(event.target.value)}
-                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+                className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
               />
             </label>
             <label className="gap-1 text-sm">
@@ -492,7 +446,7 @@ export function OrderActionsMenu({
                 maxLength={500}
                 value={anchorText}
                 onChange={(event) => setAnchorText(event.target.value)}
-                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+                className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
               />
             </label>
             <label className="gap-1 text-sm">
@@ -502,7 +456,7 @@ export function OrderActionsMenu({
                 maxLength={2048}
                 value={targetUrl}
                 onChange={(event) => setTargetUrl(event.target.value)}
-                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+                className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
               />
             </label>
             <label className="gap-1 text-sm">
@@ -512,46 +466,39 @@ export function OrderActionsMenu({
                 onChange={(event) => setClientNotes(event.target.value)}
                 maxLength={4000}
                 rows={4}
-                className="border-border bg-background text-foreground rounded-md border px-3 py-2 text-sm"
+                className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
               />
             </label>
           </div>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="cta"
-              onClick={() =>
-                runAction(
-                  () =>
-                    updateOrderFields({
-                      orderId,
-                      publishDate: publishDate || null,
-                      anchorText,
-                      targetUrl,
-                      clientNotes,
-                    }),
-                  'Order updated.'
-                )
-              }
-            >
-              Save changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Saving…' : 'Save changes'}
+        busy={pending}
+        onConfirm={() =>
+          runAction(
+            () =>
+              updateOrderFields({
+                orderId,
+                publishDate: publishDate || null,
+                anchorText,
+                targetUrl,
+                clientNotes,
+              }),
+            'Order updated.'
+          )
+        }
+      />
 
-      <Dialog open={dialog === 'override_status'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Override status</DialogTitle>
-            <DialogDescription>Admin only: set a manual status for this order.</DialogDescription>
-          </DialogHeader>
+      <MenuActionDialog
+        open={dialog === 'override_status'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title="Override status"
+        description="Admin only: set a manual status for this order."
+        middle={
           <select
             value={overrideStatus}
             onChange={(event) => setOverrideStatus(event.target.value as typeof overrideStatus)}
-            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+            className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
           >
             {ORDER_STATUSES_ORDERED.map((status) => (
               <option key={status} value={status}>
@@ -559,46 +506,25 @@ export function OrderActionsMenu({
               </option>
             ))}
           </select>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="cta"
-              onClick={() =>
-                runAction(
-                  () => overrideOrderStatus(orderId, overrideStatus),
-                  'Order status overridden.'
-                )
-              }
-            >
-              Apply
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Applying…' : 'Apply'}
+        busy={pending}
+        onConfirm={() =>
+          runAction(() => overrideOrderStatus(orderId, overrideStatus), 'Order status overridden.')
+        }
+      />
 
-      <Dialog open={dialog === 'delete_order'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete order</DialogTitle>
-            <DialogDescription>
-              This removes the order permanently. Allowed only for new or canceled orders.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setDialog(null)}>
-              Back
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => runAction(() => deleteOrder(orderId), 'Order deleted.')}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MenuActionDialog
+        open={dialog === 'delete_order'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title="Delete order"
+        description="This removes the order permanently. Allowed only for new or canceled orders."
+        confirmVariant="destructive"
+        confirmLabel={pending ? 'Deleting…' : 'Delete'}
+        busy={pending}
+        onConfirm={() => runAction(() => deleteOrder(orderId), 'Order deleted.')}
+      />
     </>
   )
 }

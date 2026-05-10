@@ -355,6 +355,49 @@ export async function disableTeamMemberAfterConfirmation(input: {
   return { ok: true }
 }
 
+export async function setClientAccountManager(input: {
+  clientUserId: string
+  managerId: string | null
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const gate = await assertAdmin()
+  if ('error' in gate) {
+    return { ok: false, message: gate.error }
+  }
+
+  const { data: client, error: cErr } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', input.clientUserId)
+    .maybeSingle()
+  if (cErr || !client || client.role !== 'client') {
+    return { ok: false, message: 'Account manager can only be set for client users.' }
+  }
+
+  if (input.managerId) {
+    const { data: mgr, error: mErr } = await adminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', input.managerId)
+      .maybeSingle()
+    if (mErr || !mgr || mgr.role !== 'manager') {
+      return { ok: false, message: 'Select a valid manager.' }
+    }
+  }
+
+  const { error } = await adminClient
+    .from('profiles')
+    .update({ account_manager_id: input.managerId })
+    .eq('id', input.clientUserId)
+
+  if (error) {
+    return { ok: false, message: error.message ?? 'Could not update account manager.' }
+  }
+
+  revalidatePath('/settings/users')
+  revalidatePath(`/settings/users/${input.clientUserId}`)
+  return { ok: true }
+}
+
 /** Activate (unban) after confirmation — same guards as unban path except admin role still applies to disabled admin edge cases (normally N/A). */
 export async function activateTeamMember(
   targetUserId: string

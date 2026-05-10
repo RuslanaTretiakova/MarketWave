@@ -12,6 +12,7 @@ import { CopywriterContentEditor } from '@/components/orders/copywriter-content-
 import { OrderContentViewer } from '@/components/orders/order-content-viewer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/page-header'
 import { cancelInvoice, markInvoiceOverdue, markInvoicePaid } from '@/lib/invoices/invoice-actions'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
@@ -127,13 +128,10 @@ export function OrderDetailView({
 
   return (
     <div className="space-y-layout mx-auto max-w-4xl">
-      {/* Header */}
-      <div className="gap-block flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-            {order.site_domain}
-          </h2>
-          <div className="mt-inset gap-block flex items-center">
+      <PageHeader
+        title={order.site_domain}
+        meta={
+          <div className="gap-block flex items-center">
             <span
               className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -146,38 +144,40 @@ export function OrderDetailView({
               ${order.price.toFixed(2)}
             </span>
           </div>
-        </div>
-        <div className="gap-inset flex shrink-0 flex-wrap">
-          {chatRoomId && (
-            <Link
-              href={`/chats/${chatRoomId}`}
-              className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
-            >
-              <MessageSquare className="size-4" /> Open chat
-            </Link>
-          )}
-          <OrderActionsMenu
-            context={{
-              role,
-              status: order.status,
-              userId,
-              orderUserId: order.user_id,
-              copywriterId: order.copywriter_id,
-              invoiceId: order.invoice?.id ?? null,
-              invoiceStatus: order.invoice?.status ?? null,
-            }}
-            orderId={order.id}
-            detailHref={`/orders/${order.id}`}
-            invoiceHref={order.invoice ? `/invoices/${order.invoice.id}` : undefined}
-            copywriterOptions={copywriterOptions}
-            initialPublishDate={order.publish_date}
-            initialAnchorText={order.anchor_text}
-            initialTargetUrl={order.target_url}
-            initialClientNotes={order.client_notes}
-            triggerVariant="button"
-          />
-        </div>
-      </div>
+        }
+        action={
+          <div className="gap-inset flex flex-wrap">
+            {chatRoomId && (
+              <Link
+                href={`/chats/${chatRoomId}`}
+                className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
+              >
+                <MessageSquare className="size-4" /> Open chat
+              </Link>
+            )}
+            <OrderActionsMenu
+              context={{
+                role,
+                status: order.status,
+                userId,
+                orderUserId: order.user_id,
+                copywriterId: order.copywriter_id,
+                invoiceId: order.invoice?.id ?? null,
+                invoiceStatus: order.invoice?.status ?? null,
+              }}
+              orderId={order.id}
+              detailHref={`/orders/${order.id}`}
+              invoiceHref={order.invoice ? `/invoices/${order.invoice.id}` : undefined}
+              copywriterOptions={copywriterOptions}
+              initialPublishDate={order.publish_date}
+              initialAnchorText={order.anchor_text}
+              initialTargetUrl={order.target_url}
+              initialClientNotes={order.client_notes}
+              triggerVariant="button"
+            />
+          </div>
+        }
+      />
 
       <div className="gap-layout grid lg:grid-cols-3">
         {/* Main info */}

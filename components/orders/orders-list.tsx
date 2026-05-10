@@ -1,10 +1,14 @@
 'use client'
 import { ClipboardList } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
+import { PageHeader } from '@/components/ui/page-header'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import type { OrderListRow, OrderStatus, UserRole } from '@/lib/orders/load-orders'
@@ -14,6 +18,8 @@ import {
   ORDER_STATUSES_ORDERED,
 } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
+
+const SEARCH_DEBOUNCE_MS = 320
 
 function buildHref(
   pathname: string,
@@ -51,17 +57,39 @@ export function OrdersList({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [searchDraft, setSearchDraft] = useState(q)
+
+  useEffect(() => {
+    function onPopState() {
+      const sp = new URLSearchParams(window.location.search)
+      setSearchDraft(sp.get('q') ?? '')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  useEffect(() => {
+    const trimmed = searchDraft.trim()
+    if (trimmed === q.trim()) return
+    const id = window.setTimeout(() => {
+      const next = searchDraft.trim()
+      if (next === q.trim()) return
+      router.replace(
+        buildHref(pathname, { q: next || undefined, status, copywriter: copywriterId }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [searchDraft, q, pathname, router, status, copywriterId])
+
+  function clearSearch() {
+    setSearchDraft('')
+    router.replace(buildHref(pathname, { status, copywriter: copywriterId }), { scroll: false })
+  }
 
   const showClientColumn = role === 'admin' || role === 'manager'
   const showCopywriterFilter =
     (role === 'admin' || role === 'manager') && (copywriterOptions?.length ?? 0) > 0
-
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const fd = new FormData(e.currentTarget)
-    const query = (fd.get('q') as string)?.trim() ?? ''
-    router.push(buildHref(pathname, { q: query, status, copywriter: copywriterId }))
-  }
 
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
     router.push(
@@ -75,54 +103,48 @@ export function OrdersList({
 
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
-      <div>
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">Orders</h2>
-        <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-          Track order status through the full pipeline.
-        </p>
-      </div>
+      <PageHeader title="Orders" description="Track order status through the full pipeline." />
 
       <div className="gap-block flex flex-col sm:flex-row sm:flex-wrap">
-        <form onSubmit={handleSearch} className="gap-inset flex min-w-[220px] flex-1">
-          <input
+        <form onSubmit={(e) => e.preventDefault()} className="gap-inset flex min-w-[220px] flex-1">
+          <FilterInput
             name="q"
             type="search"
-            defaultValue={q}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             placeholder="Search by domain…"
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 flex-1 rounded-md border px-3 text-sm"
+            className="flex-1"
+            autoComplete="off"
           />
-          <button
-            type="submit"
-            className="border-border bg-background text-foreground h-9 rounded-md border px-4 text-sm font-medium"
-          >
-            Search
-          </button>
+          {searchDraft ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              Clear
+            </Button>
+          ) : null}
         </form>
-        <select
-          value={status ?? ''}
-          onChange={handleStatusChange}
-          className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-        >
+        <FilterSelect value={status ?? ''} onChange={handleStatusChange}>
           <option value="">All statuses</option>
           {ORDER_STATUSES_ORDERED.map((s) => (
             <option key={s} value={s}>
               {ORDER_STATUS_LABEL[s]}
             </option>
           ))}
-        </select>
+        </FilterSelect>
         {showCopywriterFilter && (
-          <select
-            value={copywriterId ?? ''}
-            onChange={handleCopywriterChange}
-            className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-          >
+          <FilterSelect value={copywriterId ?? ''} onChange={handleCopywriterChange}>
             <option value="">All copywriters</option>
             {(copywriterOptions ?? []).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.full_name ?? c.email ?? c.id.slice(0, 8)}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         )}
       </div>
 

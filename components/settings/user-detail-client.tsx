@@ -10,6 +10,7 @@ import {
   activateTeamMember,
   disableTeamMemberAfterConfirmation,
   previewDisableUser,
+  setClientAccountManager,
 } from '@/lib/auth/user-admin-actions'
 import type { OrgUserRowJson } from '@/lib/org-users/types'
 import {
@@ -31,6 +32,7 @@ import { StatusBadge } from '@/components/settings/status-badge'
 import { UserAvatar } from '@/components/settings/user-avatar'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FilterSelect } from '@/components/ui/filter-bar'
 import { FormControlInput, FormControlTextarea } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 
@@ -45,11 +47,84 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
   return 'active'
 }
 
+type ManagerOptionRow = { id: string; full_name: string | null; email: string | null }
+
+function AccountManagerCard({
+  clientId,
+  initialManagerId,
+  managers,
+}: {
+  clientId: string
+  initialManagerId: string | null
+  managers: ManagerOptionRow[]
+}) {
+  const router = useRouter()
+  const [managerId, setManagerId] = useState(initialManagerId ?? '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  return (
+    <Card className="border-border/60 shadow-soft ring-border/60 gap-0 rounded-2xl py-0 ring-1">
+      <CardHeader className="border-border/60 gap-inset px-section pb-block pt-section border-b">
+        <CardTitle className="font-display text-lg font-semibold">Account manager</CardTitle>
+        <CardDescription>
+          Assigned manager for this client. Used for the automatic Sales chat after first sign-in.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="gap-block px-section py-section flex flex-col">
+        <FilterSelect
+          className="max-w-md"
+          value={managerId}
+          onChange={(e) => setManagerId(e.target.value)}
+          disabled={busy}
+        >
+          <option value="">None</option>
+          {managers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.full_name?.trim() || m.email || m.id.slice(0, 8)}
+            </option>
+          ))}
+        </FilterSelect>
+        {err ? (
+          <p className="text-destructive text-sm" role="alert">
+            {err}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          size="sm"
+          variant="cta"
+          disabled={busy || (managerId || null) === (initialManagerId ?? null)}
+          onClick={() => {
+            setErr(null)
+            setBusy(true)
+            void (async () => {
+              const res = await setClientAccountManager({
+                clientUserId: clientId,
+                managerId: managerId || null,
+              })
+              setBusy(false)
+              if (!res.ok) {
+                setErr(res.message)
+                return
+              }
+              router.refresh()
+            })()
+          }}
+        >
+          {busy ? 'Saving…' : 'Save manager'}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function UserDetailClient({
   row,
   currentUserId,
   copywriterCandidates,
   counts,
+  managerOptions = [],
 }: {
   row: OrgUserRowJson
   currentUserId: string
@@ -59,6 +134,7 @@ export function UserDetailClient({
     copywriterActiveOrders: number
     sourcerSitesCount: number
   }
+  managerOptions?: ManagerOptionRow[]
 }) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
@@ -367,6 +443,15 @@ export function UserDetailClient({
           </div>
         </CardContent>
       </Card>
+
+      {row.role === 'client' ? (
+        <AccountManagerCard
+          key={`${row.id}-${row.account_manager_id ?? 'none'}`}
+          clientId={row.id}
+          initialManagerId={row.account_manager_id}
+          managers={managerOptions}
+        />
+      ) : null}
 
       {formMessage ? (
         <p className="text-foreground text-sm" role="status">

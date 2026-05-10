@@ -51,8 +51,8 @@ export default async function NewSitePage() {
           <BreadcrumbList className="text-xs">
             <BreadcrumbItem>
               <BreadcrumbLink render={<Link href="/sites" />}>Sites</BreadcrumbLink>
-              <BreadcrumbSeparator />
             </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Create site</BreadcrumbPage>
             </BreadcrumbItem>
