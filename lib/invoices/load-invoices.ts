@@ -108,7 +108,11 @@ export async function loadInvoicesPage(
         .order('created_at', { ascending: false })
         .range(from, to)
 
-      data = (fallback.data ?? []).map((r) => normalizeSentAt(r))
+      // Primary query types `data` with full row shape; fallback select omits `sent_at`.
+      // Generated DB types for that select do not satisfy `normalizeSentAt`'s constraint, so widen here.
+      data = (fallback.data ?? []).map((r) =>
+        normalizeSentAt(r as unknown as { sent_at?: string | null })
+      ) as typeof data
       error = fallback.error
       count = fallback.count
     }
@@ -224,7 +228,9 @@ export async function loadInvoiceDetail(
       .eq('id', invoiceId)
       .maybeSingle()
 
-    data = fallback.data ? normalizeSentAt(fallback.data) : fallback.data
+    data = fallback.data
+      ? (normalizeSentAt(fallback.data as unknown as { sent_at?: string | null }) as typeof data)
+      : fallback.data
     error = fallback.error
   }
 
