@@ -15,10 +15,9 @@ export const metadata = {
 
 type SearchParams = {
   page?: string | string[]
-  q?: string | string[]
+  client?: string | string[]
   status?: string | string[]
-  dueFrom?: string | string[]
-  dueTo?: string | string[]
+  billingPeriod?: string | string[]
 }
 
 export default async function InvoicesPage(props: { searchParams: Promise<SearchParams> }) {
@@ -41,25 +40,22 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
   }
 
   const pageRaw = searchParamFirstString(sp.page)
-  const qRaw = searchParamFirstString(sp.q)
+  const clientRaw = searchParamFirstString(sp.client)
   const statusRaw = searchParamFirstString(sp.status)
-  const dueFromRaw = searchParamFirstString(sp.dueFrom)
-  const dueToRaw = searchParamFirstString(sp.dueTo)
+  const billingPeriodRaw = searchParamFirstString(sp.billingPeriod)
 
   const page = Math.max(1, Math.floor(Number(pageRaw)) || 1)
-  const q = qRaw?.trim() ?? ''
+  const client = clientRaw?.trim() ?? ''
   const status = INVOICE_STATUSES_ORDERED.includes(statusRaw as InvoiceStatus)
     ? (statusRaw as InvoiceStatus)
     : undefined
-  const dueFrom = dueFromRaw?.trim() || undefined
-  const dueTo = dueToRaw?.trim() || undefined
+  const billingPeriod = billingPeriodRaw?.trim() || new Date().toISOString().slice(0, 7)
 
   const { rows, totalCount } = await loadInvoicesPage(supabase, profile.role, {
     page,
-    q,
+    client,
     status,
-    dueFrom,
-    dueTo,
+    billingPeriod,
   })
 
   return (
@@ -70,10 +66,9 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
         rows={rows}
         totalCount={totalCount}
         page={page}
-        q={q}
+        client={client}
         status={status}
-        dueFrom={dueFrom}
-        dueTo={dueTo}
+        billingPeriod={billingPeriod}
       />
     </div>
   )

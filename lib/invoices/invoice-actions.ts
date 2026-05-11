@@ -46,13 +46,18 @@ export async function markInvoicePaid(
 
   const { data: invoice, error: loadErr } = await adminClient
     .from('invoices')
-    .select('id, order_id, status')
+    .select('id, order_id, status, order:orders!inner(status)')
     .eq('id', invoiceId)
     .maybeSingle()
 
   if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
   if (invoice.status === 'paid') return { ok: false, message: 'Invoice is already paid.' }
-  if (invoice.status === 'canceled') return { ok: false, message: 'Cannot pay a canceled invoice.' }
+  if (invoice.order && invoice.order.status === 'canceled') {
+    return { ok: false, message: 'Canceled orders cannot be marked as paid.' }
+  }
+  if (invoice.status !== 'sent') {
+    return { ok: false, message: 'Only sent invoices can be marked as paid.' }
+  }
 
   const { error } = await adminClient
     .from('invoices')
@@ -65,63 +70,10 @@ export async function markInvoicePaid(
   return { ok: true }
 }
 
-export async function markInvoiceOverdue(
-  invoiceId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const auth = await requireInvoiceManager()
-  if (!auth.ok) return auth
-
-  const { data: invoice, error: loadErr } = await adminClient
-    .from('invoices')
-    .select('id, order_id, status')
-    .eq('id', invoiceId)
-    .maybeSingle()
-
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
-  if (invoice.status !== 'pending')
-    return { ok: false, message: 'Only pending invoices can be marked overdue.' }
-
-  const { error } = await adminClient
-    .from('invoices')
-    .update({ status: 'overdue' })
-    .eq('id', invoiceId)
-
-  if (error) return { ok: false, message: error.message ?? 'Could not update invoice.' }
-
-  revalidateInvoice(invoiceId, invoice.order_id)
-  return { ok: true }
-}
-
-export async function cancelInvoice(
-  invoiceId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const auth = await requireInvoiceManager()
-  if (!auth.ok) return auth
-
-  const { data: invoice, error: loadErr } = await adminClient
-    .from('invoices')
-    .select('id, order_id, status')
-    .eq('id', invoiceId)
-    .maybeSingle()
-
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
-  if (invoice.status === 'paid') return { ok: false, message: 'Cannot cancel a paid invoice.' }
-  if (invoice.status === 'canceled') return { ok: false, message: 'Invoice is already canceled.' }
-
-  const { error } = await adminClient
-    .from('invoices')
-    .update({ status: 'canceled' })
-    .eq('id', invoiceId)
-
-  if (error) return { ok: false, message: error.message ?? 'Could not cancel invoice.' }
-
-  revalidateInvoice(invoiceId, invoice.order_id)
-  return { ok: true }
-}
-
 export type UpdateInvoiceInput = {
-  amount?: number
+  billing_month?: string | null
   due_date?: string | null
+  items?: Array<{ id: string; amount: number }>
 }
 
 export async function updateInvoice(
@@ -131,14 +83,7 @@ export async function updateInvoice(
   const auth = await requireInvoiceManager()
   if (!auth.ok) return auth
 
-  const patch: { amount?: number; due_date?: string | null } = {}
-
-  if (input.amount !== undefined) {
-    if (!Number.isFinite(input.amount) || input.amount < 0) {
-      return { ok: false, message: 'Amount must be a non-negative number.' }
-    }
-    patch.amount = Math.round(input.amount * 100) / 100
-  }
+  const patch: { due_date?: string | null; billing_month?: string | null } = {}
 
   if (input.due_date !== undefined) {
     if (input.due_date === null || input.due_date === '') {
@@ -151,8 +96,31 @@ export async function updateInvoice(
       patch.due_date = dateStr
     }
   }
+  if (input.billing_month !== undefined) {
+    if (input.billing_month === null || input.billing_month === '') {
+      patch.billing_month = null
+    } else {
+      const month = input.billing_month.trim()
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        return { ok: false, message: 'Billing month must use YYYY-MM format.' }
+      }
+      patch.billing_month = `${month}-01`
+    }
+  }
 
-  if (Object.keys(patch).length === 0) {
+  if (input.items !== undefined) {
+    if (!Array.isArray(input.items) || input.items.length === 0) {
+      return { ok: false, message: 'Invoice must include at least one item.' }
+    }
+    for (const item of input.items) {
+      if (!item.id) return { ok: false, message: 'Invoice item id is required.' }
+      if (!Number.isFinite(item.amount) || item.amount < 0) {
+        return { ok: false, message: 'Each item amount must be a non-negative number.' }
+      }
+    }
+  }
+
+  if (Object.keys(patch).length === 0 && input.items === undefined) {
     return { ok: false, message: 'Nothing to update.' }
   }
 
@@ -163,12 +131,38 @@ export async function updateInvoice(
     .maybeSingle()
 
   if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
-  if (invoice.status === 'paid' || invoice.status === 'canceled') {
-    return { ok: false, message: 'Cannot edit a paid or canceled invoice.' }
+  if (invoice.status !== 'draft') {
+    return { ok: false, message: 'Only draft invoices can be edited.' }
   }
 
-  const { error } = await adminClient.from('invoices').update(patch).eq('id', invoiceId)
-  if (error) return { ok: false, message: error.message ?? 'Could not update invoice.' }
+  if (input.items && input.items.length > 0) {
+    const ids = input.items.map((it) => it.id)
+    const { data: existingItems, error: itemLoadErr } = await adminClient
+      .from('invoice_items')
+      .select('id')
+      .eq('invoice_id', invoiceId)
+      .in('id', ids)
+    if (itemLoadErr)
+      return { ok: false, message: itemLoadErr.message ?? 'Could not load invoice items.' }
+    if ((existingItems ?? []).length !== ids.length) {
+      return { ok: false, message: 'Some invoice items are invalid for this invoice.' }
+    }
+
+    for (const item of input.items) {
+      const { error: itemErr } = await adminClient
+        .from('invoice_items')
+        .update({ amount: Math.round(item.amount * 100) / 100 })
+        .eq('id', item.id)
+        .eq('invoice_id', invoiceId)
+      if (itemErr)
+        return { ok: false, message: itemErr.message ?? 'Could not update invoice item.' }
+    }
+  }
+
+  if (Object.keys(patch).length > 0) {
+    const { error } = await adminClient.from('invoices').update(patch).eq('id', invoiceId)
+    if (error) return { ok: false, message: error.message ?? 'Could not update invoice.' }
+  }
 
   revalidateInvoice(invoiceId, invoice.order_id)
   return { ok: true }
@@ -192,14 +186,17 @@ export async function sendInvoiceEmail(
     .maybeSingle()
 
   if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
-  if (invoice.status === 'canceled') {
-    return { ok: false, message: 'Cannot send a canceled invoice.' }
+  if (invoice.status === 'paid') {
+    return { ok: false, message: 'Paid invoices cannot be sent again.' }
+  }
+  if (invoice.status !== 'draft') {
+    return { ok: false, message: 'Only draft invoices can be sent.' }
   }
 
   const sentAt = new Date().toISOString()
   const { error } = await adminClient
     .from('invoices')
-    .update({ sent_at: sentAt })
+    .update({ status: 'sent', sent_at: sentAt })
     .eq('id', invoiceId)
 
   if (error) return { ok: false, message: error.message ?? 'Could not record send timestamp.' }
@@ -208,12 +205,9 @@ export async function sendInvoiceEmail(
   return { ok: true, sentAt }
 }
 
-export async function generateMonthlyInvoiceGroups(
+export async function generateMonthlyInvoiceGroupsInternal(
   month: string
 ): Promise<{ ok: true; grouped: number } | { ok: false; message: string }> {
-  const auth = await requireInvoiceManager()
-  if (!auth.ok) return auth
-
   if (!/^\d{4}-\d{2}$/.test(month)) {
     return { ok: false, message: 'Month must use YYYY-MM format.' }
   }
@@ -222,7 +216,7 @@ export async function generateMonthlyInvoiceGroups(
   const { data: invoices, error } = await adminClient
     .from('invoices')
     .select('id, order_id, status, order:orders!inner(user_id, status, publish_date)')
-    .in('status', ['pending', 'overdue'])
+    .in('status', ['draft', 'sent'])
   if (error) return { ok: false, message: error.message ?? 'Could not load invoices.' }
 
   type InvoiceCandidate = {
@@ -262,4 +256,12 @@ export async function generateMonthlyInvoiceGroups(
 
   revalidatePath('/invoices')
   return { ok: true, grouped }
+}
+
+export async function generateMonthlyInvoiceGroups(
+  month: string
+): Promise<{ ok: true; grouped: number } | { ok: false; message: string }> {
+  const auth = await requireInvoiceManager()
+  if (!auth.ok) return auth
+  return generateMonthlyInvoiceGroupsInternal(month)
 }

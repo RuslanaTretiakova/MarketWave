@@ -90,7 +90,7 @@ The DB schema, auth system, site management, user management, categories, profil
 ```
 user_role:              client | admin | sourcer | manager | copywriter
 order_status:           new | in_progress | content_sent | needs_changes | content_approved | published | completed | canceled
-invoice_status:         pending | paid | overdue | canceled
+invoice_status:         draft | sent | paid
 site_status:            active | inactive | pending_review | needs_changes | approved | archived
 change_request_status:  open | resolved | dismissed
 link_type:              dofollow | nofollow | sponsored | ugc
@@ -140,7 +140,7 @@ new → canceled
 | Request changes     | Own `content_sent` | —            | —                | —                | —             |
 | Assign copywriter   | —                  | Yes          | Yes              | —                | —             |
 | Mark published      | —                  | Yes          | Yes              | —                | —             |
-| Mark invoice paid   | —                  | Yes          | —                | —                | —             |
+| Mark invoice paid   | —                  | Yes          | Yes              | —                | —             |
 | Cancel order        | Own `new`          | Any          | Any              | —                | —             |
 | Dashboard stats     | Personal           | Full         | Full             | Sourcing         | Assigned      |
 | Site catalog        | Active only        | All statuses | All non-archived | Own non-archived | —             |
@@ -215,7 +215,7 @@ lib/
     assign-copywriter-action.ts  assignCopywriter
     resolve-change-request-action.ts  resolveChangeRequest, dismissChangeRequest
   invoices/
-    invoice-actions.ts        markInvoicePaid, markInvoiceOverdue, cancelInvoice
+    invoice-actions.ts        markInvoicePaid, sendInvoiceEmail, updateInvoice
   sites/
     site-actions.ts           createSite, updateSite, changeSiteStatus, addSiteToCart
   auth/
@@ -349,11 +349,23 @@ cancelOrder:       new → canceled              client (own) or admin/manager (
 
 DB trigger `enforce_order_status_transition` validates all transitions — surface `P0001` as friendly toast.
 
+### Order audit + lifecycle tracking
+
+- `orders` now stores lifecycle timestamps: `assigned_at`, `content_submitted_at`, `approved_at`, `published_at`, `completed_at`, `canceled_at`.
+- `order_status_history` stores transition history with `from_status`, `to_status`, `actor_user_id`, optional comment, and timestamp.
+- `change_requests` stores resolution metadata: `resolved_by`, `resolved_at`, and optional `resolution_reason`.
+
+### Notifications
+
+- Chat system messages are emitted for lifecycle milestones (content submitted, changes requested, content approved, published, invoice paid) plus copywriter assignment changes.
+- In-app notifications are stored in `notifications` and surfaced in `/notifications`.
+
 ### Invoice Lifecycle
 
 - Auto-created by DB trigger when order is inserted (`handle_new_order`)
 - Order → `completed` when invoice → `paid` (trigger `handle_invoice_paid`)
-- Admin actions: `markInvoicePaid` (updates `status = 'paid'`, `paid_at`), `markInvoiceOverdue`, `cancelInvoice`
+- Staff actions (`admin`/`manager`): `sendInvoiceEmail` (`draft -> sent`), `markInvoicePaid` (`sent -> paid`)
+- Partial payments are currently manual/off-platform and not represented in the invoice status model.
 - Never create invoices manually in app code
 
 ### Dashboard Stats (Role-Specific)

@@ -33,7 +33,7 @@ export function SettingsTablePagination({
   return (
     <div
       className={cn(
-        'border-border/60 bg-muted/20 text-muted-foreground px-section py-block gap-inset flex flex-col items-stretch border-t sm:flex-row sm:items-center sm:justify-between',
+        'border-border/60 text-muted-foreground px-section py-block gap-inset flex flex-col items-stretch border-t sm:flex-row sm:items-center sm:justify-between',
         className
       )}
     >

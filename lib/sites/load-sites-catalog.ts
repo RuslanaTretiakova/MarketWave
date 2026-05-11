@@ -69,6 +69,22 @@ function mapRow(raw: SitesJoinRow): SiteCatalogRow {
   }
 }
 
+/** Tokens shorter than this are ignored to avoid noisy single-character matches. */
+const CATALOG_SEARCH_MIN_TOKEN_LEN = 2
+
+/**
+ * Whitespace-separated terms; each surviving token must match at least one of
+ * domain, keywords, description, or category name (AND across tokens).
+ */
+function catalogSearchTokens(rawQ: string): string[] {
+  const cleaned = sanitizeIlikePattern(rawQ)
+  if (!cleaned) return []
+  return cleaned
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= CATALOG_SEARCH_MIN_TOKEN_LEN)
+}
+
 function buildSelect(countryInner: boolean, langInner: boolean): string {
   const cc = countryInner ? 'site_countries!inner(country)' : 'site_countries(country)'
   const ll = langInner ? 'site_languages!inner(language)' : 'site_languages(language)'
@@ -108,12 +124,12 @@ export async function loadSitesCatalogPage(
 
     let q = supabase.from('sites').select(select, { count: 'exact' })
 
-    const safeQ = sanitizeIlikePattern(params.q)
-    if (safeQ.length > 0) {
-      const pat = `%${safeQ}%`
+    const tokens = catalogSearchTokens(params.q)
+    for (const token of tokens) {
+      const pat = `%${token}%`
       const quoted = quotePostgrestFilterValue(pat)
       q = q.or(
-        `domain.ilike.${quoted},keywords_relevance.ilike.${quoted},description.ilike.${quoted}`
+        `domain.ilike.${quoted},keywords_relevance.ilike.${quoted},description.ilike.${quoted},categories.name.ilike.${quoted}`
       )
     }
 

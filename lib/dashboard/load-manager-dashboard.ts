@@ -21,7 +21,7 @@ export type ManagerInvoiceRow = {
   due_date: string | null
   site_domain: string
   client_name: string | null
-  status: 'pending' | 'overdue'
+  status: 'draft' | 'sent'
   age_days: number | null
 }
 
@@ -92,8 +92,8 @@ export async function loadManagerDashboard(
     awaitingClient,
     readyToPublish,
     sitesPending,
-    invoicesPending,
-    invoicesOverdue,
+    invoicesDraft,
+    invoicesSent,
     completedThisMonth,
     completedPrevMonth,
     pipelineCountsRaw,
@@ -118,8 +118,8 @@ export async function loadManagerDashboard(
       .select('id', { count: 'exact', head: true })
       .eq('status', 'content_approved'),
     supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('invoices').select('amount, due_date, paid_at, status').eq('status', 'pending'),
-    supabase.from('invoices').select('amount, due_date, paid_at, status').eq('status', 'overdue'),
+    supabase.from('invoices').select('amount, due_date, paid_at, status').eq('status', 'draft'),
+    supabase.from('invoices').select('amount, due_date, paid_at, status').eq('status', 'sent'),
     supabase
       .from('orders')
       .select('id', { count: 'exact', head: true })
@@ -154,7 +154,7 @@ export async function loadManagerDashboard(
       .gte('updated_at', twelveWeeksAgo.toISOString()),
   ])
 
-  const unpaidInvoices = [...(invoicesPending.data ?? []), ...(invoicesOverdue.data ?? [])]
+  const unpaidInvoices = [...(invoicesDraft.data ?? []), ...(invoicesSent.data ?? [])]
   const unpaidInvoiceTotal = unpaidInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0)
 
   const pipeline = pipelineCountsRaw
@@ -194,7 +194,7 @@ export async function loadManagerDashboard(
       order:orders!inner(site_domain, user_id)
     `
     )
-    .in('status', ['pending', 'overdue'])
+    .in('status', ['draft', 'sent'])
     .order('due_date', { ascending: true, nullsFirst: false })
     .limit(5)
 
@@ -203,7 +203,7 @@ export async function loadManagerDashboard(
     order_id: string
     amount: number
     due_date: string | null
-    status: 'pending' | 'overdue'
+    status: 'draft' | 'sent'
     created_at: string
     order: { site_domain: string; user_id: string } | null
   }

@@ -29,7 +29,8 @@ async function requireStaff(): Promise<
 }
 
 export async function resolveChangeRequest(
-  changeRequestId: string
+  changeRequestId: string,
+  reason?: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const auth = await requireStaff()
   if (!auth.ok) return auth
@@ -44,9 +45,14 @@ export async function resolveChangeRequest(
   if (cr.status !== 'open')
     return { ok: false, message: 'Only open change requests can be resolved.' }
 
+  const trimmedReason = reason?.trim() ?? null
+  if (trimmedReason && trimmedReason.length > 1000) {
+    return { ok: false, message: 'Resolution reason must be 1000 characters or fewer.' }
+  }
+
   const { error } = await adminClient
     .from('change_requests')
-    .update({ status: 'resolved' })
+    .update({ status: 'resolved', resolution_reason: trimmedReason })
     .eq('id', changeRequestId)
 
   if (error) return { ok: false, message: error.message ?? 'Could not resolve change request.' }
@@ -57,7 +63,8 @@ export async function resolveChangeRequest(
 }
 
 export async function dismissChangeRequest(
-  changeRequestId: string
+  changeRequestId: string,
+  reason?: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const auth = await requireStaff()
   if (!auth.ok) return auth
@@ -72,9 +79,14 @@ export async function dismissChangeRequest(
   if (cr.status !== 'open')
     return { ok: false, message: 'Only open change requests can be dismissed.' }
 
+  const trimmedReason = reason?.trim() ?? null
+  if (trimmedReason && trimmedReason.length > 1000) {
+    return { ok: false, message: 'Resolution reason must be 1000 characters or fewer.' }
+  }
+
   const { error } = await adminClient
     .from('change_requests')
-    .update({ status: 'dismissed' })
+    .update({ status: 'dismissed', resolution_reason: trimmedReason })
     .eq('id', changeRequestId)
 
   if (error) return { ok: false, message: error.message ?? 'Could not dismiss change request.' }

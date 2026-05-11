@@ -23,7 +23,7 @@ export type AdminUnpaidInvoiceRow = {
   due_date: string | null
   site_domain: string
   client_name: string | null
-  status: 'pending' | 'overdue'
+  status: 'draft' | 'sent'
   age_days: number | null
 }
 
@@ -87,8 +87,8 @@ export async function loadAdminDashboard(
   const [
     activeOrders,
     sitesPending,
-    invoicesPending,
-    invoicesOverdue,
+    invoicesDraft,
+    invoicesSent,
     paidInvoicesResult,
     publishedOrders,
     activeRooms,
@@ -103,8 +103,8 @@ export async function loadAdminDashboard(
       .select('id', { count: 'exact', head: true })
       .in('status', ACTIVE_ORDER_STATUSES),
     supabase.from('sites').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('invoices').select('amount').eq('status', 'pending'),
-    supabase.from('invoices').select('amount').eq('status', 'overdue'),
+    supabase.from('invoices').select('amount').eq('status', 'draft'),
+    supabase.from('invoices').select('amount').eq('status', 'sent'),
     supabase.from('invoices').select('amount').eq('status', 'paid'),
     supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'published'),
     supabase.from('chat_rooms').select('id', { count: 'exact', head: true }),
@@ -142,8 +142,8 @@ export async function loadAdminDashboard(
       .gte('updated_at', twelveWeeksAgo.toISOString()),
   ])
 
-  const pendingInvoiceRows = invoicesPending.data ?? []
-  const overdueInvoiceRows = invoicesOverdue.data ?? []
+  const pendingInvoiceRows = invoicesDraft.data ?? []
+  const overdueInvoiceRows = invoicesSent.data ?? []
   const paidRows = paidInvoicesResult.data ?? []
   const pendingInvoiceTotal =
     pendingInvoiceRows.reduce((sum, inv) => sum + Number(inv.amount), 0) +
@@ -190,7 +190,7 @@ export async function loadAdminDashboard(
       order:orders!inner(site_domain, user_id)
     `
     )
-    .in('status', ['pending', 'overdue'])
+    .in('status', ['draft', 'sent'])
     .order('due_date', { ascending: true, nullsFirst: false })
     .limit(5)
 
@@ -199,7 +199,7 @@ export async function loadAdminDashboard(
     order_id: string
     amount: number
     due_date: string | null
-    status: 'pending' | 'overdue'
+    status: 'draft' | 'sent'
     created_at: string
     order: { site_domain: string; user_id: string } | null
   }

@@ -16,7 +16,7 @@ export type ClientInvoiceRow = {
   order_id: string
   amount: number
   due_date: string | null
-  status: 'pending' | 'overdue'
+  status: 'draft' | 'sent'
   site_domain: string
   age_days: number | null
 }
@@ -72,8 +72,8 @@ export async function loadClientDashboard(
     pipelineCountsRaw,
     awaitingApprovalRaw,
     recentOrdersRaw,
-    openInvoicesPending,
-    openInvoicesOverdue,
+    openInvoicesDraft,
+    openInvoicesSent,
     openInvoicesListRaw,
     cartItemsResult,
   ] = await Promise.all([
@@ -107,8 +107,8 @@ export async function loadClientDashboard(
       .in('status', ACTIVE_ORDER_STATUSES)
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase.from('invoices').select('amount').eq('status', 'pending'),
-    supabase.from('invoices').select('amount').eq('status', 'overdue'),
+    supabase.from('invoices').select('amount').eq('status', 'draft'),
+    supabase.from('invoices').select('amount').eq('status', 'sent'),
     supabase
       .from('invoices')
       .select(
@@ -117,14 +117,14 @@ export async function loadClientDashboard(
         order:orders!inner(site_domain)
       `
       )
-      .in('status', ['pending', 'overdue'])
+      .in('status', ['draft', 'sent'])
       .order('due_date', { ascending: true, nullsFirst: false })
       .limit(5),
     supabase.from('carts').select('id, cart_items(id)').maybeSingle(),
   ])
 
-  const pendingRows = openInvoicesPending.data ?? []
-  const overdueRows = openInvoicesOverdue.data ?? []
+  const pendingRows = openInvoicesDraft.data ?? []
+  const overdueRows = openInvoicesSent.data ?? []
   const openInvoiceTotal =
     pendingRows.reduce((sum, inv) => sum + Number(inv.amount), 0) +
     overdueRows.reduce((sum, inv) => sum + Number(inv.amount), 0)
@@ -154,7 +154,7 @@ export async function loadClientDashboard(
     order_id: string
     amount: number
     due_date: string | null
-    status: 'pending' | 'overdue'
+    status: 'draft' | 'sent'
     created_at: string
     order: { site_domain: string } | null
   }

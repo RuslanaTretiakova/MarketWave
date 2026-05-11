@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { ShoppingCart, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SiteChangeStatusDialog } from '@/components/sites/site-change-status-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { removeFromCartBySiteId } from '@/lib/cart/cart-actions'
 import { siteAdminTransitions } from '@/lib/sites/admin-site-transitions'
 import { addSiteToCart } from '@/lib/sites/site-actions'
 import type { Database } from '@/lib/supabase/types'
@@ -22,6 +24,7 @@ export function SiteDetailToolbar({
   domain,
   status,
   sourcerId,
+  siteInCart,
 }: {
   role: Role
   userId: string
@@ -29,8 +32,12 @@ export function SiteDetailToolbar({
   domain: string
   status: SiteStatus
   sourcerId: string | null
+  siteInCart: boolean
 }) {
-  const [pending, startTransition] = useTransition()
+  const router = useRouter()
+  const [adding, setAdding] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [justAddedSiteId, setJustAddedSiteId] = useState<string | null>(null)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
   const canEdit =
@@ -38,15 +45,44 @@ export function SiteDetailToolbar({
 
   const canCart = role === 'client' && status === 'active'
 
+  const inCart = siteInCart || justAddedSiteId === siteId
+
   const addCart = () => {
-    startTransition(async () => {
-      const res = await addSiteToCart(siteId)
-      if (!res.ok) {
-        toast.error(res.message)
-        return
+    if (inCart || adding) return
+    setAdding(true)
+    void (async () => {
+      try {
+        const res = await addSiteToCart(siteId)
+        if (!res.ok) {
+          toast.error(res.message)
+          return
+        }
+        toast.success('Added to cart', { description: domain })
+        setJustAddedSiteId(siteId)
+        router.refresh()
+      } finally {
+        setAdding(false)
       }
-      toast.success(`Added to cart: ${domain}`)
-    })
+    })()
+  }
+
+  const removeFromCart = () => {
+    if (!inCart || removing || adding) return
+    setRemoving(true)
+    void (async () => {
+      try {
+        const res = await removeFromCartBySiteId(siteId)
+        if (!res.ok) {
+          toast.error(res.message)
+          return
+        }
+        toast.success('Removed from cart', { description: domain })
+        setJustAddedSiteId(null)
+        router.refresh()
+      } finally {
+        setRemoving(false)
+      }
+    })()
   }
 
   return (
@@ -73,16 +109,31 @@ export function SiteDetailToolbar({
           </Link>
         ) : null}
         {canCart ? (
-          <Button
-            type="button"
-            variant="cta"
-            className="h-10 min-h-10 justify-center gap-2 rounded-full"
-            disabled={pending}
-            onClick={addCart}
-          >
-            <ShoppingCart className="size-4" aria-hidden />
-            Add to cart
-          </Button>
+          inCart ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 min-h-10 justify-center gap-2 rounded-full"
+              disabled={removing}
+              onClick={removeFromCart}
+              aria-label={`Remove ${domain} from cart`}
+            >
+              <Trash2 className="size-4" aria-hidden />
+              {removing ? 'Removing…' : 'Remove from cart'}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="cta"
+              className="h-10 min-h-10 justify-center gap-2 rounded-full"
+              disabled={adding}
+              onClick={addCart}
+              aria-label={adding ? `Adding ${domain} to cart` : `Add ${domain} to cart`}
+            >
+              <ShoppingCart className="size-4" aria-hidden />
+              {adding ? 'Adding…' : 'Add to cart'}
+            </Button>
+          )
         ) : null}
         {canEdit ? (
           <Link

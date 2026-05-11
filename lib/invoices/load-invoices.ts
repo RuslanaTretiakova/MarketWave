@@ -1,7 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { sanitizeIlikePattern } from '@/lib/pagination/sanitize-ilike'
-import { quotePostgrestFilterValue } from '@/lib/supabase/postgrest-quote-filter-value'
 import type { Database } from '@/lib/supabase/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -23,16 +22,14 @@ export type InvoiceListRow = {
   client_name: string | null
   client_email: string | null
   site_domain: string
+  billing_period_label: string
 }
 
 export type InvoicesSearchParams = {
   page: number
-  q: string
+  client: string
   status?: InvoiceStatus
-  /** Filter on `due_date >= dueFrom` (ISO date YYYY-MM-DD) */
-  dueFrom?: string
-  /** Filter on `due_date <= dueTo` */
-  dueTo?: string
+  billingPeriod?: string
 }
 
 type InvoiceViewerRole = Database['public']['Enums']['user_role']
@@ -41,10 +38,76 @@ function isMissingSentAtColumn(message: string): boolean {
   return message.includes('column invoices.sent_at does not exist')
 }
 
+function isMissingBillingMonthColumn(message: string): boolean {
+  return message.includes('column invoices.billing_month does not exist')
+}
+
+function isMissingInvoiceItemsRelation(message: string): boolean {
+  return (
+    message.includes("Could not find a relationship between 'invoices' and 'invoice_items'") ||
+    message.includes('invoice_items')
+  )
+}
+
+function isMissingInvoiceItemsTable(message: string): boolean {
+  return (
+    message.includes('relation "public.invoice_items" does not exist') ||
+    message.includes("Could not find the table 'public.invoice_items' in the schema cache")
+  )
+}
+
 function normalizeSentAt<T extends { sent_at?: string | null }>(
   row: T
 ): T & { sent_at: string | null } {
   return { ...row, sent_at: row.sent_at ?? null }
+}
+
+function normalizeBillingMonth<T extends { billing_month?: string | null }>(
+  row: T
+): T & { billing_month: string | null } {
+  return { ...row, billing_month: row.billing_month ?? null }
+}
+
+function invoicesListSelect(opts: { billingMonth: boolean; sentAt: boolean }): string {
+  const cols = [
+    'id',
+    'order_id',
+    ...(opts.billingMonth ? ['billing_month'] : []),
+    'invoice_group_id',
+    'status',
+    'amount',
+    'due_date',
+    'paid_at',
+    ...(opts.sentAt ? ['sent_at'] : []),
+    'created_at',
+    'updated_at',
+  ]
+  return `
+        ${cols.join(', ')},
+        order:orders!inner(site_domain, user_id)
+      `
+}
+
+function invoiceDetailSelect(opts: { billingMonth: boolean; sentAt: boolean }): string {
+  const cols = [
+    'id',
+    'order_id',
+    ...(opts.billingMonth ? ['billing_month'] : []),
+    'invoice_group_id',
+    'status',
+    'amount',
+    'due_date',
+    'paid_at',
+    ...(opts.sentAt ? ['sent_at'] : []),
+    'created_at',
+    'updated_at',
+  ]
+  return `
+      ${cols.join(', ')},
+      order:orders!inner(
+        site_domain, user_id, status, published_url, publish_date, price
+      )
+    `
 }
 
 /**
@@ -59,10 +122,6 @@ export async function loadInvoicesPage(
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
   let page = Math.max(1, Math.floor(params.page) || 1)
 
-  const dueFrom = params.dueFrom?.trim()
-  const dueTo = params.dueTo?.trim()
-  const validDate = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : undefined)
-
   let rows: InvoiceListRow[] = []
   let totalCount = 0
 
@@ -71,50 +130,61 @@ export async function loadInvoicesPage(
     const to = from + pageSize - 1
 
     const client = role === 'admin' || role === 'manager' ? adminClient : supabase
-    let q = client.from('invoices').select(
-      `
-        id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
-        order:orders!inner(site_domain, user_id)
-      `,
-      { count: 'exact' }
-    )
 
-    if (params.status) q = q.eq('status', params.status)
-    const safeDueFrom = validDate(dueFrom)
-    const safeDueTo = validDate(dueTo)
-    if (safeDueFrom) q = q.gte('due_date', safeDueFrom)
-    if (safeDueTo) q = q.lte('due_date', safeDueTo)
+    let billingMonth = true
+    let sentAt = true
+    let data: unknown = null
+    let error: { message: string } | null = null
+    let count: number | null = null
 
-    const safeQ = sanitizeIlikePattern(params.q)
-    if (safeQ.length > 0) {
-      const pat = `%${safeQ}%`
-      const quoted = quotePostgrestFilterValue(pat)
-      q = q.ilike('order.site_domain', quoted)
+    for (;;) {
+      let q = client.from('invoices').select(invoicesListSelect({ billingMonth, sentAt }), {
+        count: 'exact',
+      })
+
+      if (params.status) q = q.eq('status', params.status)
+      if (params.billingPeriod && /^\d{4}-\d{2}$/.test(params.billingPeriod)) {
+        const monthStart = `${params.billingPeriod}-01`
+        const [yearPart, monthPart] = params.billingPeriod.split('-')
+        const year = Number(yearPart)
+        const month = Number(monthPart)
+        const nextMonthDate = new Date(Date.UTC(year, month, 1))
+        const nextMonthStart = nextMonthDate.toISOString().slice(0, 10)
+
+        if (billingMonth) {
+          q = q.or(
+            `billing_month.eq.${monthStart},and(billing_month.is.null,created_at.gte.${monthStart},created_at.lt.${nextMonthStart})`
+          )
+        } else {
+          q = q.gte('created_at', monthStart).lt('created_at', nextMonthStart)
+        }
+      }
+
+      const res = await q.order('created_at', { ascending: false }).range(from, to)
+      data = res.data
+      error = res.error
+      count = res.count
+
+      if (!error) break
+
+      const msg = error.message ?? ''
+      if (billingMonth && isMissingBillingMonthColumn(msg)) {
+        billingMonth = false
+        continue
+      }
+      if (sentAt && isMissingSentAtColumn(msg)) {
+        sentAt = false
+        continue
+      }
+      break
     }
 
-    let { data, error, count } = await q.order('created_at', { ascending: false }).range(from, to)
-
-    // Compatibility fallback while local/remote DB still misses `invoices.sent_at`.
-    if (error && isMissingSentAtColumn(error.message ?? '')) {
-      const fallback = await client
-        .from('invoices')
-        .select(
-          `
-          id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, created_at, updated_at,
-          order:orders!inner(site_domain, user_id)
-        `,
-          { count: 'exact' }
+    if (data && Array.isArray(data)) {
+      data = (data as unknown[]).map((r) =>
+        normalizeBillingMonth(
+          normalizeSentAt(r as { sent_at?: string | null; billing_month?: string | null })
         )
-        .order('created_at', { ascending: false })
-        .range(from, to)
-
-      // Primary query types `data` with full row shape; fallback select omits `sent_at`.
-      // Generated DB types for that select do not satisfy `normalizeSentAt`'s constraint, so widen here.
-      data = (fallback.data ?? []).map((r) =>
-        normalizeSentAt(r as unknown as { sent_at?: string | null })
       ) as typeof data
-      error = fallback.error
-      count = fallback.count
     }
 
     if (error) {
@@ -163,6 +233,9 @@ export async function loadInvoicesPage(
     rows = rawRows.map((r) => {
       const clientId = r.order?.user_id ?? ''
       const profile = profileMap.get(clientId)
+      const billingPeriodLabel = r.billing_month
+        ? r.billing_month.slice(0, 7)
+        : r.created_at.slice(0, 7)
       return {
         id: r.id,
         order_id: r.order_id,
@@ -179,8 +252,20 @@ export async function loadInvoicesPage(
         client_name: profile?.full_name ?? null,
         client_email: profile?.email ?? null,
         site_domain: r.order?.site_domain ?? '—',
+        billing_period_label: billingPeriodLabel,
       }
     })
+
+    const safeClient = sanitizeIlikePattern(params.client)
+    if (safeClient.length > 0 && (role === 'admin' || role === 'manager')) {
+      const needle = safeClient.toLowerCase()
+      rows = rows.filter((row) => {
+        const name = (row.client_name ?? '').toLowerCase()
+        const email = (row.client_email ?? '').toLowerCase()
+        return name.includes(needle) || email.includes(needle)
+      })
+      totalCount = rows.length
+    }
 
     break
   }
@@ -193,6 +278,12 @@ export type InvoiceDetail = InvoiceListRow & {
   order_published_url: string | null
   order_publish_date: string | null
   order_price: number
+  items: Array<{
+    id: string
+    order_id: string
+    site_domain: string
+    amount: number
+  }>
 }
 
 export async function loadInvoiceDetail(
@@ -201,37 +292,45 @@ export async function loadInvoiceDetail(
   invoiceId: string
 ): Promise<InvoiceDetail | null> {
   const client = role === 'admin' || role === 'manager' ? adminClient : supabase
-  let { data, error } = await client
-    .from('invoices')
-    .select(
-      `
-      id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, sent_at, created_at, updated_at,
-      order:orders!inner(
-        site_domain, user_id, status, published_url, publish_date, price
-      )
-    `
-    )
-    .eq('id', invoiceId)
-    .maybeSingle()
 
-  if (error && isMissingSentAtColumn(error.message ?? '')) {
-    const fallback = await client
-      .from('invoices')
-      .select(
-        `
-        id, order_id, billing_month, invoice_group_id, status, amount, due_date, paid_at, created_at, updated_at,
-        order:orders!inner(
-          site_domain, user_id, status, published_url, publish_date, price
-        )
-      `
-      )
-      .eq('id', invoiceId)
-      .maybeSingle()
+  let billingMonth = true
+  let sentAt = true
+  let includeItemsJoin = true
+  let data: unknown = null
+  let error: { message: string } | null = null
 
-    data = fallback.data
-      ? (normalizeSentAt(fallback.data as unknown as { sent_at?: string | null }) as typeof data)
-      : fallback.data
-    error = fallback.error
+  for (;;) {
+    const select = includeItemsJoin
+      ? `${invoiceDetailSelect({ billingMonth, sentAt })},
+        items:invoice_items(id, order_id, site_domain, amount)`
+      : invoiceDetailSelect({ billingMonth, sentAt })
+
+    const res = await client.from('invoices').select(select).eq('id', invoiceId).maybeSingle()
+    data = res.data
+    error = res.error
+
+    if (!error) break
+
+    const msg = error.message ?? ''
+    if (billingMonth && isMissingBillingMonthColumn(msg)) {
+      billingMonth = false
+      continue
+    }
+    if (sentAt && isMissingSentAtColumn(msg)) {
+      sentAt = false
+      continue
+    }
+    if (includeItemsJoin && isMissingInvoiceItemsRelation(msg)) {
+      includeItemsJoin = false
+      continue
+    }
+    break
+  }
+
+  if (data && typeof data === 'object') {
+    data = normalizeBillingMonth(
+      normalizeSentAt(data as { sent_at?: string | null; billing_month?: string | null })
+    ) as typeof data
   }
 
   if (error) {
@@ -260,6 +359,12 @@ export async function loadInvoiceDetail(
       publish_date: string | null
       price: number
     } | null
+    items?: Array<{
+      id: string
+      order_id: string
+      site_domain: string
+      amount: number
+    }> | null
   }
 
   const row = data as unknown as Joined
@@ -274,6 +379,48 @@ export async function loadInvoiceDetail(
       .maybeSingle()
     client_name = profile?.full_name ?? null
     client_email = profile?.email ?? null
+  }
+
+  let items =
+    (row.items ?? []).map((item) => ({
+      id: item.id,
+      order_id: item.order_id,
+      site_domain: item.site_domain,
+      amount: item.amount,
+    })) ?? []
+
+  if (!includeItemsJoin) {
+    const itemsRes = await client
+      .from('invoice_items')
+      .select('id, order_id, site_domain, amount')
+      .eq('invoice_id', invoiceId)
+      .order('created_at', { ascending: true })
+    if (itemsRes.error) {
+      const message = itemsRes.error.message ?? ''
+      if (!isMissingInvoiceItemsTable(message)) {
+        console.error('[invoices/detail/items]', message)
+        return null
+      }
+      items = []
+    } else {
+      items = (itemsRes.data ?? []).map((item) => ({
+        id: item.id,
+        order_id: item.order_id,
+        site_domain: item.site_domain,
+        amount: item.amount,
+      }))
+    }
+  }
+
+  if (items.length === 0) {
+    items = [
+      {
+        id: `fallback:${row.id}`,
+        order_id: row.order_id,
+        site_domain: row.order?.site_domain ?? '—',
+        amount: row.amount,
+      },
+    ]
   }
 
   return {
@@ -292,9 +439,13 @@ export async function loadInvoiceDetail(
     client_name,
     client_email,
     site_domain: row.order?.site_domain ?? '—',
+    billing_period_label: row.billing_month
+      ? row.billing_month.slice(0, 7)
+      : row.created_at.slice(0, 7),
     order_status: row.order?.status ?? 'new',
     order_published_url: row.order?.published_url ?? null,
     order_publish_date: row.order?.publish_date ?? null,
     order_price: row.order?.price ?? row.amount,
+    items,
   }
 }

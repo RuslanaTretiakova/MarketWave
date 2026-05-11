@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { inactiveSitesCheckoutErrorMessage } from '@/lib/cart/cart-site-availability'
+import { fetchCartItemsForCheckout } from '@/lib/cart/load-cart'
+import { validateCartPublishMonths } from '@/lib/cart/validate-publish-month'
 import { logAuthError } from '@/lib/errors/log-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -17,6 +20,13 @@ type OrderCreateStage =
   | 'insert_orders'
   | 'clear_cart'
   | 'unexpected'
+
+function isOrdersInsertSchemaCacheAnchorText(message: string): boolean {
+  const m = message.toLowerCase()
+  return m.includes('schema cache') && m.includes('anchor_text')
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 async function logOrderCreateFailure(opts: {
   stage: OrderCreateStage
@@ -69,13 +79,7 @@ export async function createOrdersFromCart(): Promise<
     }
     if (profile.role !== 'client') return { ok: false, message: 'Only clients can place orders.' }
 
-    // Load cart items with full site join
-    const { data: cartItems, error: cartErr } = await supabase
-      .from('cart_items')
-      .select(
-        'id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, sites(id, domain, price, dr, status, link_type, requirements, description, contact_info, keywords_relevance, organic_keywords_count, organic_traffic_count, categories(name), site_countries(country), site_languages(language))'
-      )
-      .order('created_at', { ascending: true })
+    const { data: cartItems, error: cartErr } = await fetchCartItemsForCheckout(supabase)
 
     if (cartErr) {
       await logOrderCreateFailure({
@@ -87,7 +91,14 @@ export async function createOrdersFromCart(): Promise<
     }
     if (!cartItems || cartItems.length === 0) return { ok: false, message: 'Your cart is empty.' }
 
-    type RawItem = (typeof cartItems)[0] & {
+    type RawItem = {
+      id: string
+      site_id: string
+      publish_date: string | null
+      publish_month: string | null
+      anchor_text: string | null
+      target_url: string | null
+      client_notes: string | null
       sites: {
         id: string
         domain: string
@@ -107,7 +118,7 @@ export async function createOrdersFromCart(): Promise<
       } | null
     }
 
-    const items = cartItems as unknown as RawItem[]
+    const items = cartItems as RawItem[]
 
     // Validate all sites are still active
     const inactiveItems = items.filter((item) => item.sites?.status !== 'active')
@@ -121,7 +132,7 @@ export async function createOrdersFromCart(): Promise<
       })
       return {
         ok: false,
-        message: `Some sites are no longer available: ${domains}. Please remove them from your cart.`,
+        message: inactiveSitesCheckoutErrorMessage(domains),
       }
     }
 
@@ -134,6 +145,16 @@ export async function createOrdersFromCart(): Promise<
         payload: { missingSiteCount: missingItems.length },
       })
       return { ok: false, message: 'Some cart items reference sites that no longer exist.' }
+    }
+
+    const monthCheck = validateCartPublishMonths(items)
+    if (!monthCheck.ok) {
+      await logOrderCreateFailure({
+        stage: 'validate_sites',
+        message: monthCheck.message,
+        userId: user.id,
+      })
+      return { ok: false, message: monthCheck.message }
     }
 
     // Build order inserts (snapshot all site data at checkout time)
@@ -165,10 +186,17 @@ export async function createOrdersFromCart(): Promise<
     })
 
     // Insert orders using service role (clients have no direct INSERT policy)
-    const { data: inserted, error: insertErr } = await adminClient
+    let { data: inserted, error: insertErr } = await adminClient
       .from('orders')
       .insert(orderInserts)
       .select('id')
+
+    if (insertErr && isOrdersInsertSchemaCacheAnchorText(insertErr.message ?? '')) {
+      await sleep(400)
+      const retry = await adminClient.from('orders').insert(orderInserts).select('id')
+      inserted = retry.data
+      insertErr = retry.error
+    }
 
     if (insertErr || !inserted) {
       await logOrderCreateFailure({
@@ -201,6 +229,7 @@ export async function createOrdersFromCart(): Promise<
 
     revalidatePath('/cart')
     revalidatePath('/orders')
+    revalidatePath('/sites')
     return { ok: true, orderIds }
   } catch (error) {
     await logOrderCreateFailure({

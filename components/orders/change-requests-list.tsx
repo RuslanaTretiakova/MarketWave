@@ -34,16 +34,18 @@ export function ChangeRequestsList({
   const isStaff = role === 'admin' || role === 'manager'
 
   function handleResolve(id: string) {
+    const reason = window.prompt('Optional resolution reason:', '') ?? undefined
     startTransition(async () => {
-      const res = await resolveChangeRequest(id)
+      const res = await resolveChangeRequest(id, reason)
       if (!res.ok) toast.error(res.message)
       else toast.success('Change request resolved.')
     })
   }
 
   function handleDismiss(id: string) {
+    const reason = window.prompt('Optional dismissal reason:', '') ?? undefined
     startTransition(async () => {
-      const res = await dismissChangeRequest(id)
+      const res = await dismissChangeRequest(id, reason)
       if (!res.ok) toast.error(res.message)
       else toast.success('Change request dismissed.')
     })
@@ -73,6 +75,14 @@ export function ChangeRequestsList({
           <p className="text-muted-foreground text-xs">
             {new Date(cr.created_at).toLocaleString()}
           </p>
+          {cr.resolved_at && (
+            <p className="text-muted-foreground text-xs">
+              Resolved at {new Date(cr.resolved_at).toLocaleString()}
+            </p>
+          )}
+          {cr.resolution_reason && (
+            <p className="text-muted-foreground text-xs">Reason: {cr.resolution_reason}</p>
+          )}
           {isStaff && cr.status === 'open' && (
             <div className="gap-inset flex">
               <Button

@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { Receipt } from 'lucide-react'
+import { Filter, Receipt, Search } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
@@ -22,22 +22,14 @@ import { cn } from '@/lib/utils'
 
 const SEARCH_DEBOUNCE_MS = 320
 
-function formatDateUtc(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toISOString().slice(0, 10)
-}
-
 function buildHref(
   pathname: string,
-  params: { page?: number; q?: string; status?: string; dueFrom?: string; dueTo?: string }
+  params: { page?: number; client?: string; status?: string; billingPeriod?: string }
 ): string {
   const sp = new URLSearchParams()
-  if (params.q) sp.set('q', params.q)
+  if (params.client) sp.set('client', params.client)
   if (params.status) sp.set('status', params.status)
-  if (params.dueFrom) sp.set('dueFrom', params.dueFrom)
-  if (params.dueTo) sp.set('dueTo', params.dueTo)
+  if (params.billingPeriod) sp.set('billingPeriod', params.billingPeriod)
   if (params.page && params.page > 1) sp.set('page', String(params.page))
   const qs = sp.toString()
   return qs ? `${pathname}?${qs}` : pathname
@@ -48,69 +40,64 @@ export function InvoicesList({
   rows,
   totalCount,
   page,
-  q,
+  client,
   status,
-  dueFrom,
-  dueTo,
+  billingPeriod,
 }: {
   role: Database['public']['Enums']['user_role']
   rows: InvoiceListRow[]
   totalCount: number
   page: number
-  q: string
+  client: string
   status?: InvoiceStatus
-  dueFrom?: string
-  dueTo?: string
+  billingPeriod?: string
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [localQ, setLocalQ] = useState(q)
-  const [localFrom, setLocalFrom] = useState(dueFrom ?? '')
-  const [localTo, setLocalTo] = useState(dueTo ?? '')
+  const isStaff = role === 'admin' || role === 'manager'
+  const [localClient, setLocalClient] = useState(client)
+  const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
 
   useEffect(() => {
     function onPopState() {
       const sp = new URLSearchParams(window.location.search)
-      setLocalQ(sp.get('q') ?? '')
-      setLocalFrom(sp.get('dueFrom') ?? '')
-      setLocalTo(sp.get('dueTo') ?? '')
+      setLocalClient(sp.get('client') ?? '')
+      setLocalBillingPeriod(sp.get('billingPeriod') ?? '')
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   useEffect(() => {
-    const trimmed = localQ.trim()
-    if (trimmed === q.trim()) return
+    const trimmed = localClient.trim()
+    if (trimmed === client.trim()) return
     const id = window.setTimeout(() => {
-      const next = localQ.trim()
-      if (next === q.trim()) return
+      const next = localClient.trim()
+      if (next === client.trim()) return
       router.replace(
         buildHref(pathname, {
-          q: next || undefined,
+          client: next || undefined,
           status,
-          dueFrom,
-          dueTo,
+          billingPeriod,
         }),
         { scroll: false }
       )
     }, SEARCH_DEBOUNCE_MS)
     return () => window.clearTimeout(id)
-  }, [localQ, q, pathname, router, status, dueFrom, dueTo])
+  }, [localClient, client, pathname, router, status, billingPeriod])
 
   function clearSearch() {
-    setLocalQ('')
-    router.replace(buildHref(pathname, { status, dueFrom, dueTo }), { scroll: false })
+    setLocalClient('')
+    router.replace(buildHref(pathname, { status, billingPeriod }), { scroll: false })
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     router.push(
       buildHref(pathname, {
-        q: localQ.trim(),
+        client: localClient.trim(),
         status,
-        dueFrom: localFrom.trim() || undefined,
-        dueTo: localTo.trim() || undefined,
+        billingPeriod: localBillingPeriod.trim() || undefined,
       })
     )
   }
@@ -118,10 +105,9 @@ export function InvoicesList({
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
     router.push(
       buildHref(pathname, {
-        q,
+        client,
         status: (e.target.value as InvoiceStatus) || undefined,
-        dueFrom,
-        dueTo,
+        billingPeriod,
       })
     )
   }
@@ -137,53 +123,79 @@ export function InvoicesList({
         }
       />
 
-      <form onSubmit={handleSubmit} className="gap-block flex flex-col sm:flex-row sm:flex-wrap">
-        <div className="gap-inset flex min-w-[220px] flex-1">
-          <FilterInput
-            name="q"
-            type="search"
-            value={localQ}
-            onChange={(e) => setLocalQ(e.target.value)}
-            placeholder="Search by domain…"
-            className="flex-1"
-            autoComplete="off"
-          />
-          {localQ ? (
+      <div className="border-border/60 bg-card overflow-hidden rounded-2xl border">
+        {isStaff ? (
+          <div className="border-border/60 px-section py-block border-b">
+            <div className="gap-inset flex items-center">
+              <form onSubmit={(e) => e.preventDefault()} className="relative min-w-0 flex-1">
+                <Search
+                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                  aria-hidden
+                />
+                <FilterInput
+                  name="client"
+                  type="search"
+                  value={localClient}
+                  onChange={(e) => setLocalClient(e.target.value)}
+                  placeholder="Filter by client…"
+                  className="pr-3 pl-10"
+                  autoComplete="off"
+                />
+              </form>
+              {localClient ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 rounded-full px-4"
+                  onClick={clearSearch}
+                  aria-label="Clear client filter"
+                >
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="px-section py-block border-border/60 bg-muted/20 border-b">
+          <div className="text-muted-foreground gap-inset mb-inset flex items-center text-xs font-medium">
+            <Filter className="size-3.5 shrink-0" aria-hidden />
+            <span>Filters</span>
+          </div>
+          <form
+            onSubmit={handleSubmit}
+            className="gap-block flex flex-col sm:flex-row sm:flex-wrap sm:items-end"
+          >
+            <FilterSelect
+              value={status ?? ''}
+              onChange={handleStatusChange}
+              className="h-10 sm:w-[180px]"
+            >
+              <option value="">All statuses</option>
+              {INVOICE_STATUSES_ORDERED.map((s) => (
+                <option key={s} value={s}>
+                  {INVOICE_STATUS_LABEL[s]}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterInput
+              type="month"
+              value={localBillingPeriod}
+              onChange={(e) => setLocalBillingPeriod(e.target.value)}
+              className="h-10 sm:w-[180px]"
+            />
             <Button
-              type="button"
               variant="outline"
               size="sm"
-              onClick={clearSearch}
-              aria-label="Clear search"
+              type="submit"
+              className="px-block h-10 rounded-full"
             >
-              Clear
+              Apply
             </Button>
-          ) : null}
-          <Button variant="outline" size="sm" type="submit">
-            Apply
-          </Button>
+          </form>
         </div>
-        <FilterSelect value={status ?? ''} onChange={handleStatusChange}>
-          <option value="">All statuses</option>
-          {INVOICE_STATUSES_ORDERED.map((s) => (
-            <option key={s} value={s}>
-              {INVOICE_STATUS_LABEL[s]}
-            </option>
-          ))}
-        </FilterSelect>
-        <label className="gap-inset flex items-center text-sm">
-          <span className="text-muted-foreground">Due from</span>
-          <FilterInput
-            type="date"
-            value={localFrom}
-            onChange={(e) => setLocalFrom(e.target.value)}
-          />
-        </label>
-        <label className="gap-inset flex items-center text-sm">
-          <span className="text-muted-foreground">to</span>
-          <FilterInput type="date" value={localTo} onChange={(e) => setLocalTo(e.target.value)} />
-        </label>
-      </form>
+      </div>
 
       {rows.length === 0 ? (
         <Card className="py-hero gap-block flex flex-col items-center text-center">
@@ -191,7 +203,7 @@ export function InvoicesList({
           <div className="space-y-inset">
             <p className="text-foreground font-semibold">No invoices found</p>
             <p className="text-muted-foreground text-sm">
-              {q || status || dueFrom || dueTo
+              {client || status || billingPeriod
                 ? 'Try adjusting your filters.'
                 : 'Invoices appear here automatically when an order is placed.'}
             </p>
@@ -203,29 +215,22 @@ export function InvoicesList({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-border border-b">
+                  {isStaff ? (
+                    <th className="text-muted-foreground px-section py-block text-left font-medium">
+                      Client
+                    </th>
+                  ) : null}
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
-                    Domain
-                  </th>
-                  <th className="text-muted-foreground px-section py-block text-left font-medium">
-                    Client
+                    Billing period
                   </th>
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Status
                   </th>
                   <th className="text-muted-foreground px-section py-block text-right font-medium">
-                    Amount
+                    Total amount
                   </th>
-                  <th className="text-muted-foreground px-section py-block hidden text-left font-medium sm:table-cell">
-                    Due date
-                  </th>
-                  <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
-                    Billing month
-                  </th>
-                  <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
-                    Sent
-                  </th>
-                  <th className="text-muted-foreground px-section py-block hidden text-left font-medium md:table-cell">
-                    Paid
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -235,19 +240,21 @@ export function InvoicesList({
                     key={row.id}
                     className="border-border hover:bg-muted/30 border-b last:border-b-0"
                   >
+                    {isStaff ? (
+                      <td className="text-muted-foreground px-section py-block">
+                        {row.client_name ?? '—'}
+                        {row.client_email && (
+                          <p className="text-muted-foreground/80 text-xs">{row.client_email}</p>
+                        )}
+                      </td>
+                    ) : null}
                     <td className="px-section py-block">
                       <Link
                         href={`/invoices/${row.id}`}
                         className="text-foreground font-medium hover:underline"
                       >
-                        {row.site_domain}
+                        {row.billing_period_label}
                       </Link>
-                    </td>
-                    <td className="text-muted-foreground px-section py-block">
-                      {row.client_name ?? '—'}
-                      {row.client_email && (
-                        <p className="text-muted-foreground/80 text-xs">{row.client_email}</p>
-                      )}
                     </td>
                     <td className="px-section py-block">
                       <span
@@ -262,17 +269,13 @@ export function InvoicesList({
                     <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
                       ${row.amount.toFixed(2)}
                     </td>
-                    <td className="text-muted-foreground px-section py-block hidden sm:table-cell">
-                      {row.due_date ?? '—'}
-                    </td>
-                    <td className="text-muted-foreground px-section py-block hidden md:table-cell">
-                      {row.billing_month ? row.billing_month.slice(0, 7) : '—'}
-                    </td>
-                    <td className="text-muted-foreground px-section py-block hidden md:table-cell">
-                      {formatDateUtc(row.sent_at)}
-                    </td>
-                    <td className="text-muted-foreground px-section py-block hidden md:table-cell">
-                      {formatDateUtc(row.paid_at)}
+                    <td className="px-section py-block text-right">
+                      <Link
+                        href={`/invoices/${row.id}`}
+                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                      >
+                        View
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -283,7 +286,7 @@ export function InvoicesList({
             page={page}
             pageSize={SETTINGS_TABLE_PAGE_SIZE}
             totalCount={totalCount}
-            buildHref={(p) => buildHref(pathname, { q, status, dueFrom, dueTo, page: p })}
+            buildHref={(p) => buildHref(pathname, { client, status, billingPeriod, page: p })}
           />
         </Card>
       )}

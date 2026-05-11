@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { agentDebugLog } from '@/lib/agent-debug-log.server'
 import { loadTotalUnreadCount } from '@/lib/chat/load-rooms'
+import { loadUnreadNotificationsCount } from '@/lib/notifications/load-notifications'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
 
 // Auth + cookies — must not be statically prerendered at build time (CI may omit Supabase env).
@@ -40,10 +41,16 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   // Best-effort unread count for the chat nav badge. Failures (e.g. tables missing in
   // a fresh local clone before migrations run) should not block the shell from rendering.
   let chatUnreadCount = 0
+  let notificationsUnreadCount = 0
   try {
     chatUnreadCount = await loadTotalUnreadCount(user.id)
   } catch (err) {
     console.error('[layout/chat-unread]', err)
+  }
+  try {
+    notificationsUnreadCount = await loadUnreadNotificationsCount(supabase, user.id)
+  } catch (err) {
+    console.error('[layout/notifications-unread]', err)
   }
 
   return (
@@ -56,6 +63,7 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
         avatarUrl: profile?.avatar_url ?? null,
       }}
       chatUnreadCount={chatUnreadCount}
+      notificationsUnreadCount={notificationsUnreadCount}
     >
       {children}
     </AppShell>

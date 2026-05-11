@@ -48,6 +48,19 @@ async function updateOrderStatus(
   status: OrderStatus,
   extraPatch?: Record<string, unknown>
 ): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (status === 'canceled') {
+    const { data: invoice } = await adminClient
+      .from('invoices')
+      .select('status')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (invoice && invoice.status !== 'draft') {
+      return { ok: false, message: 'Only orders with draft invoices can be canceled.' }
+    }
+  }
+
   const patch = { status, ...extraPatch }
   const { error } = await adminClient.from('orders').update(patch).eq('id', orderId)
   if (error)
@@ -216,6 +229,16 @@ export async function cancelOrder(
     if (error)
       return { ok: false, message: mapPostgresError(error.message ?? 'Could not cancel order.') }
   } else if (ctx.role === 'admin' || ctx.role === 'manager') {
+    const { data: order, error: loadErr } = await adminClient
+      .from('orders')
+      .select('status')
+      .eq('id', orderId)
+      .maybeSingle()
+    if (loadErr || !order) return { ok: false, message: 'Order not found.' }
+    if (order.status !== 'new') {
+      return { ok: false, message: 'Staff can only cancel orders that are still new.' }
+    }
+
     const res = await updateOrderStatus(orderId, 'canceled')
     if (!res.ok) return res
   } else {

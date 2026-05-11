@@ -4,6 +4,7 @@ import { SitesCatalog } from '@/components/sites/sites-catalog'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { searchParamFirstString } from '@/lib/pagination/search-param-first-string'
 import { isSitesCatalogFilterAbsent } from '@/lib/sites/sites-catalog-filter'
+import { loadCartSiteIds } from '@/lib/cart/load-cart'
 import { loadSitesCatalogPage } from '@/lib/sites/load-sites-catalog'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -112,6 +113,11 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
 
   const categories = categoriesRaw ?? []
 
+  let cartSiteIds: string[] = []
+  if (profile.role === 'client') {
+    cartSiteIds = await loadCartSiteIds(supabase)
+  }
+
   let page = pageParsed
   let rows = [] as Awaited<ReturnType<typeof loadSitesCatalogPage>>['rows']
   let totalCount = 0
@@ -154,6 +160,7 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
       priceMin={priceMin}
       priceMax={priceMax}
       categories={categories}
+      cartSiteIds={cartSiteIds}
     />
   )
 }

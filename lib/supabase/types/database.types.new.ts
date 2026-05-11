@@ -433,6 +433,9 @@ export type Database = {
           created_at: string
           id: string
           order_id: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           status: Database['public']['Enums']['change_request_status']
           updated_at: string
           user_id: string
@@ -442,6 +445,9 @@ export type Database = {
           created_at?: string
           id?: string
           order_id: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: Database['public']['Enums']['change_request_status']
           updated_at?: string
           user_id: string
@@ -451,6 +457,9 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: Database['public']['Enums']['change_request_status']
           updated_at?: string
           user_id?: string
@@ -466,6 +475,13 @@ export type Database = {
           {
             foreignKeyName: 'change_requests_user_id_fkey'
             columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'change_requests_resolved_by_fkey'
+            columns: ['resolved_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -560,6 +576,129 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          order_id: string
+          site_domain: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          order_id: string
+          site_domain: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          order_id?: string
+          site_domain?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_items_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoice_items_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          change_request_id: string | null
+          created_at: string
+          event: Database['public']['Enums']['notification_event']
+          id: string
+          invoice_id: string | null
+          message: string
+          order_id: string | null
+          read_at: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          change_request_id?: string | null
+          created_at?: string
+          event: Database['public']['Enums']['notification_event']
+          id?: string
+          invoice_id?: string | null
+          message: string
+          order_id?: string | null
+          read_at?: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          change_request_id?: string | null
+          created_at?: string
+          event?: Database['public']['Enums']['notification_event']
+          id?: string
+          invoice_id?: string | null
+          message?: string
+          order_id?: string | null
+          read_at?: string | null
+          recipient_user_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_actor_user_id_fkey'
+            columns: ['actor_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_change_request_id_fkey'
+            columns: ['change_request_id']
+            isOneToOne: false
+            referencedRelation: 'change_requests'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_recipient_user_id_fkey'
+            columns: ['recipient_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       order_content_versions: {
         Row: {
           body_html: string
@@ -617,16 +756,67 @@ export type Database = {
           },
         ]
       }
+      order_status_history: {
+        Row: {
+          actor_user_id: string | null
+          comment: string | null
+          created_at: string
+          from_status: Database['public']['Enums']['order_status']
+          id: string
+          order_id: string
+          to_status: Database['public']['Enums']['order_status']
+        }
+        Insert: {
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status: Database['public']['Enums']['order_status']
+          id?: string
+          order_id: string
+          to_status: Database['public']['Enums']['order_status']
+        }
+        Update: {
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: Database['public']['Enums']['order_status']
+          id?: string
+          order_id?: string
+          to_status?: Database['public']['Enums']['order_status']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'order_status_history_actor_user_id_fkey'
+            columns: ['actor_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'order_status_history_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       orders: {
         Row: {
+          approved_at: string | null
           anchor_text: string | null
+          assigned_at: string | null
+          canceled_at: string | null
           client_notes: string | null
+          completed_at: string | null
+          content_submitted_at: string | null
           copywriter_id: string | null
           created_at: string
           id: string
           price: number
           publish_date: string | null
           publish_month: string | null
+          published_at: string | null
           published_url: string | null
           site_category: string
           site_contact_info: string | null
@@ -647,14 +837,20 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved_at?: string | null
           anchor_text?: string | null
+          assigned_at?: string | null
+          canceled_at?: string | null
           client_notes?: string | null
+          completed_at?: string | null
+          content_submitted_at?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price: number
           publish_date?: string | null
           publish_month?: string | null
+          published_at?: string | null
           published_url?: string | null
           site_category: string
           site_contact_info?: string | null
@@ -675,14 +871,20 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved_at?: string | null
           anchor_text?: string | null
+          assigned_at?: string | null
+          canceled_at?: string | null
           client_notes?: string | null
+          completed_at?: string | null
+          content_submitted_at?: string | null
           copywriter_id?: string | null
           created_at?: string
           id?: string
           price?: number
           publish_date?: string | null
           publish_month?: string | null
+          published_at?: string | null
           published_url?: string | null
           site_category?: string
           site_contact_info?: string | null
@@ -1057,8 +1259,16 @@ export type Database = {
       chat_message_type: 'text' | 'system'
       chat_room_kind: 'order' | 'direct' | 'group'
       chat_room_status: 'active' | 'archived'
-      invoice_status: 'pending' | 'paid' | 'overdue' | 'canceled'
+      invoice_status: 'draft' | 'sent' | 'paid'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
+      notification_event:
+        | 'copywriter_assigned'
+        | 'copywriter_reassigned'
+        | 'content_submitted'
+        | 'changes_requested'
+        | 'content_approved'
+        | 'order_published'
+        | 'invoice_paid'
       order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
@@ -1201,8 +1411,17 @@ export const Constants = {
       chat_message_type: ['text', 'system'],
       chat_room_kind: ['order', 'direct', 'group'],
       chat_room_status: ['active', 'archived'],
-      invoice_status: ['pending', 'paid', 'overdue', 'canceled'],
+      invoice_status: ['draft', 'sent', 'paid'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
+      notification_event: [
+        'copywriter_assigned',
+        'copywriter_reassigned',
+        'content_submitted',
+        'changes_requested',
+        'content_approved',
+        'order_published',
+        'invoice_paid',
+      ],
       order_content_status: ['draft', 'submitted'],
       order_status: [
         'new',

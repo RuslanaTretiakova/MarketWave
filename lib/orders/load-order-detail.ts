@@ -25,6 +25,18 @@ export type OrderChangeRequest = {
   user_id: string
   created_at: string
   updated_at: string
+  resolved_by: string | null
+  resolved_at: string | null
+  resolution_reason: string | null
+}
+
+export type OrderStatusHistoryRow = {
+  id: string
+  from_status: OrderStatus
+  to_status: OrderStatus
+  actor_user_id: string | null
+  comment: string | null
+  created_at: string
 }
 
 export type OrderDetail = {
@@ -35,12 +47,19 @@ export type OrderDetail = {
   status: OrderStatus
   price: number
   publish_date: string | null
+  publish_month: string | null
   anchor_text: string | null
   target_url: string | null
   client_notes: string | null
   published_url: string | null
   created_at: string
   updated_at: string
+  assigned_at: string | null
+  content_submitted_at: string | null
+  approved_at: string | null
+  published_at: string | null
+  completed_at: string | null
+  canceled_at: string | null
   site_domain: string
   site_dr: number | null
   site_category: string
@@ -55,6 +74,7 @@ export type OrderDetail = {
   site_organic_traffic_count: number | null
   invoice: OrderInvoice | null
   change_requests: OrderChangeRequest[]
+  status_history: OrderStatusHistoryRow[]
   content: OrderContentBundle
   client_name: string | null
   client_email: string | null
@@ -79,12 +99,21 @@ export async function loadOrderDetail(
     .from('invoices')
     .select('id, status, amount, due_date, paid_at, created_at')
     .eq('order_id', orderId)
-    .maybeSingle()
+    .order('created_at', { ascending: false })
+    .limit(1)
 
   // Load change requests
   const { data: changeRequestsData } = await supabase
     .from('change_requests')
-    .select('id, comment, status, user_id, created_at, updated_at')
+    .select(
+      'id, comment, status, user_id, created_at, updated_at, resolved_by, resolved_at, resolution_reason'
+    )
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false })
+
+  const { data: statusHistoryData } = await supabase
+    .from('order_status_history')
+    .select('id, from_status, to_status, actor_user_id, comment, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: false })
 
@@ -123,12 +152,19 @@ export async function loadOrderDetail(
     status: order.status,
     price: order.price,
     publish_date: order.publish_date,
+    publish_month: order.publish_month ?? null,
     anchor_text: order.anchor_text,
     target_url: order.target_url,
     client_notes: order.client_notes,
     published_url: order.published_url,
     created_at: order.created_at,
     updated_at: order.updated_at,
+    assigned_at: order.assigned_at ?? null,
+    content_submitted_at: order.content_submitted_at ?? null,
+    approved_at: order.approved_at ?? null,
+    published_at: order.published_at ?? null,
+    completed_at: order.completed_at ?? null,
+    canceled_at: order.canceled_at ?? null,
     site_domain: order.site_domain,
     site_dr: order.site_dr,
     site_category: order.site_category,
@@ -141,8 +177,9 @@ export async function loadOrderDetail(
     site_keywords_relevance: order.site_keywords_relevance,
     site_organic_keywords_count: order.site_organic_keywords_count,
     site_organic_traffic_count: order.site_organic_traffic_count,
-    invoice: invoiceData ?? null,
+    invoice: invoiceData?.[0] ?? null,
     change_requests: (changeRequestsData ?? []) as OrderChangeRequest[],
+    status_history: (statusHistoryData ?? []) as OrderStatusHistoryRow[],
     content,
     client_name,
     client_email,

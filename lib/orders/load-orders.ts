@@ -21,6 +21,7 @@ export type OrderListRow = {
   copywriter_id: string | null
   client_name: string | null
   copywriter_name: string | null
+  invoice_status: Database['public']['Enums']['invoice_status'] | null
 }
 
 export type OrdersSearchParams = {
@@ -28,6 +29,9 @@ export type OrdersSearchParams = {
   q: string
   status?: OrderStatus
   copywriterId?: string
+  clientId?: string
+  publishDate?: string
+  invoiceStatus?: Database['public']['Enums']['invoice_status']
 }
 
 export async function loadOrdersPage(
@@ -57,7 +61,13 @@ export async function loadOrdersPage(
     if (safeQ.length > 0) {
       const pat = `%${safeQ}%`
       const quoted = quotePostgrestFilterValue(pat)
-      q = q.ilike('site_domain', quoted)
+      const validUuid =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+      if (validUuid.test(params.q.trim())) {
+        q = q.or(`site_domain.ilike.${quoted},id.eq.${params.q.trim()}`)
+      } else {
+        q = q.ilike('site_domain', quoted)
+      }
     }
 
     if (params.status) {
@@ -66,6 +76,28 @@ export async function loadOrdersPage(
 
     if (params.copywriterId) {
       q = q.eq('copywriter_id', params.copywriterId)
+    }
+    if (params.clientId) {
+      q = q.eq('user_id', params.clientId)
+    }
+    if (params.publishDate && /^\d{4}-\d{2}-\d{2}$/.test(params.publishDate)) {
+      q = q.eq('publish_date', params.publishDate)
+    }
+
+    if (params.invoiceStatus) {
+      const { data: invoiceRows, error: invoiceErr } = await adminClient
+        .from('invoices')
+        .select('order_id')
+        .eq('status', params.invoiceStatus)
+      if (invoiceErr) {
+        console.error('[orders/load/invoice-filter]', invoiceErr.message)
+        throw new Error(invoiceErr.message || 'Failed to filter by invoice status')
+      }
+      const orderIds = [...new Set((invoiceRows ?? []).map((row) => row.order_id))]
+      if (orderIds.length === 0) {
+        return { rows: [], totalCount: 0 }
+      }
+      q = q.in('id', orderIds)
     }
 
     const { data, error, count } = await q.order('created_at', { ascending: false }).range(from, to)
@@ -113,6 +145,21 @@ export async function loadOrdersPage(
       }
     }
 
+    const orderIds = rawRows.map((row) => row.id)
+    const invoiceStatusByOrderId = new Map<string, Database['public']['Enums']['invoice_status']>()
+    if (orderIds.length > 0) {
+      const { data: invoiceRows } = await adminClient
+        .from('invoices')
+        .select('order_id, status, created_at')
+        .in('order_id', orderIds)
+        .order('created_at', { ascending: false })
+      for (const invoice of invoiceRows ?? []) {
+        if (!invoiceStatusByOrderId.has(invoice.order_id)) {
+          invoiceStatusByOrderId.set(invoice.order_id, invoice.status)
+        }
+      }
+    }
+
     rows = rawRows.map((r) => ({
       id: r.id,
       status: r.status,
@@ -125,6 +172,7 @@ export async function loadOrdersPage(
       copywriter_id: r.copywriter_id,
       client_name: clientNames[r.user_id] ?? null,
       copywriter_name: r.copywriter_id ? (copywriterNames[r.copywriter_id] ?? null) : null,
+      invoice_status: invoiceStatusByOrderId.get(r.id) ?? null,
     }))
 
     break

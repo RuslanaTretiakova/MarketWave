@@ -220,7 +220,7 @@ export function ClientDashboard({
 
           <SideListCard
             title="Open invoices"
-            description="Pending and overdue"
+            description="Draft and sent"
             link={{ href: '/invoices', label: 'All' }}
           >
             {data.openInvoices.length === 0 ? (
@@ -258,7 +258,7 @@ export function ClientDashboard({
                       <p className="text-muted-foreground font-mono text-[0.65rem] tabular-nums">
                         {row.due_date
                           ? row.age_days !== null && row.age_days > 0
-                            ? `${row.age_days}d overdue`
+                            ? `${row.age_days}d open`
                             : `Due ${row.due_date}`
                           : 'No due date'}
                       </p>
