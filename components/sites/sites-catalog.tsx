@@ -13,26 +13,16 @@ import {
   Plus,
   RotateCcw,
   Search,
-  ShieldCheck,
   ShoppingCart,
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { SiteCatalogRowActions } from '@/components/sites/site-catalog-row-actions'
 import { SiteChangeStatusDialog } from '@/components/sites/site-change-status-dialog'
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { FormControlInput, FormControlSelect } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 import {
@@ -45,13 +35,9 @@ import {
 } from '@/components/ui/table'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { removeFromCartBySiteId } from '@/lib/cart/cart-actions'
-import {
-  siteAdminTransitionMenuLabel,
-  siteAdminTransitions,
-} from '@/lib/sites/admin-site-transitions'
+import { siteAdminTransitions } from '@/lib/sites/admin-site-transitions'
 import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
 import { addSiteToCart } from '@/lib/sites/site-actions'
-import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 import {
   SITE_STATUS_CHIP,
   SITE_STATUS_LABEL,
@@ -311,7 +297,6 @@ export function SitesCatalog({
     siteId: string
     domain: string
     currentStatus: Database['public']['Enums']['site_status']
-    transition: SiteAdminTransition | null
   } | null>(null)
 
   const hasStructuredFilters =
@@ -488,13 +473,12 @@ export function SitesCatalog({
   const canUseCart = role === 'client'
   const canAdminStatus = role === 'admin' || role === 'manager'
 
-  function openStatus(
-    siteId: string,
-    domain: string,
-    currentStatus: Database['public']['Enums']['site_status'],
-    transition: SiteAdminTransition
-  ) {
-    setStatusDialog({ siteId, domain, currentStatus, transition })
+  function openChangeStatusDialog(row: SiteCatalogRow) {
+    setStatusDialog({
+      siteId: row.id,
+      domain: row.domain,
+      currentStatus: row.status,
+    })
   }
 
   const editAllowed = useCallback(
@@ -517,11 +501,11 @@ export function SitesCatalog({
         siteId={statusDialog?.siteId ?? ''}
         domainLabel={statusDialog?.domain ?? ''}
         currentStatus={statusDialog?.currentStatus}
-        open={statusDialog !== null && statusDialog.transition !== null}
+        open={statusDialog !== null}
         onOpenChange={(open) => {
           if (!open) setStatusDialog(null)
         }}
-        transition={statusDialog?.transition ?? null}
+        transitions={statusDialog ? siteAdminTransitions(statusDialog.currentStatus) : []}
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
@@ -804,102 +788,18 @@ export function SitesCatalog({
                           data-row-actions
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="gap-inset inline-flex flex-wrap items-center justify-end">
-                            {canUseCart ? (
-                              cartSiteIdSet.has(row.id) ? (
-                                <>
-                                  <span className="text-muted-foreground text-xs whitespace-nowrap">
-                                    In cart
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 rounded-full px-3"
-                                    disabled={removingSiteId === row.id}
-                                    onClick={() => removeFromCart(row.id, row.domain)}
-                                  >
-                                    {removingSiteId === row.id ? 'Removing…' : 'Remove'}
-                                  </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  type="button"
-                                  variant="cta"
-                                  size="sm"
-                                  className="h-9 rounded-full px-3"
-                                  disabled={row.status !== 'active' || addingSiteId === row.id}
-                                  onClick={() => addCart(row.id, row.domain)}
-                                  aria-label={
-                                    addingSiteId === row.id
-                                      ? `Adding ${row.domain} to cart`
-                                      : `Add ${row.domain} to cart`
-                                  }
-                                >
-                                  <ShoppingCart className="size-4" aria-hidden />
-                                  {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
-                                </Button>
-                              )
-                            ) : (
-                              <>
-                                {editAllowed(row) ? (
-                                  <Link
-                                    href={`/sites/${row.id}/edit`}
-                                    className={cn(
-                                      buttonVariants({ variant: 'outline', size: 'sm' }),
-                                      'h-9 rounded-full px-3'
-                                    )}
-                                  >
-                                    <Pencil className="size-4" aria-hidden />
-                                    Edit
-                                  </Link>
-                                ) : (
-                                  <Link
-                                    href={`/sites/${row.id}`}
-                                    className={cn(
-                                      buttonVariants({ variant: 'outline', size: 'sm' }),
-                                      'h-9 rounded-full px-3'
-                                    )}
-                                  >
-                                    <Eye className="size-4" aria-hidden />
-                                    View
-                                  </Link>
-                                )}
-                                {canAdminStatus ? (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger
-                                      type="button"
-                                      className={cn(
-                                        buttonVariants({ variant: 'outline', size: 'sm' }),
-                                        'h-9 rounded-full px-3'
-                                      )}
-                                    >
-                                      <ShieldCheck className="size-4" aria-hidden />
-                                      Status
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="min-w-48">
-                                      <DropdownMenuGroup>
-                                        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                          Review actions
-                                        </DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        {siteAdminTransitions(row.status).map((t) => (
-                                          <DropdownMenuItem
-                                            key={t}
-                                            onClick={() =>
-                                              openStatus(row.id, row.domain, row.status, t)
-                                            }
-                                          >
-                                            {siteAdminTransitionMenuLabel(t)}
-                                          </DropdownMenuItem>
-                                        ))}
-                                      </DropdownMenuGroup>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                ) : null}
-                              </>
-                            )}
-                          </div>
+                          <SiteCatalogRowActions
+                            row={row}
+                            canUseCart={canUseCart}
+                            canAdminStatus={canAdminStatus}
+                            cartSiteIdSet={cartSiteIdSet}
+                            addingSiteId={addingSiteId}
+                            removingSiteId={removingSiteId}
+                            addCart={addCart}
+                            removeFromCart={removeFromCart}
+                            editAllowed={editAllowed(row)}
+                            onOpenChangeStatus={openChangeStatusDialog}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -945,72 +845,18 @@ export function SitesCatalog({
                           </div>
                         </Button>
                         <div data-row-actions className="shrink-0">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={<TableRowActionsTrigger label={`Manage ${row.domain}`} />}
-                            />
-                            <DropdownMenuContent align="end" className="min-w-48">
-                              <DropdownMenuGroup>
-                                <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                  Manage
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="gap-2"
-                                  onClick={() => router.push(`/sites/${row.id}`)}
-                                >
-                                  <Eye className="size-4" aria-hidden />
-                                  View
-                                </DropdownMenuItem>
-                                {editAllowed(row) ? (
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    onClick={() => router.push(`/sites/${row.id}/edit`)}
-                                  >
-                                    <Pencil className="size-4" aria-hidden />
-                                    Edit
-                                  </DropdownMenuItem>
-                                ) : null}
-                                {canUseCart && cartSiteIdSet.has(row.id) ? (
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    disabled={removingSiteId === row.id}
-                                    onClick={() => removeFromCart(row.id, row.domain)}
-                                  >
-                                    <Trash2 className="size-4" aria-hidden />
-                                    {removingSiteId === row.id ? 'Removing…' : 'Remove from cart'}
-                                  </DropdownMenuItem>
-                                ) : canUseCart ? (
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    disabled={row.status !== 'active' || addingSiteId === row.id}
-                                    onClick={() => addCart(row.id, row.domain)}
-                                  >
-                                    <ShoppingCart className="size-4" aria-hidden />
-                                    {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
-                                  </DropdownMenuItem>
-                                ) : null}
-                                {canAdminStatus ? (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                      Review actions
-                                    </DropdownMenuLabel>
-                                    {siteAdminTransitions(row.status).map((t) => (
-                                      <DropdownMenuItem
-                                        key={t}
-                                        onClick={() =>
-                                          openStatus(row.id, row.domain, row.status, t)
-                                        }
-                                      >
-                                        {siteAdminTransitionMenuLabel(t)}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </>
-                                ) : null}
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <SiteCatalogRowActions
+                            row={row}
+                            canUseCart={canUseCart}
+                            canAdminStatus={canAdminStatus}
+                            cartSiteIdSet={cartSiteIdSet}
+                            addingSiteId={addingSiteId}
+                            removingSiteId={removingSiteId}
+                            addCart={addCart}
+                            removeFromCart={removeFromCart}
+                            editAllowed={editAllowed(row)}
+                            onOpenChangeStatus={openChangeStatusDialog}
+                          />
                         </div>
                       </div>
                     </li>

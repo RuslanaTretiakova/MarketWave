@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import { SiteDetailHeaderActions } from '@/components/sites/site-detail-header-actions'
 import { SiteListingForm } from '@/components/sites/site-listing-form'
 import type { SiteFormSourcerOption } from '@/components/sites/site-listing-form'
 import { createClient } from '@/lib/supabase/server'
@@ -101,6 +102,15 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
             Saving updates listing data. Sourcer edits reset review status to Pending.
           </p>
         </div>
+        <SiteDetailHeaderActions
+          role={profile.role}
+          userId={user.id}
+          siteId={siteId}
+          domain={site.domain}
+          status={site.status}
+          sourcerId={site.sourcer_id}
+          siteInCart={false}
+        />
       </div>
 
       <SiteListingForm

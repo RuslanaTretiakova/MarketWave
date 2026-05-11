@@ -1140,6 +1140,7 @@ export type Database = {
           link_type: Database['public']['Enums']['link_type']
           needs_changes_at: string | null
           needs_changes_by: string | null
+          needs_changes_comment: string | null
           organic_keywords_count: number | null
           organic_traffic_count: number | null
           price: number
@@ -1164,6 +1165,7 @@ export type Database = {
           link_type?: Database['public']['Enums']['link_type']
           needs_changes_at?: string | null
           needs_changes_by?: string | null
+          needs_changes_comment?: string | null
           organic_keywords_count?: number | null
           organic_traffic_count?: number | null
           price: number
@@ -1188,6 +1190,7 @@ export type Database = {
           link_type?: Database['public']['Enums']['link_type']
           needs_changes_at?: string | null
           needs_changes_by?: string | null
+          needs_changes_comment?: string | null
           organic_keywords_count?: number | null
           organic_traffic_count?: number | null
           price?: number
