@@ -14,10 +14,12 @@ const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
 export function AppShell({
   user,
   chatUnreadCount = 0,
+  notificationsUnreadCount = 0,
   children,
 }: {
   user: AppShellUser
   chatUnreadCount?: number
+  notificationsUnreadCount?: number
   children: ReactNode
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -25,8 +27,9 @@ export function AppShell({
   const navBadges = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {}
     if (chatUnreadCount > 0) map['/chats'] = chatUnreadCount
+    if (notificationsUnreadCount > 0) map['/notifications'] = notificationsUnreadCount
     return map
-  }, [chatUnreadCount])
+  }, [chatUnreadCount, notificationsUnreadCount])
 
   useEffect(() => {
     let cancelled = false

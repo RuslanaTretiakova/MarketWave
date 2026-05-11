@@ -39,6 +39,33 @@ type RawCartItem = {
   } | null
 }
 
+/** Nested `sites(...)` projection used by checkout / order creation. */
+export const CHECKOUT_CART_SITES_SELECT =
+  'sites(id, domain, price, dr, status, link_type, requirements, description, contact_info, keywords_relevance, organic_keywords_count, organic_traffic_count, categories(name), site_countries(country), site_languages(language))'
+
+const CART_PAGE_SITES_SELECT = 'sites(id, domain, price, dr, status, link_type, categories(name))'
+
+function isMissingCartItemExtendedColumns(message: string): boolean {
+  const markers = [
+    'column cart_items.publish_month does not exist',
+    'column cart_items.anchor_text does not exist',
+    'column cart_items.target_url does not exist',
+    'column cart_items.client_notes does not exist',
+  ]
+  return markers.some((m) => message.includes(m))
+}
+
+function patchLegacyCartExtendedFields(row: unknown): unknown {
+  if (!row || typeof row !== 'object') return row
+  return {
+    ...row,
+    publish_month: null,
+    anchor_text: null,
+    target_url: null,
+    client_notes: null,
+  }
+}
+
 function mapRow(raw: RawCartItem): CartItemRow {
   return {
     id: raw.id,
@@ -58,20 +85,64 @@ function mapRow(raw: RawCartItem): CartItemRow {
   }
 }
 
-export async function loadCart(supabase: SupabaseClient<Database>): Promise<CartItemRow[]> {
-  const { data, error } = await supabase
+/**
+ * Cart rows with the expanded site join used at checkout. Retries with a legacy
+ * column list when `cart_items` predates billing/checkout columns.
+ */
+export async function fetchCartItemsForCheckout(supabase: SupabaseClient<Database>): Promise<{
+  data: unknown[] | null
+  error: { message: string } | null
+}> {
+  const fullSelect = `id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, ${CHECKOUT_CART_SITES_SELECT}`
+  const legacySelect = `id, site_id, publish_date, ${CHECKOUT_CART_SITES_SELECT}`
+
+  const first = await supabase
     .from('cart_items')
-    .select(
-      'id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, created_at, sites(id, domain, price, dr, status, link_type, categories(name))'
-    )
+    .select(fullSelect)
     .order('created_at', { ascending: true })
+
+  let error = first.error
+  let rows: unknown[] | null = (first.data as unknown[] | null) ?? null
+
+  if (error && isMissingCartItemExtendedColumns(error.message ?? '')) {
+    const fb = await supabase
+      .from('cart_items')
+      .select(legacySelect)
+      .order('created_at', { ascending: true })
+    error = fb.error
+    rows = fb.data ? (fb.data as unknown[]).map((r) => patchLegacyCartExtendedFields(r)) : null
+  }
+
+  return { data: rows, error }
+}
+
+export async function loadCart(supabase: SupabaseClient<Database>): Promise<CartItemRow[]> {
+  const fullSelect = `id, site_id, publish_date, publish_month, anchor_text, target_url, client_notes, created_at, ${CART_PAGE_SITES_SELECT}`
+  const legacySelect = `id, site_id, publish_date, created_at, ${CART_PAGE_SITES_SELECT}`
+
+  const first = await supabase
+    .from('cart_items')
+    .select(fullSelect)
+    .order('created_at', { ascending: true })
+
+  let error = first.error
+  let rows: unknown[] | null = (first.data as unknown[] | null) ?? null
+
+  if (error && isMissingCartItemExtendedColumns(error.message ?? '')) {
+    const fb = await supabase
+      .from('cart_items')
+      .select(legacySelect)
+      .order('created_at', { ascending: true })
+    error = fb.error
+    rows = fb.data ? (fb.data as unknown[]).map((r) => patchLegacyCartExtendedFields(r)) : null
+  }
 
   if (error) {
     console.error('[cart/load]', error.message)
     throw new Error(error.message || 'Failed to load cart')
   }
 
-  return ((data ?? []) as unknown as RawCartItem[]).map(mapRow)
+  return ((rows ?? []) as unknown as RawCartItem[]).map(mapRow)
 }
 
 export async function loadCartWithTotal(
@@ -80,4 +151,12 @@ export async function loadCartWithTotal(
   const items = await loadCart(supabase)
   const total = items.reduce((sum, item) => sum + item.site_price, 0)
   return { items, total }
+}
+
+/** Site IDs currently in the signed-in user's cart (empty if no cart). */
+export async function loadCartSiteIds(supabase: SupabaseClient<Database>): Promise<string[]> {
+  const { data: cart } = await supabase.from('carts').select('id').maybeSingle()
+  if (!cart) return []
+  const { data: rows } = await supabase.from('cart_items').select('site_id').eq('cart_id', cart.id)
+  return (rows ?? []).map((r) => r.site_id)
 }

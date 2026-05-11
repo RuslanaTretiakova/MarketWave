@@ -26,12 +26,7 @@ import {
   isOrderActionEnabled,
   type OrderActionContext,
 } from '@/lib/orders/order-action-matrix'
-import {
-  cancelInvoice,
-  markInvoiceOverdue,
-  markInvoicePaid,
-  sendInvoiceEmail,
-} from '@/lib/invoices/invoice-actions'
+import { markInvoicePaid, sendInvoiceEmail } from '@/lib/invoices/invoice-actions'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -196,12 +191,12 @@ export function OrderActionsMenu({
                   <DropdownMenuItem
                     onClick={() => runAction(() => approveContent(orderId), 'Content approved.')}
                   >
-                    Approve content
+                    Approve
                   </DropdownMenuItem>
                 )}
                 {isOrderActionEnabled(actions, 'request_changes') && (
                   <DropdownMenuItem onClick={() => setDialog('request_changes')}>
-                    Request changes
+                    Needs changes
                   </DropdownMenuItem>
                 )}
                 {isOrderActionEnabled(actions, 'resume_order') && (
@@ -215,7 +210,7 @@ export function OrderActionsMenu({
                 )}
                 {isOrderActionEnabled(actions, 'publish_order') && (
                   <DropdownMenuItem onClick={() => setDialog('publish')}>
-                    Mark published
+                    Publish order
                   </DropdownMenuItem>
                 )}
               </DropdownMenuGroup>
@@ -224,8 +219,6 @@ export function OrderActionsMenu({
 
           {(isOrderActionEnabled(actions, 'view_invoice') ||
             isOrderActionEnabled(actions, 'mark_invoice_paid') ||
-            isOrderActionEnabled(actions, 'mark_invoice_overdue') ||
-            isOrderActionEnabled(actions, 'cancel_invoice') ||
             isOrderActionEnabled(actions, 'send_invoice')) && (
             <>
               <DropdownMenuSeparator />
@@ -242,13 +235,10 @@ export function OrderActionsMenu({
                 {isOrderActionEnabled(actions, 'send_invoice') && context.invoiceId && (
                   <DropdownMenuItem
                     onClick={() =>
-                      runAction(
-                        () => sendInvoiceEmail(context.invoiceId!),
-                        'Invoice marked as sent.'
-                      )
+                      runAction(() => sendInvoiceEmail(context.invoiceId!), 'Invoice sent.')
                     }
                   >
-                    Send / resend invoice
+                    Send invoice
                   </DropdownMenuItem>
                 )}
                 {isOrderActionEnabled(actions, 'mark_invoice_paid') && context.invoiceId && (
@@ -258,28 +248,6 @@ export function OrderActionsMenu({
                     }
                   >
                     Mark invoice paid
-                  </DropdownMenuItem>
-                )}
-                {isOrderActionEnabled(actions, 'mark_invoice_overdue') && context.invoiceId && (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      runAction(
-                        () => markInvoiceOverdue(context.invoiceId!),
-                        'Invoice marked overdue.'
-                      )
-                    }
-                  >
-                    Mark invoice overdue
-                  </DropdownMenuItem>
-                )}
-                {isOrderActionEnabled(actions, 'cancel_invoice') && context.invoiceId && (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      runAction(() => cancelInvoice(context.invoiceId!), 'Invoice canceled.')
-                    }
-                    variant="destructive"
-                  >
-                    Cancel invoice
                   </DropdownMenuItem>
                 )}
               </DropdownMenuGroup>
@@ -337,8 +305,8 @@ export function OrderActionsMenu({
             setError(null)
           }
         }}
-        title="Request changes"
-        description="Add revision notes for the copywriter."
+        title="Leave a comment"
+        description="Describe what should change. The copywriter and team will see this."
         middle={
           <textarea
             value={changeComment}
@@ -346,11 +314,11 @@ export function OrderActionsMenu({
             rows={4}
             maxLength={2000}
             className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
-            placeholder="Describe what should be changed..."
+            placeholder="Describe what should be changed…"
           />
         }
         confirmVariant="cta"
-        confirmLabel={pending ? 'Sending…' : 'Send back'}
+        confirmLabel={pending ? 'Sending…' : 'Send'}
         confirmDisabled={!changeComment.trim()}
         busy={pending}
         onConfirm={() =>
@@ -379,7 +347,7 @@ export function OrderActionsMenu({
           />
         }
         confirmVariant="cta"
-        confirmLabel={pending ? 'Confirming…' : 'Confirm'}
+        confirmLabel={pending ? 'Publishing…' : 'Publish'}
         confirmDisabled={!publishedUrl.trim()}
         busy={pending}
         onConfirm={() =>

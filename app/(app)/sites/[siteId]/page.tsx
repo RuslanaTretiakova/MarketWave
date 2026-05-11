@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
+import { loadCartSiteIds } from '@/lib/cart/load-cart'
+
 import { SiteDetailToolbar } from '@/components/sites/site-detail-toolbar'
 import { Separator } from '@/components/ui/separator'
 import { SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
@@ -81,6 +83,12 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
   const countries = [...new Set((row.site_countries ?? []).map((c) => c.country))].sort()
   const languages = [...new Set((row.site_languages ?? []).map((l) => l.language))].sort()
 
+  let siteInCart = false
+  if (role === 'client') {
+    const cartSiteIds = await loadCartSiteIds(supabase)
+    siteInCart = cartSiteIds.includes(siteId)
+  }
+
   const ids = [row.needs_changes_by, row.approved_by, row.sourcer_id].filter(Boolean) as string[]
   const profileMap = new Map<string, { full_name: string | null; email: string | null }>()
   if (role === 'admin' && ids.length > 0) {
@@ -135,6 +143,7 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
         domain={row.domain}
         status={row.status}
         sourcerId={row.sourcer_id}
+        siteInCart={siteInCart}
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">

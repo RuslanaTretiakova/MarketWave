@@ -7,26 +7,21 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 import { PageHeader } from '@/components/ui/page-header'
 import {
-  cancelInvoice,
-  markInvoiceOverdue,
-  markInvoicePaid,
-  sendInvoiceEmail,
-  updateInvoice,
-} from '@/lib/invoices/invoice-actions'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { markInvoicePaid, sendInvoiceEmail, updateInvoice } from '@/lib/invoices/invoice-actions'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import type { InvoiceDetail } from '@/lib/invoices/load-invoices'
-import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
-
-function formatDateUtc(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toISOString().slice(0, 10)
-}
 
 function formatDateTimeUtc(iso: string | null): string {
   if (!iso) return '—'
@@ -54,13 +49,20 @@ export function InvoiceDetailView({
 }) {
   const [pending, startTransition] = useTransition()
   const canManage = role === 'admin' || role === 'manager'
-
-  const [amount, setAmount] = useState(invoice.amount.toFixed(2))
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [sendOpen, setSendOpen] = useState(false)
+  const [markPaidOpen, setMarkPaidOpen] = useState(false)
   const [dueDate, setDueDate] = useState(invoice.due_date ?? '')
+  const [billingMonth, setBillingMonth] = useState(
+    invoice.billing_month ? invoice.billing_month.slice(0, 7) : ''
+  )
+  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>(
+    Object.fromEntries(invoice.items.map((item) => [item.id, item.amount.toFixed(2)]))
+  )
 
-  const isLocked = invoice.status === 'paid' || invoice.status === 'canceled'
-  const dirty =
-    parseFloat(amount || '0') !== invoice.amount || (dueDate || null) !== invoice.due_date
+  const canEdit = canManage && invoice.status === 'draft'
+  const canSend = canManage && invoice.status === 'draft'
+  const canMarkPaid = canManage && invoice.status === 'sent'
 
   function runAction(
     action: () => Promise<{ ok: boolean; message?: string }>,
@@ -73,21 +75,25 @@ export function InvoiceDetailView({
     })
   }
 
-  function handleSave(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const parsed = parseFloat(amount)
-    if (Number.isNaN(parsed) || parsed < 0) {
-      toast.error('Enter a valid amount.')
+  function handleSaveInvoice() {
+    const items = invoice.items.map((item) => {
+      const parsed = parseFloat(itemAmounts[item.id] ?? '')
+      return { id: item.id, parsed }
+    })
+    if (items.some((it) => Number.isNaN(it.parsed) || it.parsed < 0)) {
+      toast.error('Each item amount must be a valid non-negative number.')
       return
     }
     runAction(
       () =>
         updateInvoice(invoice.id, {
-          amount: parsed,
+          billing_month: billingMonth || null,
           due_date: dueDate || null,
+          items: items.map((it) => ({ id: it.id, amount: it.parsed })),
         }),
       'Invoice updated.'
     )
+    setIsEditOpen(false)
   }
 
   return (
@@ -100,7 +106,7 @@ export function InvoiceDetailView({
           <ArrowLeft className="size-4" /> Back to invoices
         </Link>
         <PageHeader
-          title={invoice.site_domain}
+          title={`Invoice ${invoice.id.slice(0, 8).toUpperCase()}`}
           meta={
             <div className="gap-block flex items-center">
               <span
@@ -110,15 +116,6 @@ export function InvoiceDetailView({
                 )}
               >
                 {INVOICE_STATUS_LABEL[invoice.status]}
-              </span>
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  ORDER_STATUS_CHIP[invoice.order_status]
-                )}
-                title="Order status"
-              >
-                Order: {ORDER_STATUS_LABEL[invoice.order_status]}
               </span>
               <span className="text-muted-foreground text-sm tabular-nums">
                 ${invoice.amount.toFixed(2)}
@@ -135,19 +132,34 @@ export function InvoiceDetailView({
               >
                 <Download className="size-4" /> Download PDF
               </a>
-              {canManage && (
+              {canEdit && (
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() =>
-                    runAction(
-                      () => sendInvoiceEmail(invoice.id),
-                      invoice.sent_at ? 'Invoice resent.' : 'Invoice sent.'
-                    )
-                  }
-                  disabled={pending || invoice.status === 'canceled'}
+                  onClick={() => setIsEditOpen(true)}
+                  disabled={pending}
                 >
-                  <Mail className="size-4" /> {invoice.sent_at ? 'Resend' : 'Send'} invoice
+                  <Save className="size-4" /> Edit
+                </Button>
+              )}
+              {canSend && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSendOpen(true)}
+                  disabled={pending}
+                >
+                  <Mail className="size-4" /> Send invoice
+                </Button>
+              )}
+              {canMarkPaid && (
+                <Button
+                  type="button"
+                  variant="cta"
+                  onClick={() => setMarkPaidOpen(true)}
+                  disabled={pending}
+                >
+                  Mark as paid
                 </Button>
               )}
             </div>
@@ -155,19 +167,16 @@ export function InvoiceDetailView({
         />
       </div>
 
-      <div className="gap-layout grid lg:grid-cols-3">
-        <Card className="p-section space-y-block lg:col-span-2">
-          <h3 className="text-foreground text-base font-semibold">Invoice</h3>
+      <div className="gap-layout grid">
+        <Card className="p-section space-y-block">
+          <h3 className="text-foreground text-base font-semibold">Invoice header</h3>
           <dl className="space-y-inset">
-            <DetailRow label="Domain" value={invoice.site_domain} />
             <DetailRow label="Client" value={invoice.client_name ?? '—'} />
+            <DetailRow label="Billing period" value={invoice.billing_period_label} />
+            <DetailRow label="Status" value={INVOICE_STATUS_LABEL[invoice.status]} />
             <DetailRow label="Email" value={invoice.client_email ?? '—'} />
+            <DetailRow label="Site" value={invoice.site_domain} />
             <DetailRow label="Created" value={formatDateTimeUtc(invoice.created_at)} />
-            <DetailRow
-              label="Billing month"
-              value={invoice.billing_month ? invoice.billing_month.slice(0, 7) : '—'}
-            />
-            <DetailRow label="Group ID" value={invoice.invoice_group_id ?? '—'} />
             {invoice.sent_at && (
               <DetailRow label="Last sent" value={formatDateTimeUtc(invoice.sent_at)} />
             )}
@@ -198,101 +207,140 @@ export function InvoiceDetailView({
               />
             )}
           </dl>
-
-          {canManage && (
-            <form
-              onSubmit={handleSave}
-              className="space-y-block mt-section border-border pt-section border-t"
-            >
-              <h3 className="text-foreground text-base font-semibold">Edit invoice</h3>
-              {isLocked ? (
-                <p className="text-muted-foreground text-sm">
-                  {invoice.status === 'paid'
-                    ? 'Paid invoices are read-only.'
-                    : 'Canceled invoices are read-only.'}
-                </p>
-              ) : (
-                <>
-                  <div className="gap-block grid sm:grid-cols-2">
-                    <label className="gap-inset flex flex-col text-sm">
-                      <span className="text-foreground font-medium">Amount</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-                      />
-                    </label>
-                    <label className="gap-inset flex flex-col text-sm">
-                      <span className="text-foreground font-medium">Due date</span>
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-                      />
-                    </label>
-                  </div>
-                  <Button type="submit" variant="cta" disabled={pending || !dirty}>
-                    <Save className="size-4" /> Save changes
-                  </Button>
-                </>
-              )}
-            </form>
-          )}
         </Card>
 
-        {canManage && (
-          <Card className="p-section space-y-block">
-            <h3 className="text-foreground text-base font-semibold">Actions</h3>
-            {invoice.status !== 'paid' && invoice.status !== 'canceled' && (
-              <div className="gap-inset flex flex-col">
-                <Button
-                  type="button"
-                  variant="cta"
-                  onClick={() =>
-                    runAction(() => markInvoicePaid(invoice.id), 'Invoice marked as paid.')
-                  }
-                  disabled={pending}
-                >
-                  Mark as paid
-                </Button>
-                {(invoice.status === 'pending' || invoice.status === 'overdue') && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      runAction(() => markInvoiceOverdue(invoice.id), 'Marked overdue.')
-                    }
-                    disabled={pending || invoice.status === 'overdue'}
-                  >
-                    Mark overdue
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => runAction(() => cancelInvoice(invoice.id), 'Invoice canceled.')}
-                  disabled={pending}
-                >
-                  Cancel invoice
-                </Button>
-              </div>
-            )}
-            {invoice.status === 'paid' && (
-              <p className="text-muted-foreground text-sm">
-                Paid on {formatDateUtc(invoice.paid_at)}.
-              </p>
-            )}
-            {invoice.status === 'canceled' && (
-              <p className="text-muted-foreground text-sm">This invoice has been canceled.</p>
-            )}
-          </Card>
-        )}
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-border border-b">
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Site
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Order
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoice.items.map((item) => (
+                  <tr key={item.id} className="border-border border-b last:border-b-0">
+                    <td className="px-section py-block">{item.site_domain}</td>
+                    <td className="px-section py-block">
+                      <Link
+                        href={`/orders/${item.order_id}`}
+                        className="text-primary hover:underline"
+                      >
+                        {item.order_id.slice(0, 8)}
+                      </Link>
+                    </td>
+                    <td className="px-section py-block text-right font-semibold tabular-nums">
+                      ${item.amount.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
+
+      <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle>Edit draft invoice</SheetTitle>
+            <SheetDescription>
+              Update billing period, due date, and line item amounts.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-block px-4">
+            <label className="gap-inset flex flex-col text-sm">
+              <span className="text-foreground font-medium">Billing period</span>
+              <input
+                type="month"
+                value={billingMonth}
+                onChange={(e) => setBillingMonth(e.target.value)}
+                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+              />
+            </label>
+            <label className="gap-inset flex flex-col text-sm">
+              <span className="text-foreground font-medium">Due date</span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
+              />
+            </label>
+            <div className="space-y-inset">
+              <p className="text-foreground text-sm font-medium">Invoice items</p>
+              {invoice.items.map((item) => (
+                <label
+                  key={item.id}
+                  className="gap-inset flex items-center justify-between text-sm"
+                >
+                  <span className="text-muted-foreground">{item.site_domain}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={itemAmounts[item.id] ?? ''}
+                    onChange={(e) =>
+                      setItemAmounts((prev) => ({
+                        ...prev,
+                        [item.id]: e.target.value,
+                      }))
+                    }
+                    className="border-border bg-background text-foreground h-9 w-32 rounded-md border px-3 text-sm"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+          <SheetFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditOpen(false)}
+              disabled={pending}
+            >
+              Cancel
+            </Button>
+            <Button type="button" variant="cta" onClick={handleSaveInvoice} disabled={pending}>
+              Save changes
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <MenuActionDialog
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        title="Send invoice"
+        description="This will mark the draft invoice as sent."
+        confirmLabel={pending ? 'Sending…' : 'Send invoice'}
+        busy={pending}
+        onConfirm={() => {
+          runAction(() => sendInvoiceEmail(invoice.id), 'Invoice sent.')
+          setSendOpen(false)
+        }}
+      />
+
+      <MenuActionDialog
+        open={markPaidOpen}
+        onOpenChange={setMarkPaidOpen}
+        title="Mark invoice as paid"
+        description="This will mark the invoice as paid and complete linked orders via trigger."
+        confirmLabel={pending ? 'Marking…' : 'Mark as paid'}
+        busy={pending}
+        onConfirm={() => {
+          runAction(() => markInvoicePaid(invoice.id), 'Invoice marked as paid.')
+          setMarkPaidOpen(false)
+        }}
+      />
     </div>
   )
 }

@@ -156,16 +156,14 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
         <div className="gap-block flex flex-col">
           <SideListCard
             title="Outstanding invoices"
-            description="Pending and overdue"
+            description="Draft and sent"
             link={{ href: '/invoices', label: 'All' }}
           >
             {data.unpaidInvoices.length === 0 ? (
               <div className="text-muted-foreground gap-block bg-muted/25 px-block py-section flex flex-col items-center justify-center rounded-xl border border-dashed text-center text-sm">
                 <Mail className="text-primary size-8" aria-hidden />
                 <p className="text-foreground font-medium">All caught up</p>
-                <p className="max-w-xs text-xs leading-relaxed">
-                  Every invoice has been paid or canceled.
-                </p>
+                <p className="max-w-xs text-xs leading-relaxed">Every invoice has been paid.</p>
               </div>
             ) : (
               <ul className="gap-inset flex flex-col">
@@ -200,7 +198,7 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
                       <p className="text-muted-foreground font-mono text-[0.65rem] tabular-nums">
                         {row.due_date
                           ? row.age_days !== null && row.age_days > 0
-                            ? `${row.age_days}d overdue`
+                            ? `${row.age_days}d open`
                             : `Due ${row.due_date}`
                           : 'No due date'}
                       </p>

@@ -8,12 +8,13 @@ import { toast } from 'sonner'
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { AssignCopywriterSelect } from '@/components/orders/assign-copywriter-select'
 import { ChangeRequestsList } from '@/components/orders/change-requests-list'
+import { ClientContentReviewActions } from '@/components/orders/client-content-review-actions'
 import { CopywriterContentEditor } from '@/components/orders/copywriter-content-editor'
 import { OrderContentViewer } from '@/components/orders/order-content-viewer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui/page-header'
-import { cancelInvoice, markInvoiceOverdue, markInvoicePaid } from '@/lib/invoices/invoice-actions'
+import { markInvoicePaid } from '@/lib/invoices/invoice-actions'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
 import type { OrderDetail, UserRole } from '@/lib/orders/load-order-detail'
@@ -67,42 +68,19 @@ function InvoicePanel({
           <DetailRow label="Paid at" value={new Date(invoice.paid_at).toLocaleString()} />
         )}
       </dl>
-      {(role === 'admin' || role === 'manager') &&
-        invoice.status !== 'paid' &&
-        invoice.status !== 'canceled' && (
-          <div className="gap-inset flex flex-wrap">
-            <Button
-              type="button"
-              size="sm"
-              variant="cta"
-              onClick={() => runAction(() => markInvoicePaid(invoice.id))}
-              disabled={pending}
-            >
-              Mark as paid
-            </Button>
-            {(invoice.status === 'pending' || invoice.status === 'overdue') && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => runAction(() => markInvoiceOverdue(invoice.id))}
-                disabled={pending || invoice.status === 'overdue'}
-              >
-                Mark overdue
-              </Button>
-            )}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => runAction(() => cancelInvoice(invoice.id))}
-              disabled={pending}
-            >
-              Cancel invoice
-            </Button>
-          </div>
-        )}
+      {(role === 'admin' || role === 'manager') && invoice.status === 'sent' && (
+        <div className="gap-inset flex flex-wrap">
+          <Button
+            type="button"
+            size="sm"
+            variant="cta"
+            onClick={() => runAction(() => markInvoicePaid(invoice.id))}
+            disabled={pending}
+          >
+            Mark as paid
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -121,6 +99,7 @@ export function OrderDetailView({
   chatRoomId?: string | null
 }) {
   const isStaff = role === 'admin' || role === 'manager'
+  const isClientOwner = role === 'client' && userId === order.user_id
   const isAssignedCopywriter = role === 'copywriter' && userId === order.copywriter_id
   const canEditContent =
     isAssignedCopywriter && (order.status === 'in_progress' || order.status === 'needs_changes')
@@ -196,6 +175,10 @@ export function OrderDetailView({
               <DetailRow label="Countries" value={order.site_countries.join(', ') || null} />
               <DetailRow label="Languages" value={order.site_languages.join(', ') || null} />
               <DetailRow label="Publish date" value={order.publish_date ?? '—'} />
+              <DetailRow
+                label="Publication month"
+                value={order.publish_month ? order.publish_month.slice(0, 7) : '—'}
+              />
               <DetailRow label="Anchor text" value={order.anchor_text} />
               <DetailRow
                 label="Target URL"
@@ -229,6 +212,34 @@ export function OrderDetailView({
                 }
               />
               <DetailRow label="Placed" value={new Date(order.created_at).toLocaleDateString()} />
+              <DetailRow
+                label="Assigned at"
+                value={order.assigned_at ? new Date(order.assigned_at).toLocaleString() : null}
+              />
+              <DetailRow
+                label="Content submitted at"
+                value={
+                  order.content_submitted_at
+                    ? new Date(order.content_submitted_at).toLocaleString()
+                    : null
+                }
+              />
+              <DetailRow
+                label="Approved at"
+                value={order.approved_at ? new Date(order.approved_at).toLocaleString() : null}
+              />
+              <DetailRow
+                label="Published at"
+                value={order.published_at ? new Date(order.published_at).toLocaleString() : null}
+              />
+              <DetailRow
+                label="Completed at"
+                value={order.completed_at ? new Date(order.completed_at).toLocaleString() : null}
+              />
+              <DetailRow
+                label="Canceled at"
+                value={order.canceled_at ? new Date(order.canceled_at).toLocaleString() : null}
+              />
               {isStaff && order.client_name && (
                 <DetailRow label="Client" value={order.client_name} />
               )}
@@ -274,6 +285,10 @@ export function OrderDetailView({
               )}
             </div>
 
+            {isClientOwner && order.status === 'content_sent' ? (
+              <ClientContentReviewActions orderId={order.id} />
+            ) : null}
+
             {canEditContent ? (
               <>
                 <CopywriterContentEditor
@@ -305,6 +320,32 @@ export function OrderDetailView({
           <Card className="p-section space-y-block">
             <h3 className="text-foreground text-base font-semibold">Change requests</h3>
             <ChangeRequestsList changeRequests={order.change_requests} role={role} />
+          </Card>
+
+          <Card className="p-section space-y-block">
+            <h3 className="text-foreground text-base font-semibold">Status history</h3>
+            {order.status_history.length === 0 ? (
+              <p className="text-muted-foreground text-sm italic">
+                No status transitions recorded yet.
+              </p>
+            ) : (
+              <div className="space-y-inset">
+                {order.status_history.map((item) => (
+                  <div key={item.id} className="border-border rounded-md border p-3 text-sm">
+                    <p className="text-foreground font-medium">
+                      {ORDER_STATUS_LABEL[item.from_status]} {'->'}{' '}
+                      {ORDER_STATUS_LABEL[item.to_status]}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
+                    {item.comment ? (
+                      <p className="text-muted-foreground mt-1">{item.comment}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -15,6 +15,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingCart,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -43,6 +44,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { removeFromCartBySiteId } from '@/lib/cart/cart-actions'
 import {
   siteAdminTransitionMenuLabel,
   siteAdminTransitions,
@@ -266,6 +268,7 @@ export function SitesCatalog({
   priceMin,
   priceMax,
   categories,
+  cartSiteIds = [],
 }: {
   role: UserRole
   userId: string
@@ -281,6 +284,8 @@ export function SitesCatalog({
   priceMin?: number
   priceMax?: number
   categories: SitesCatalogCategoryOption[]
+  /** For clients: site IDs already in cart (disables Add to cart until checkout). */
+  cartSiteIds?: string[]
 }) {
   const router = useRouter()
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
@@ -292,7 +297,16 @@ export function SitesCatalog({
   }
 
   const [mobileDetailRow, setMobileDetailRow] = useState<SiteCatalogRow | null>(null)
-  const [cartPending, startCartTransition] = useTransition()
+  const [addingSiteId, setAddingSiteId] = useState<string | null>(null)
+  const [removingSiteId, setRemovingSiteId] = useState<string | null>(null)
+  const [optimisticCartSiteIds, setOptimisticCartSiteIds] = useState(() => new Set<string>())
+
+  const cartSiteIdSet = useMemo(() => {
+    const s = new Set(cartSiteIds)
+    for (const id of optimisticCartSiteIds) s.add(id)
+    return s
+  }, [cartSiteIds, optimisticCartSiteIds])
+
   const [statusDialog, setStatusDialog] = useState<{
     siteId: string
     domain: string
@@ -390,21 +404,73 @@ export function SitesCatalog({
   const onSearchSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
-      router.push(buildListHref(1, { q: searchDraft }), { scroll: false })
+      router.replace(buildListHref(1, { q: searchDraft }), { scroll: false })
     },
     [router, buildListHref, searchDraft]
   )
 
-  const addCart = useCallback((siteId: string, domain: string) => {
-    startCartTransition(async () => {
-      const res = await addSiteToCart(siteId)
-      if (!res.ok) {
-        toast.error(res.message)
-        return
-      }
-      toast.success(`Added to cart: ${domain}`)
-    })
-  }, [])
+  useEffect(() => {
+    const draftApplied = searchDraft.trim()
+    const urlApplied = q.trim()
+    if (draftApplied === urlApplied) return
+
+    const delay = draftApplied === '' ? 0 : SITES_FILTER_INPUT_DEBOUNCE_MS
+    const id = window.setTimeout(() => {
+      router.replace(buildListHref(1, { q: searchDraft }), { scroll: false })
+    }, delay)
+    return () => window.clearTimeout(id)
+  }, [searchDraft, q, router, buildListHref])
+
+  const addCart = useCallback(
+    (siteId: string, domain: string, onSuccess?: () => void) => {
+      if (cartSiteIdSet.has(siteId)) return
+      setAddingSiteId(siteId)
+      void (async () => {
+        try {
+          const res = await addSiteToCart(siteId)
+          if (!res.ok) {
+            toast.error(res.message)
+            return
+          }
+          toast.success('Added to cart', { description: domain })
+          setOptimisticCartSiteIds((prev) => new Set(prev).add(siteId))
+          onSuccess?.()
+          router.refresh()
+        } finally {
+          setAddingSiteId(null)
+        }
+      })()
+    },
+    [cartSiteIdSet, router]
+  )
+
+  const removeFromCart = useCallback(
+    (siteId: string, domain: string, onSuccess?: () => void) => {
+      if (removingSiteId !== null) return
+      setRemovingSiteId(siteId)
+      void (async () => {
+        try {
+          const res = await removeFromCartBySiteId(siteId)
+          if (!res.ok) {
+            toast.error(res.message)
+            return
+          }
+          toast.success('Removed from cart', { description: domain })
+          setOptimisticCartSiteIds((prev) => {
+            if (!prev.has(siteId)) return prev
+            const next = new Set(prev)
+            next.delete(siteId)
+            return next
+          })
+          onSuccess?.()
+          router.refresh()
+        } finally {
+          setRemovingSiteId(null)
+        }
+      })()
+    },
+    [removingSiteId, router]
+  )
 
   const filtersActive = q.trim() || hasStructuredFilters
 
@@ -509,15 +575,9 @@ export function SitesCatalog({
               />
               <FormControlInput
                 type="search"
-                placeholder="Search domain, keywords, description…"
+                placeholder="Search domain, keywords, description, category…"
                 value={searchDraft}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setSearchDraft(v)
-                  if (!v.trim() && q.trim()) {
-                    router.push(buildListHref(1, { q: '' }), { scroll: false })
-                  }
-                }}
+                onChange={(e) => setSearchDraft(e.target.value)}
                 className="pr-3 pl-10"
                 aria-label="Search sites"
               />
@@ -744,19 +804,42 @@ export function SitesCatalog({
                           data-row-actions
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="gap-inset inline-flex items-center justify-end">
+                          <div className="gap-inset inline-flex flex-wrap items-center justify-end">
                             {canUseCart ? (
-                              <Button
-                                type="button"
-                                variant="cta"
-                                size="sm"
-                                className="h-9 rounded-full px-3"
-                                disabled={cartPending || row.status !== 'active'}
-                                onClick={() => addCart(row.id, row.domain)}
-                              >
-                                <ShoppingCart className="size-4" aria-hidden />
-                                Add to cart
-                              </Button>
+                              cartSiteIdSet.has(row.id) ? (
+                                <>
+                                  <span className="text-muted-foreground text-xs whitespace-nowrap">
+                                    In cart
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 rounded-full px-3"
+                                    disabled={removingSiteId === row.id}
+                                    onClick={() => removeFromCart(row.id, row.domain)}
+                                  >
+                                    {removingSiteId === row.id ? 'Removing…' : 'Remove'}
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="cta"
+                                  size="sm"
+                                  className="h-9 rounded-full px-3"
+                                  disabled={row.status !== 'active' || addingSiteId === row.id}
+                                  onClick={() => addCart(row.id, row.domain)}
+                                  aria-label={
+                                    addingSiteId === row.id
+                                      ? `Adding ${row.domain} to cart`
+                                      : `Add ${row.domain} to cart`
+                                  }
+                                >
+                                  <ShoppingCart className="size-4" aria-hidden />
+                                  {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
+                                </Button>
+                              )
                             ) : (
                               <>
                                 {editAllowed(row) ? (
@@ -888,14 +971,23 @@ export function SitesCatalog({
                                     Edit
                                   </DropdownMenuItem>
                                 ) : null}
-                                {canUseCart ? (
+                                {canUseCart && cartSiteIdSet.has(row.id) ? (
                                   <DropdownMenuItem
                                     className="gap-2"
-                                    disabled={cartPending || row.status !== 'active'}
+                                    disabled={removingSiteId === row.id}
+                                    onClick={() => removeFromCart(row.id, row.domain)}
+                                  >
+                                    <Trash2 className="size-4" aria-hidden />
+                                    {removingSiteId === row.id ? 'Removing…' : 'Remove from cart'}
+                                  </DropdownMenuItem>
+                                ) : canUseCart ? (
+                                  <DropdownMenuItem
+                                    className="gap-2"
+                                    disabled={row.status !== 'active' || addingSiteId === row.id}
                                     onClick={() => addCart(row.id, row.domain)}
                                   >
                                     <ShoppingCart className="size-4" aria-hidden />
-                                    Add to cart
+                                    {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
                                   </DropdownMenuItem>
                                 ) : null}
                                 {canAdminStatus ? (
@@ -968,6 +1060,39 @@ export function SitesCatalog({
                 <Eye className="size-4" aria-hidden />
                 View
               </Button>
+              {canUseCart &&
+              mobileDetailRow.status === 'active' &&
+              cartSiteIdSet.has(mobileDetailRow.id) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2 sm:w-auto"
+                  disabled={removingSiteId === mobileDetailRow.id}
+                  onClick={() =>
+                    removeFromCart(mobileDetailRow.id, mobileDetailRow.domain, () =>
+                      setMobileDetailRow(null)
+                    )
+                  }
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                  {removingSiteId === mobileDetailRow.id ? 'Removing…' : 'Remove from cart'}
+                </Button>
+              ) : canUseCart && mobileDetailRow.status === 'active' ? (
+                <Button
+                  type="button"
+                  variant="cta"
+                  className="w-full gap-2 sm:w-auto"
+                  disabled={addingSiteId === mobileDetailRow.id}
+                  onClick={() =>
+                    addCart(mobileDetailRow.id, mobileDetailRow.domain, () =>
+                      setMobileDetailRow(null)
+                    )
+                  }
+                >
+                  <ShoppingCart className="size-4" aria-hidden />
+                  {addingSiteId === mobileDetailRow.id ? 'Adding…' : 'Add to cart'}
+                </Button>
+              ) : null}
               {editAllowed(mobileDetailRow) ? (
                 <Button
                   type="button"

@@ -19,8 +19,6 @@ export type OrderActionId =
   | 'delete_order'
   | 'view_invoice'
   | 'mark_invoice_paid'
-  | 'mark_invoice_overdue'
-  | 'cancel_invoice'
   | 'send_invoice'
 
 export type OrderActionGroupKey = 'order' | 'content' | 'invoice' | 'admin'
@@ -65,7 +63,7 @@ export function getOrderActionAvailability(ctx: OrderActionContext): OrderAction
       group: 'order',
       enabled:
         (ctx.role === 'client' && isOwnOrder && ctx.status === 'new') ||
-        (isStaff && ctx.status !== 'completed' && ctx.status !== 'canceled'),
+        (isStaff && ctx.status === 'new'),
     },
     {
       id: 'assign_copywriter',
@@ -108,24 +106,12 @@ export function getOrderActionAvailability(ctx: OrderActionContext): OrderAction
     {
       id: 'mark_invoice_paid',
       group: 'invoice',
-      enabled:
-        hasInvoice && isStaff && ctx.invoiceStatus !== 'paid' && ctx.invoiceStatus !== 'canceled',
-    },
-    {
-      id: 'mark_invoice_overdue',
-      group: 'invoice',
-      enabled: hasInvoice && isStaff && ctx.invoiceStatus === 'pending',
-    },
-    {
-      id: 'cancel_invoice',
-      group: 'invoice',
-      enabled:
-        hasInvoice && isStaff && ctx.invoiceStatus !== 'paid' && ctx.invoiceStatus !== 'canceled',
+      enabled: hasInvoice && isStaff && ctx.invoiceStatus === 'sent',
     },
     {
       id: 'send_invoice',
       group: 'invoice',
-      enabled: hasInvoice && isStaff && ctx.invoiceStatus !== 'canceled',
+      enabled: hasInvoice && isStaff && ctx.invoiceStatus === 'draft',
     },
     {
       id: 'override_status',

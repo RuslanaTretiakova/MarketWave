@@ -3,7 +3,9 @@
 import { Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { SITE_STATUS_LABEL } from '@/lib/cart/cart-site-availability'
 import type { CartItemRow } from '@/lib/cart/load-cart'
+import { cn } from '@/lib/utils'
 
 export function CartItemRow({
   item,
@@ -27,12 +29,23 @@ export function CartItemRow({
   pending: boolean
 }) {
   const publishMonthInput = item.publish_month ? item.publish_month.slice(0, 7) : ''
+  const siteIsActive = item.site_status === 'active'
 
   return (
-    <div className="border-border gap-block px-section py-block lg:gap-section flex flex-col border-b last:border-b-0 lg:flex-row lg:items-start lg:justify-between">
+    <div
+      className={cn(
+        'border-border gap-block px-section py-block lg:gap-section flex flex-col border-b last:border-b-0 lg:flex-row lg:items-start lg:justify-between',
+        !siteIsActive && 'bg-destructive/5'
+      )}
+    >
       <div className="space-y-inset min-w-0 lg:w-72 lg:shrink-0 lg:pr-0">
         <p className="text-foreground font-medium wrap-break-word">{item.site_domain}</p>
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          {!siteIsActive ? (
+            <span className="bg-destructive/15 text-destructive border-destructive/30 rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+              {SITE_STATUS_LABEL[item.site_status]}
+            </span>
+          ) : null}
           {item.site_category ? (
             <span className="bg-muted/70 text-foreground rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">
               {item.site_category}
@@ -107,12 +120,13 @@ export function CartItemRow({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive gap-1.5"
             onClick={() => onRemove(item.id)}
             disabled={pending}
             aria-label={`Remove ${item.site_domain} from cart`}
           >
-            <Trash2 className="size-4" />
+            <Trash2 className="size-4 shrink-0" />
+            <span>Remove</span>
           </Button>
         </div>
       </div>

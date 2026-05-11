@@ -119,7 +119,7 @@ export function OrderStatusActions({
         onClick={() => runAction(() => approveContent(orderId))}
         disabled={pending}
       >
-        Approve content
+        Approve
       </Button>,
       <Button
         key="changes"
@@ -128,7 +128,7 @@ export function OrderStatusActions({
         onClick={() => setConfirmDialog({ kind: 'request_changes' })}
         disabled={pending}
       >
-        Request changes
+        Needs changes
       </Button>
     )
   }
@@ -252,14 +252,14 @@ export function OrderStatusActions({
             setActionError(null)
           }
         }}
-        title="Request changes"
-        description="Describe the changes needed. The order will be sent back for revision."
+        title="Leave a comment"
+        description="Describe what should change. The copywriter and team will see this."
         middle={
           <>
             <textarea
               value={changeComment}
               onChange={(e) => setChangeComment(e.target.value)}
-              placeholder="Describe the changes needed…"
+              placeholder="Describe what should be changed…"
               rows={4}
               maxLength={2000}
               className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
@@ -272,7 +272,7 @@ export function OrderStatusActions({
           </>
         }
         confirmVariant="cta"
-        confirmLabel={pending ? 'Submitting…' : 'Submit'}
+        confirmLabel={pending ? 'Sending…' : 'Send'}
         confirmDisabled={!changeComment.trim()}
         busy={pending}
         onConfirm={handleConfirmRequestChanges}
