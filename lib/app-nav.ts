@@ -8,7 +8,6 @@ import {
   Receipt,
   ShoppingCart,
   Tags,
-  User,
   Users,
 } from 'lucide-react'
 
@@ -23,7 +22,6 @@ export type AppNavItem = {
 export type AppNavRole = Database['public']['Enums']['user_role']
 
 const dashboard: AppNavItem = { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard }
-const profile: AppNavItem = { href: '/settings/profile', label: 'Profile', Icon: User }
 const sites: AppNavItem = { href: '/sites', label: 'Site catalog', Icon: Globe }
 const orders: AppNavItem = { href: '/orders', label: 'Orders', Icon: ClipboardList }
 const invoices: AppNavItem = { href: '/invoices', label: 'Invoices', Icon: Receipt }
@@ -50,17 +48,17 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 export function getAppNavItems(role: AppNavRole): AppNavItem[] {
   switch (role) {
     case 'client':
-      return [dashboard, profile, sites, cart, orders, invoices, chats]
+      return [dashboard, sites, cart, orders, invoices, chats]
     case 'admin':
-      return [dashboard, profile, users, categories, sites, orders, invoices, chats, earnings]
+      return [dashboard, users, categories, sites, orders, invoices, chats, earnings]
     case 'manager':
-      return [dashboard, profile, sites, orders, invoices, chats, earnings]
+      return [dashboard, sites, orders, invoices, chats, earnings]
     case 'sourcer':
-      return [dashboard, profile, sites, earnings]
+      return [dashboard, sites, chats, earnings]
     case 'copywriter':
-      return [dashboard, profile, orders, chats]
+      return [dashboard, orders, chats]
     default:
-      return [dashboard, profile, sites, orders]
+      return [dashboard, sites, orders]
   }
 }
 

@@ -7,6 +7,7 @@ import {
   checkAndRecordPublicRateLimit,
 } from '@/lib/auth/public-rate-limit'
 import { logAuthError } from '@/lib/errors/log-auth-error'
+import { ensureOnboardingChatsForUser } from '@/lib/chat/ensure-onboarding-chats'
 import { adminClient } from '@/lib/supabase/admin'
 import { AUTH_MIN_PASSWORD_LENGTH } from '@/lib/auth/password-min'
 import { createClient } from '@/lib/supabase/server'
@@ -69,6 +70,8 @@ export async function submitSetPasswordAction(input: {
   if (profErr) {
     return { ok: false, message: 'Could not update your account. Try again.' }
   }
+
+  await ensureOnboardingChatsForUser(user.id)
 
   return { ok: true }
 }

@@ -6,6 +6,7 @@ import { MessageComposer } from '@/components/chat/message-composer'
 import { MessageList } from '@/components/chat/message-list'
 import { markRoomRead } from '@/lib/chat/chat-actions'
 import { clientChatChannelLabel } from '@/lib/chat/channel'
+import { canSendMessages } from '@/lib/chat/chat-rules'
 import type { ChatMessage, ChatRoomDetail } from '@/lib/chat/types'
 import { createClient } from '@/lib/supabase/client'
 
@@ -79,6 +80,7 @@ export function ChatShell({
               message_type: m.message_type,
               created_at: m.created_at,
               attachments: [],
+              read_by: [],
             },
           ])
 
@@ -106,7 +108,8 @@ export function ChatShell({
             {room.title ?? room.order_site_domain ?? 'Conversation'}
           </h2>
           <p className="text-muted-foreground truncate text-xs">
-            {clientChatChannelLabel(room.channel)} · {room.participants.length} member
+            {clientChatChannelLabel(room.channel)}
+            {room.status === 'archived' ? ' · Archived' : ''} · {room.participants.length} member
             {room.participants.length === 1 ? '' : 's'}
             {room.kind === 'order' && room.order_id ? (
               <>
@@ -121,7 +124,13 @@ export function ChatShell({
         </div>
       </header>
       <MessageList messages={messages} currentUserId={currentUserId} />
-      <MessageComposer roomId={room.id} />
+      {canSendMessages(room.status) ? (
+        <MessageComposer roomId={room.id} />
+      ) : (
+        <div className="border-border bg-muted/30 text-muted-foreground p-block border-t text-center text-sm">
+          This chat is archived — messaging is disabled. Unarchive from the list to reply.
+        </div>
+      )}
     </div>
   )
 }

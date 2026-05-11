@@ -7,15 +7,18 @@ const MESSAGE_PAGE_SIZE = 100
 
 /**
  * Loads a single chat room with its participants and most recent messages, only when
- * the requesting user is a member (or is admin/manager). Returns null otherwise so
+ * the requesting user is a member (or is admin). Returns null otherwise so
  * callers can fall through to `notFound()`.
+ *
+ * Read receipts: we keep `chat_room_reads.last_read_at` for fast unread counts; the
+ * `chat_message_reads` table stores per-message “read by” rows synced from that marker
+ * (see migration). Below we load `read_by` only for messages you sent.
  */
 export async function loadChatRoom(
   roomId: string,
   userId: string,
   role: Database['public']['Enums']['user_role']
 ): Promise<ChatRoomDetail | null> {
-  // Membership gate (admin can view any room).
   const { data: membership } = await adminClient
     .from('chat_room_participants')
     .select('user_id')
@@ -23,13 +26,15 @@ export async function loadChatRoom(
     .eq('user_id', userId)
     .maybeSingle()
 
-  const isStaff = role === 'admin'
-  if (!membership && !isStaff) return null
+  const isAdmin = role === 'admin'
+  if (!membership && !isAdmin) return null
 
   const [roomResult, participantsResult, messagesResult, readResult] = await Promise.all([
     adminClient
       .from('chat_rooms')
-      .select('id, kind, channel, title, order_id, order:orders(site_domain)')
+      .select(
+        'id, kind, channel, title, order_id, created_at, status, system_managed, order:orders(site_domain)'
+      )
       .eq('id', roomId)
       .maybeSingle(),
     adminClient
@@ -58,6 +63,9 @@ export async function loadChatRoom(
     channel: Database['public']['Enums']['chat_channel_type']
     title: string | null
     order_id: string | null
+    created_at: string
+    status: Database['public']['Enums']['chat_room_status']
+    system_managed: boolean
     order: { site_domain: string } | null
   }
   type ParticipantRow = {
@@ -84,7 +92,6 @@ export async function loadChatRoom(
   const participants = (participantsResult.data ?? []) as unknown as ParticipantRow[]
   const messagesRaw = (messagesResult.data ?? []) as unknown as MsgRow[]
 
-  // Fetch attachments for these messages
   const messageIds = messagesRaw.map((m) => m.id)
   let attachmentsByMessage = new Map<
     string,
@@ -116,7 +123,7 @@ export async function loadChatRoom(
     }
   }
 
-  const messages: ChatMessage[] = messagesRaw
+  let messages: ChatMessage[] = messagesRaw
     .map((m) => ({
       id: m.id,
       room_id: m.room_id,
@@ -126,9 +133,33 @@ export async function loadChatRoom(
       message_type: m.message_type,
       created_at: m.created_at,
       attachments: attachmentsByMessage.get(m.id) ?? [],
+      read_by: [] as ChatMessage['read_by'],
     }))
-    // We pulled DESC for the LIMIT; render oldest-first.
     .reverse()
+
+  const ownMessageIds = messages.filter((m) => m.sender_id === userId).map((m) => m.id)
+  if (ownMessageIds.length > 0) {
+    type ReadRow = {
+      message_id: string
+      user_id: string
+      profiles: { full_name: string | null } | null
+    }
+    const { data: readRows } = await adminClient
+      .from('chat_message_reads')
+      .select('message_id, user_id, profiles(full_name)')
+      .in('message_id', ownMessageIds)
+
+    const byMessage = new Map<string, ChatMessage['read_by']>()
+    for (const row of (readRows ?? []) as unknown as ReadRow[]) {
+      const list = byMessage.get(row.message_id) ?? []
+      list.push({ user_id: row.user_id, full_name: row.profiles?.full_name ?? null })
+      byMessage.set(row.message_id, list)
+    }
+    messages = messages.map((m) => ({
+      ...m,
+      read_by: m.sender_id === userId ? (byMessage.get(m.id) ?? []) : [],
+    }))
+  }
 
   const chatParticipants: ChatParticipant[] = participants
     .filter((p) => p.profiles)
@@ -148,6 +179,9 @@ export async function loadChatRoom(
       title: room.title,
       orderId: room.order_id,
     }),
+    status: room.status ?? 'active',
+    system_managed: room.system_managed ?? false,
+    created_at: room.created_at,
     title: room.title,
     order_id: room.order_id,
     order_site_domain: room.order?.site_domain ?? null,

@@ -75,9 +75,7 @@ export function FormControlSelect({
 
   const handleValueChange = React.useCallback(
     (nextValue: string | null) => {
-      if (nextValue !== null) {
-        onValueChange(nextValue)
-      }
+      onValueChange(nextValue ?? '')
     },
     [onValueChange]
   )

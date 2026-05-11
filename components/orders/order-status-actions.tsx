@@ -4,14 +4,7 @@ import { useCallback, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 import {
   approveContent,
   cancelOrder,
@@ -198,31 +191,19 @@ export function OrderStatusActions({
         </p>
       )}
 
-      {/* Cancel confirm dialog */}
-      <Dialog
+      <MenuActionDialog
         open={confirmDialog?.kind === 'cancel'}
         onOpenChange={(o) => !o && setConfirmDialog(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel order</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. The order will be permanently canceled.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-inset">
-            <Button variant="outline" onClick={() => setConfirmDialog(null)}>
-              Keep order
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmCancel} disabled={pending}>
-              Cancel order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Cancel order"
+        description="This action cannot be undone. The order will be permanently canceled."
+        cancelLabel="Keep order"
+        confirmLabel="Cancel order"
+        confirmVariant="destructive"
+        busy={pending}
+        onConfirm={handleConfirmCancel}
+      />
 
-      {/* Publish confirm dialog */}
-      <Dialog
+      <MenuActionDialog
         open={confirmDialog?.kind === 'publish'}
         onOpenChange={(o) => {
           if (!o) {
@@ -231,57 +212,38 @@ export function OrderStatusActions({
             setActionError(null)
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mark as published</DialogTitle>
-            <DialogDescription>
-              Paste the live URL where the content was published. This will be shared with the
-              client and the order will move to published status.
-            </DialogDescription>
-          </DialogHeader>
-          <label className="gap-inset flex flex-col text-sm">
-            <span className="text-foreground font-medium">Published URL</span>
-            <input
-              type="url"
-              required
-              autoFocus
-              value={publishedUrl}
-              onChange={(e) => setPublishedUrl(e.target.value)}
-              placeholder="https://example.com/post"
-              maxLength={2048}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 rounded-md border px-3 text-sm"
-            />
-          </label>
-          {actionError && (
-            <p className="text-destructive text-sm" role="alert">
-              {actionError}
-            </p>
-          )}
-          <DialogFooter className="gap-inset">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setConfirmDialog(null)
-                setPublishedUrl('')
-                setActionError(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="cta"
-              onClick={handleConfirmPublish}
-              disabled={pending || !publishedUrl.trim()}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Mark as published"
+        description="Paste the live URL where the content was published. This will be shared with the client and the order will move to published status."
+        middle={
+          <>
+            <label className="gap-inset flex flex-col text-sm">
+              <span className="text-foreground font-medium">Published URL</span>
+              <input
+                type="url"
+                required
+                autoFocus
+                value={publishedUrl}
+                onChange={(e) => setPublishedUrl(e.target.value)}
+                placeholder="https://example.com/post"
+                maxLength={2048}
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 rounded-md border px-3 text-sm"
+              />
+            </label>
+            {actionError ? (
+              <p className="text-destructive text-sm" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+          </>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Confirming…' : 'Confirm'}
+        confirmDisabled={!publishedUrl.trim()}
+        busy={pending}
+        onConfirm={handleConfirmPublish}
+      />
 
-      {/* Request changes dialog */}
-      <Dialog
+      <MenuActionDialog
         open={confirmDialog?.kind === 'request_changes'}
         onOpenChange={(o) => {
           if (!o) {
@@ -290,48 +252,31 @@ export function OrderStatusActions({
             setActionError(null)
           }
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request changes</DialogTitle>
-            <DialogDescription>
-              Describe the changes needed. The order will be sent back for revision.
-            </DialogDescription>
-          </DialogHeader>
-          <textarea
-            value={changeComment}
-            onChange={(e) => setChangeComment(e.target.value)}
-            placeholder="Describe the changes needed…"
-            rows={4}
-            maxLength={2000}
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
-          />
-          {actionError && (
-            <p className="text-destructive text-sm" role="alert">
-              {actionError}
-            </p>
-          )}
-          <DialogFooter className="gap-inset">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setConfirmDialog(null)
-                setChangeComment('')
-                setActionError(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="cta"
-              onClick={handleConfirmRequestChanges}
-              disabled={pending || !changeComment.trim()}
-            >
-              Submit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Request changes"
+        description="Describe the changes needed. The order will be sent back for revision."
+        middle={
+          <>
+            <textarea
+              value={changeComment}
+              onChange={(e) => setChangeComment(e.target.value)}
+              placeholder="Describe the changes needed…"
+              rows={4}
+              maxLength={2000}
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
+            />
+            {actionError ? (
+              <p className="text-destructive text-sm" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+          </>
+        }
+        confirmVariant="cta"
+        confirmLabel={pending ? 'Submitting…' : 'Submit'}
+        confirmDisabled={!changeComment.trim()}
+        busy={pending}
+        onConfirm={handleConfirmRequestChanges}
+      />
     </>
   )
 }

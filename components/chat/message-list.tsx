@@ -75,6 +75,12 @@ function MessageBubble({
       <p className="text-muted-foreground mt-0.5 px-1 text-[0.65rem] tabular-nums">
         {formatTimeUtc(message.created_at)}
       </p>
+      {isMine && message.read_by.length > 0 && (
+        <p className="text-muted-foreground max-w-[80%] px-1 text-[0.65rem]">
+          Read by{' '}
+          {message.read_by.map((r) => r.full_name?.trim() || r.user_id.slice(0, 8)).join(', ')}
+        </p>
+      )}
     </li>
   )
 }

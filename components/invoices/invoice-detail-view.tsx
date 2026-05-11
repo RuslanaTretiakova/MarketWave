@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   cancelInvoice,
   markInvoiceOverdue,
@@ -98,12 +99,10 @@ export function InvoiceDetailView({
         >
           <ArrowLeft className="size-4" /> Back to invoices
         </Link>
-        <div className="gap-block flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-              {invoice.site_domain}
-            </h2>
-            <div className="mt-inset gap-block flex items-center">
+        <PageHeader
+          title={invoice.site_domain}
+          meta={
+            <div className="gap-block flex items-center">
               <span
                 className={cn(
                   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -125,33 +124,35 @@ export function InvoiceDetailView({
                 ${invoice.amount.toFixed(2)}
               </span>
             </div>
-          </div>
-          <div className="gap-inset flex flex-wrap">
-            <a
-              href={`/api/invoices/${invoice.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
-            >
-              <Download className="size-4" /> Download PDF
-            </a>
-            {canManage && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  runAction(
-                    () => sendInvoiceEmail(invoice.id),
-                    invoice.sent_at ? 'Invoice resent.' : 'Invoice sent.'
-                  )
-                }
-                disabled={pending || invoice.status === 'canceled'}
+          }
+          action={
+            <div className="gap-inset flex flex-wrap">
+              <a
+                href={`/api/invoices/${invoice.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
               >
-                <Mail className="size-4" /> {invoice.sent_at ? 'Resend' : 'Send'} invoice
-              </Button>
-            )}
-          </div>
-        </div>
+                <Download className="size-4" /> Download PDF
+              </a>
+              {canManage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    runAction(
+                      () => sendInvoiceEmail(invoice.id),
+                      invoice.sent_at ? 'Invoice resent.' : 'Invoice sent.'
+                    )
+                  }
+                  disabled={pending || invoice.status === 'canceled'}
+                >
+                  <Mail className="size-4" /> {invoice.sent_at ? 'Resend' : 'Send'} invoice
+                </Button>
+              )}
+            </div>
+          }
+        />
       </div>
 
       <div className="gap-layout grid lg:grid-cols-3">

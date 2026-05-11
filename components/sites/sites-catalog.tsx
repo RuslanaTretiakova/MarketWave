@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import {
   ChevronDown,
   ChevronUp,
   Eye,
   Filter,
   Globe,
-  MoreHorizontal,
   Pencil,
   Plus,
   RotateCcw,
@@ -23,6 +22,7 @@ import { SiteChangeStatusDialog } from '@/components/sites/site-change-status-di
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,10 @@ import {
   SITE_STATUS_LABEL,
   SITE_STATUSES_ORDERED,
 } from '@/lib/sites/site-status-labels'
+import {
+  SITES_CATALOG_FILTER_SENTINEL,
+  sitesCatalogQueryValueForUrl,
+} from '@/lib/sites/sites-catalog-filter'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -77,6 +81,8 @@ const SITE_ROW_CELL_MUTED =
 
 const SITE_ROW_CELL_ACTIONS =
   'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/site-row:bg-muted/50 group-has-[[aria-expanded=true]]/site-row:bg-muted/50'
+
+const SITES_FILTER_INPUT_DEBOUNCE_MS = 320
 
 function TokenPill({ value, tone = 'neutral' }: { value: string; tone?: 'neutral' | 'warm' }) {
   return (
@@ -114,6 +120,134 @@ function ValuePillList({
       ))}
       {extra > 0 ? <TokenPill value={`+${extra}`} /> : null}
     </div>
+  )
+}
+
+type SitesCatalogBuildListHref = (
+  nextPage: number,
+  overrides?: {
+    q?: string
+    category_id?: string
+    status?: string
+    country?: string
+    language?: string
+    link_type?: string
+    price_min?: string
+    price_max?: string
+  }
+) => string
+
+function SitesCatalogDebouncedFilters({
+  country,
+  language,
+  priceMin,
+  priceMax,
+  buildListHref,
+  router,
+}: {
+  country?: string
+  language?: string
+  priceMin?: number
+  priceMax?: number
+  buildListHref: SitesCatalogBuildListHref
+  router: ReturnType<typeof useRouter>
+}) {
+  const [countryDraft, setCountryDraft] = useState(() => country ?? '')
+  const [languageDraft, setLanguageDraft] = useState(() => language ?? '')
+  const [priceMinDraft, setPriceMinDraft] = useState(() =>
+    priceMin !== undefined ? String(priceMin) : ''
+  )
+  const [priceMaxDraft, setPriceMaxDraft] = useState(() =>
+    priceMax !== undefined ? String(priceMax) : ''
+  )
+
+  useEffect(() => {
+    const applied = (country ?? '').trim()
+    if (countryDraft.trim() === applied) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { country: countryDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [countryDraft, country, router, buildListHref])
+
+  useEffect(() => {
+    const applied = (language ?? '').trim()
+    if (languageDraft.trim() === applied) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { language: languageDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [languageDraft, language, router, buildListHref])
+
+  useEffect(() => {
+    const appliedStr = priceMin !== undefined ? String(priceMin) : ''
+    if (priceMinDraft.trim() === appliedStr.trim()) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { price_min: priceMinDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [priceMinDraft, priceMin, router, buildListHref])
+
+  useEffect(() => {
+    const appliedStr = priceMax !== undefined ? String(priceMax) : ''
+    if (priceMaxDraft.trim() === appliedStr.trim()) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { price_max: priceMaxDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [priceMaxDraft, priceMax, router, buildListHref])
+
+  return (
+    <>
+      <div className="gap-inset flex flex-col">
+        <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
+          Country code
+        </Label>
+        <FormControlInput
+          id="filter-country"
+          placeholder="Any country"
+          value={countryDraft}
+          onChange={(e) => setCountryDraft(e.target.value)}
+          maxLength={8}
+        />
+      </div>
+      <div className="gap-inset flex flex-col">
+        <Label htmlFor="filter-language" className="text-muted-foreground text-xs">
+          Language code
+        </Label>
+        <FormControlInput
+          id="filter-language"
+          placeholder="All languages"
+          value={languageDraft}
+          onChange={(e) => setLanguageDraft(e.target.value)}
+          maxLength={16}
+        />
+      </div>
+      <div className="gap-inset flex flex-col">
+        <Label htmlFor="price-min" className="text-muted-foreground text-xs">
+          Price from
+        </Label>
+        <FormControlInput
+          id="price-min"
+          inputMode="decimal"
+          placeholder="From"
+          value={priceMinDraft}
+          onChange={(e) => setPriceMinDraft(e.target.value)}
+        />
+      </div>
+      <div className="gap-inset flex flex-col">
+        <Label htmlFor="price-max" className="text-muted-foreground text-xs">
+          Price to
+        </Label>
+        <FormControlInput
+          id="price-max"
+          inputMode="decimal"
+          placeholder="To"
+          value={priceMaxDraft}
+          onChange={(e) => setPriceMaxDraft(e.target.value)}
+        />
+      </div>
+    </>
   )
 }
 
@@ -174,7 +308,10 @@ export function SitesCatalog({
     linkType !== undefined ||
     priceMin !== undefined ||
     priceMax !== undefined
-  const [filtersOpen, setFiltersOpen] = useState(() => role !== 'client' && hasStructuredFilters)
+  const [filtersOpenDiscrete, setFiltersOpenDiscrete] = useState(false)
+  const filtersOpen = role !== 'client' && (hasStructuredFilters || filtersOpenDiscrete)
+
+  const debouncedFiltersKey = `${country ?? ''}|${language ?? ''}|${priceMin ?? ''}|${priceMax ?? ''}`
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
@@ -182,21 +319,21 @@ export function SitesCatalog({
   }, [role])
   const categoryFilterOptions = useMemo(
     () => [
-      { value: '', label: 'All categories' },
+      { value: SITES_CATALOG_FILTER_SENTINEL, label: 'All categories' },
       ...categories.map((c) => ({ value: String(c.id), label: c.name })),
     ],
     [categories]
   )
   const statusOptions = useMemo(
     () => [
-      { value: '', label: 'All statuses' },
+      { value: SITES_CATALOG_FILTER_SENTINEL, label: 'All statuses' },
       ...statusFilterOptions.map((s) => ({ value: s, label: SITE_STATUS_LABEL[s] })),
     ],
     [statusFilterOptions]
   )
   const linkTypeOptions = useMemo(
     () => [
-      { value: '', label: 'Any link type' },
+      { value: SITES_CATALOG_FILTER_SENTINEL, label: 'Any link type' },
       ...LINK_TYPES.map((lt) => ({ value: lt, label: lt })),
     ],
     []
@@ -218,25 +355,29 @@ export function SitesCatalog({
     ) => {
       const params = new URLSearchParams()
       const qUse = overrides?.q !== undefined ? overrides.q : q
-      const catUse =
+      const catRaw =
         overrides?.category_id !== undefined
           ? overrides.category_id
           : (categoryId?.toString() ?? '')
-      const stUse = overrides?.status !== undefined ? overrides.status : (status ?? '')
+      const stRaw = overrides?.status !== undefined ? overrides.status : (status ?? '')
       const coUse = overrides?.country !== undefined ? overrides.country : (country ?? '')
       const langUse = overrides?.language !== undefined ? overrides.language : (language ?? '')
-      const ltUse = overrides?.link_type !== undefined ? overrides.link_type : (linkType ?? '')
+      const ltRaw = overrides?.link_type !== undefined ? overrides.link_type : (linkType ?? '')
       const pminUse =
         overrides?.price_min !== undefined ? overrides.price_min : (priceMin?.toString() ?? '')
       const pmaxUse =
         overrides?.price_max !== undefined ? overrides.price_max : (priceMax?.toString() ?? '')
 
+      const catParam = sitesCatalogQueryValueForUrl(catRaw)
+      const stParam = sitesCatalogQueryValueForUrl(stRaw)
+      const ltParam = sitesCatalogQueryValueForUrl(ltRaw)
+
       if (qUse.trim()) params.set('q', qUse.trim())
-      if (catUse.trim()) params.set('category_id', catUse.trim())
-      if (stUse.trim()) params.set('status', stUse.trim())
+      if (catParam !== null) params.set('category_id', catParam)
+      if (stParam !== null) params.set('status', stParam)
       if (coUse.trim()) params.set('country', coUse.trim())
       if (langUse.trim()) params.set('language', langUse.trim())
-      if (ltUse.trim()) params.set('link_type', ltUse.trim())
+      if (ltParam !== null) params.set('link_type', ltParam)
       if (pminUse.trim()) params.set('price_min', pminUse.trim())
       if (pmaxUse.trim()) params.set('price_max', pmaxUse.trim())
       if (nextPage > 1) params.set('page', String(nextPage))
@@ -266,9 +407,6 @@ export function SitesCatalog({
   }, [])
 
   const filtersActive = q.trim() || hasStructuredFilters
-  if (role !== 'client' && hasStructuredFilters && !filtersOpen) {
-    setFiltersOpen(true)
-  }
 
   const countLabel = filtersActive
     ? `${totalCount} match${totalCount === 1 ? '' : 'es'}`
@@ -390,7 +528,10 @@ export function SitesCatalog({
                   type="button"
                   variant="outline"
                   className="h-10 min-h-10 rounded-full px-4"
-                  onClick={() => setFiltersOpen((v) => !v)}
+                  onClick={() => {
+                    if (hasStructuredFilters) return
+                    setFiltersOpenDiscrete((v) => !v)
+                  }}
                   aria-expanded={filtersOpen}
                   aria-controls="sites-catalog-filters"
                 >
@@ -434,7 +575,11 @@ export function SitesCatalog({
                     </Label>
                     <FormControlSelect
                       id="filter-category"
-                      value={categoryId?.toString() ?? ''}
+                      value={
+                        categoryId !== undefined
+                          ? String(categoryId)
+                          : SITES_CATALOG_FILTER_SENTINEL
+                      }
                       onValueChange={(value) =>
                         router.push(buildListHref(1, { category_id: value }), { scroll: false })
                       }
@@ -447,43 +592,11 @@ export function SitesCatalog({
                     </Label>
                     <FormControlSelect
                       id="filter-status"
-                      value={status ?? ''}
+                      value={status ?? SITES_CATALOG_FILTER_SENTINEL}
                       onValueChange={(value) =>
                         router.push(buildListHref(1, { status: value }), { scroll: false })
                       }
                       options={statusOptions}
-                    />
-                  </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
-                      Country code
-                    </Label>
-                    <FormControlInput
-                      id="filter-country"
-                      placeholder="Any country"
-                      value={country ?? ''}
-                      onChange={(e) =>
-                        router.push(buildListHref(1, { country: e.target.value }), {
-                          scroll: false,
-                        })
-                      }
-                      maxLength={8}
-                    />
-                  </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="filter-language" className="text-muted-foreground text-xs">
-                      Language code
-                    </Label>
-                    <FormControlInput
-                      id="filter-language"
-                      placeholder="All languages"
-                      value={language ?? ''}
-                      onChange={(e) =>
-                        router.push(buildListHref(1, { language: e.target.value }), {
-                          scroll: false,
-                        })
-                      }
-                      maxLength={16}
                     />
                   </div>
                   <div className="gap-inset flex flex-col">
@@ -492,43 +605,22 @@ export function SitesCatalog({
                     </Label>
                     <FormControlSelect
                       id="filter-link"
-                      value={linkType ?? ''}
+                      value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
                       onValueChange={(value) =>
                         router.push(buildListHref(1, { link_type: value }), { scroll: false })
                       }
                       options={linkTypeOptions}
                     />
                   </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="price-min" className="text-muted-foreground text-xs">
-                      Price from
-                    </Label>
-                    <FormControlInput
-                      id="price-min"
-                      inputMode="decimal"
-                      placeholder="From"
-                      value={priceMin !== undefined ? String(priceMin) : ''}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        router.push(buildListHref(1, { price_min: v }), { scroll: false })
-                      }}
-                    />
-                  </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="price-max" className="text-muted-foreground text-xs">
-                      Price to
-                    </Label>
-                    <FormControlInput
-                      id="price-max"
-                      inputMode="decimal"
-                      placeholder="To"
-                      value={priceMax !== undefined ? String(priceMax) : ''}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        router.push(buildListHref(1, { price_max: v }), { scroll: false })
-                      }}
-                    />
-                  </div>
+                  <SitesCatalogDebouncedFilters
+                    key={debouncedFiltersKey}
+                    country={country}
+                    language={language}
+                    priceMin={priceMin}
+                    priceMax={priceMax}
+                    buildListHref={buildListHref}
+                    router={router}
+                  />
                 </div>
               </div>
             ) : null}
@@ -772,15 +864,8 @@ export function SitesCatalog({
                         <div data-row-actions className="shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger
-                              type="button"
-                              aria-label={`Manage ${row.domain}`}
-                              className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'rounded-full opacity-80 hover:opacity-100'
-                              )}
-                            >
-                              <MoreHorizontal className="size-4" aria-hidden />
-                            </DropdownMenuTrigger>
+                              render={<TableRowActionsTrigger label={`Manage ${row.domain}`} />}
+                            />
                             <DropdownMenuContent align="end" className="min-w-48">
                               <DropdownMenuGroup>
                                 <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">

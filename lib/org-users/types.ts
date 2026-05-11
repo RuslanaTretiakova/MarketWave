@@ -19,4 +19,6 @@ export type OrgUserRowJson = {
   company_name: string | null
   phone: string | null
   created_at: string | null
+  /** Client’s assigned manager (Sales onboarding chat). Admin-maintained. */
+  account_manager_id: string | null
 }

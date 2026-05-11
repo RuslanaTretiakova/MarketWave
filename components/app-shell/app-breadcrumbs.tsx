@@ -28,7 +28,35 @@ function segmentLabel(segment: string): string {
     .join(' ')
 }
 
-function inferLabel(pathname: string, segment: string, index: number): string {
+/** UUID v4-style segment (avoid hyphen-split title case for IDs). */
+function segmentLooksLikeOpaqueId(segment: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment.trim())
+}
+
+/** Human label for a dynamic route segment from its parent path segment. */
+function labelForOpaqueId(parentSegment: string | undefined): string | null {
+  switch (parentSegment) {
+    case 'orders':
+      return 'Order'
+    case 'invoices':
+      return 'Invoice'
+    case 'sites':
+      return 'Site'
+    case 'chats':
+      return 'Chat'
+    case 'users':
+      return 'User'
+    default:
+      return null
+  }
+}
+
+function inferLabel(
+  pathname: string,
+  segment: string,
+  index: number,
+  allSegments: string[]
+): string {
   if (pathname.startsWith('/sites/')) {
     if (index === 1) return 'Site'
     if (index === 2 && segment === 'edit') return 'Edit'
@@ -38,12 +66,26 @@ function inferLabel(pathname: string, segment: string, index: number): string {
     if (index === 1) return 'Order'
   }
 
+  if (pathname.startsWith('/invoices/')) {
+    if (index === 1) return 'Invoice'
+  }
+
+  if (pathname.startsWith('/chats/')) {
+    if (index === 1) return 'Chat'
+  }
+
   if (pathname.startsWith('/settings/users/')) {
     if (index === 2) return 'User'
   }
 
   if (pathname === '/cart/checkout' && segment === 'checkout') {
     return 'Checkout'
+  }
+
+  if (segmentLooksLikeOpaqueId(segment)) {
+    const parent = index > 0 ? allSegments[index - 1] : undefined
+    const fromParent = labelForOpaqueId(parent)
+    if (fromParent) return fromParent
   }
 
   return segmentLabel(segment)
@@ -60,7 +102,9 @@ function buildCrumbs(pathname: string, navItems: AppNavItem[]): Crumb[] {
   for (const [index, segment] of segments.entries()) {
     runningPath += `/${segment}`
     const label =
-      index === 0 ? navTitleForPath(runningPath, navItems) : inferLabel(cleanPath, segment, index)
+      index === 0
+        ? navTitleForPath(runningPath, navItems)
+        : inferLabel(cleanPath, segment, index, segments)
     crumbs.push({
       href: runningPath,
       label,
