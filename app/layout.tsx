@@ -5,6 +5,7 @@ import { metadataKeywords, SITE_NAME, SITE_TAGLINE } from '@/lib/brand'
 
 import { AuthSessionHashHandler } from '@/components/auth/auth-session-hash-handler'
 import { Toaster } from '@/components/ui/sonner'
+import Script from 'next/script'
 
 import './globals.css'
 
@@ -44,7 +45,28 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head></head>
+      <head>
+        <Script
+          id="strip-extension-bis-attrs"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                const strip = () => {
+                  document.querySelectorAll('[bis_skin_checked]').forEach((node) => {
+                    node.removeAttribute('bis_skin_checked');
+                  });
+                };
+                strip();
+                new MutationObserver(strip).observe(document.documentElement, {
+                  attributes: true,
+                  subtree: true,
+                });
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <AuthSessionHashHandler />
         {children}
