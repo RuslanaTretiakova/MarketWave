@@ -6,6 +6,7 @@ import { searchParamFirstString } from '@/lib/pagination/search-param-first-stri
 import {
   loadOrgCopywriterCandidatesForAdmin,
   loadOrgUsersListForAdmin,
+  loadOrgUsersListForManager,
   parseOrgUsersListRoleFilter,
   parseOrgUsersListStatusFilter,
   parseSettingsTablePage,
@@ -42,36 +43,52 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  const role = profile?.role
+  if (role !== 'admin' && role !== 'manager') {
     notFound()
   }
 
   const page = parseSettingsTablePage(searchParamFirstString(sp.page))
   const qRaw = searchParamFirstString(sp.q)
   const q = qRaw !== undefined ? qRaw : ''
-  const role = parseOrgUsersListRoleFilter(searchParamFirstString(sp.role))
+  const roleFilter = parseOrgUsersListRoleFilter(searchParamFirstString(sp.role))
   const status = parseOrgUsersListStatusFilter(searchParamFirstString(sp.status))
 
   let listResult
-  let copywriterCandidates
+  let copywriterCandidates: Awaited<ReturnType<typeof loadOrgCopywriterCandidatesForAdmin>>
   try {
-    const listRes = await loadOrgUsersListForAdmin({
-      page,
-      pageSize: SETTINGS_TABLE_PAGE_SIZE,
-      q,
-      role,
-      status,
-    })
-    if ('forbidden' in listRes) {
-      notFound()
-    }
-    listResult = listRes
+    if (role === 'admin') {
+      const listRes = await loadOrgUsersListForAdmin({
+        page,
+        pageSize: SETTINGS_TABLE_PAGE_SIZE,
+        q,
+        role: roleFilter,
+        status,
+      })
+      if ('forbidden' in listRes) {
+        notFound()
+      }
+      listResult = listRes
 
-    const cwRes = await loadOrgCopywriterCandidatesForAdmin()
-    if ('forbidden' in cwRes) {
-      notFound()
+      const cwRes = await loadOrgCopywriterCandidatesForAdmin()
+      if ('forbidden' in cwRes) {
+        notFound()
+      }
+      copywriterCandidates = cwRes
+    } else {
+      const listRes = await loadOrgUsersListForManager({
+        page,
+        pageSize: SETTINGS_TABLE_PAGE_SIZE,
+        q,
+        role: roleFilter,
+        status,
+      })
+      if ('forbidden' in listRes) {
+        notFound()
+      }
+      listResult = listRes
+      copywriterCandidates = []
     }
-    copywriterCandidates = cwRes
   } catch (err) {
     console.error('[settings/users] load list', err)
     throw err instanceof Error ? err : new Error('Failed to load organization users.')
@@ -79,12 +96,13 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
 
   return (
     <UsersManagement
+      listMode={role === 'admin' ? 'admin' : 'manager'}
       initialRows={listResult.rows}
       totalCount={listResult.totalCount}
       page={listResult.page}
       pageSize={SETTINGS_TABLE_PAGE_SIZE}
       q={q}
-      roleFilter={role}
+      roleFilter={roleFilter}
       statusFilter={status}
       copywriterCandidates={copywriterCandidates}
       currentUserId={user.id}

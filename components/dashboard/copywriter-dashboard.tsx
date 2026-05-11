@@ -15,12 +15,14 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import {
   AttentionTableCard,
   KpiCard,
+  NotificationsSummaryCard,
   PipelineCard,
   QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
 import type { CopywriterDashboardData } from '@/lib/dashboard/load-copywriter-dashboard'
+import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
 
@@ -35,9 +37,11 @@ function moneyUSD(n: number) {
 export function CopywriterDashboard({
   data,
   greetingName,
+  unreadByEvent,
 }: {
   data: CopywriterDashboardData
   greetingName: string | null
+  unreadByEvent?: UnreadByEvent
 }) {
   const who = greetingName?.trim() || 'there'
   return (
@@ -48,7 +52,7 @@ export function CopywriterDashboard({
         action={
           <Link
             href="/orders?status=in_progress"
-            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'rounded-xl')}
+            className={cn(buttonVariants({ variant: 'cta', size: 'xl' }), 'rounded-xl')}
           >
             <ClipboardList className="size-4" aria-hidden />
             Open my queue
@@ -56,14 +60,10 @@ export function CopywriterDashboard({
         }
       />
 
+      {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
+
       <QuickActionsBar
         actions={[
-          {
-            href: '/orders?status=in_progress',
-            label: 'In progress',
-            icon: ClipboardList,
-            variant: 'default',
-          },
           {
             href: '/orders?status=needs_changes',
             label: 'Needs revision',
@@ -85,18 +85,24 @@ export function CopywriterDashboard({
           label="Assigned"
           value={String(data.assignedOrders)}
           icon={ClipboardList}
+          href="/orders"
+          ariaLabel={`Assigned orders: ${data.assignedOrders}. Open orders.`}
           tone="primary"
         />
         <KpiCard
           label="Pending content send"
           value={String(data.pendingContentSend)}
           icon={Send}
+          href="/orders?status=in_progress"
+          ariaLabel={`Pending content send: ${data.pendingContentSend}. Open in progress orders.`}
           tone="primaryMuted"
         />
         <KpiCard
           label="Needs revision"
           value={String(data.needsRevisionOrders)}
           icon={ListChecks}
+          href="/orders?status=needs_changes"
+          ariaLabel={`Needs revision: ${data.needsRevisionOrders}. Open orders needing changes.`}
           showDelta={data.needsRevisionOrders > 0}
           delta="Action required"
           deltaClassName="text-accent"
@@ -106,6 +112,8 @@ export function CopywriterDashboard({
           label="Approval rate"
           value={data.approvalRatePercent !== null ? `${data.approvalRatePercent}%` : '—'}
           icon={TrendingUp}
+          href="/orders"
+          ariaLabel="Approval rate. Open orders."
           tone="muted"
         />
       </div>

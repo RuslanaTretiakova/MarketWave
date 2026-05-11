@@ -18,12 +18,14 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import {
   AttentionTableCard,
   KpiCard,
+  NotificationsSummaryCard,
   PipelineCard,
   QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
 import type { ManagerDashboardData } from '@/lib/dashboard/load-manager-dashboard'
+import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
@@ -38,9 +40,11 @@ function moneyUSD(n: number) {
 
 export function ManagerDashboard({
   data,
+  unreadByEvent,
 }: {
   data: ManagerDashboardData
   greetingName: string | null
+  unreadByEvent?: UnreadByEvent
 }) {
   const completedDeltaShow = data.ordersCompletedPrevMonth > 0
   const completedDeltaText =
@@ -64,7 +68,7 @@ export function ManagerDashboard({
         action={
           <Link
             href="/orders"
-            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'rounded-xl')}
+            className={cn(buttonVariants({ variant: 'cta', size: 'xl' }), 'rounded-xl')}
           >
             <ClipboardList className="size-4" aria-hidden />
             Manage orders
@@ -72,9 +76,10 @@ export function ManagerDashboard({
         }
       />
 
+      {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
+
       <QuickActionsBar
         actions={[
-          { href: '/orders', label: 'Manage orders', icon: ClipboardList, variant: 'default' },
           { href: '/invoices', label: 'Open invoices', icon: Receipt, variant: 'outline' },
           { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
           { href: '/chats', label: 'Open chats', icon: MessageSquare, variant: 'ghost' },
@@ -86,24 +91,32 @@ export function ManagerDashboard({
           label="Active orders"
           value={String(data.totalActiveOrders)}
           icon={ClipboardList}
+          href="/orders"
+          ariaLabel={`Active orders: ${data.totalActiveOrders}. Open orders.`}
           tone="primary"
         />
         <KpiCard
           label="Awaiting assignment"
           value={String(data.ordersAwaitingAssignment)}
           icon={UserCheck}
+          href="/orders"
+          ariaLabel={`Awaiting assignment: ${data.ordersAwaitingAssignment}. Open orders.`}
           tone="muted"
         />
         <KpiCard
           label="Ready to publish"
           value={String(data.ordersReadyToPublish)}
           icon={CheckCircle2}
+          href="/orders?status=content_approved"
+          ariaLabel={`Ready to publish: ${data.ordersReadyToPublish}. Open orders filtered by ready to publish.`}
           tone="primaryMuted"
         />
         <KpiCard
           label="Unpaid invoices"
           value={moneyUSD(data.unpaidInvoiceTotal)}
           icon={DollarSign}
+          href="/invoices"
+          ariaLabel={`Unpaid invoices total ${moneyUSD(data.unpaidInvoiceTotal)}. Open invoices.`}
           showDelta={data.unpaidInvoiceCount > 0}
           delta={`${data.unpaidInvoiceCount} open`}
           deltaClassName="text-muted-foreground"

@@ -20,6 +20,12 @@ type Crumb = {
   label: string
 }
 
+/** Site detail + edit use `SiteDetailBreadcrumbs` in `sites/[siteId]/layout.tsx`. */
+function isSiteDetailShellBreadcrumbPath(pathname: string): boolean {
+  const p = pathname.split('?')[0] ?? pathname
+  return /^\/sites\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/edit)?$/i.test(p)
+}
+
 function segmentLabel(segment: string): string {
   return segment
     .split('-')
@@ -116,8 +122,12 @@ function buildCrumbs(pathname: string, navItems: AppNavItem[]): Crumb[] {
 
 export function AppBreadcrumbs({ navItems }: { navItems: AppNavItem[] }) {
   const pathname = usePathname()
+  if (isSiteDetailShellBreadcrumbPath(pathname)) return null
+
   const crumbs = buildCrumbs(pathname, navItems)
   if (crumbs.length === 0) return null
+  // Top-level routes (e.g. /dashboard, /orders) duplicate the sidebar; show crumbs only when nested.
+  if (crumbs.length < 2) return null
 
   return (
     <Breadcrumb className="mb-layout">

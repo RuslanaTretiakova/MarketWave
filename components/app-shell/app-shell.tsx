@@ -27,9 +27,8 @@ export function AppShell({
   const navBadges = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {}
     if (chatUnreadCount > 0) map['/chats'] = chatUnreadCount
-    if (notificationsUnreadCount > 0) map['/notifications'] = notificationsUnreadCount
     return map
-  }, [chatUnreadCount, notificationsUnreadCount])
+  }, [chatUnreadCount])
 
   useEffect(() => {
     let cancelled = false
@@ -73,6 +72,7 @@ export function AppShell({
           user={user}
           navItems={navItems}
           navBadges={navBadges}
+          notificationsUnreadCount={notificationsUnreadCount}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />

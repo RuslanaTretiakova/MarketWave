@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
-import type { Database } from '@/lib/supabase/types'
+import type { Database, Enums } from '@/lib/supabase/types'
 
+export type NotificationEvent = Enums<'notification_event'>
 export type NotificationRow = Database['public']['Tables']['notifications']['Row']
 
 function isMissingNotificationsTable(message: string): boolean {
@@ -55,4 +56,29 @@ export async function loadUnreadNotificationsCount(
     return 0
   }
   return count ?? 0
+}
+
+export type UnreadByEvent = Partial<Record<NotificationEvent, number>>
+
+export async function loadUnreadNotificationsByEvent(
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<UnreadByEvent> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('event')
+    .eq('recipient_user_id', userId)
+    .is('read_at', null)
+
+  if (error) {
+    if (isMissingNotificationsTable(error.message ?? '')) return {}
+    console.error('[notifications/load-by-event]', error.message)
+    return {}
+  }
+
+  const counts: UnreadByEvent = {}
+  for (const row of data ?? []) {
+    counts[row.event] = (counts[row.event] ?? 0) + 1
+  }
+  return counts
 }

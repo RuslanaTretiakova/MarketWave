@@ -12,6 +12,7 @@ export function SideListCard({
   badge,
   children,
   contentClassName,
+  className,
 }: {
   title: string
   description?: string
@@ -20,9 +21,10 @@ export function SideListCard({
   badge?: ReactNode
   children: ReactNode
   contentClassName?: string
+  className?: string
 }) {
   return (
-    <Card className="border-border rounded-2xl shadow-none">
+    <Card className={cn('border-border rounded-2xl shadow-none', className)}>
       <CardHeader className="gap-inset border-border [.border-b]:pb-section border-b">
         <div className="gap-inset flex flex-wrap items-start justify-between">
           <div>

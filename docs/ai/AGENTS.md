@@ -60,7 +60,7 @@ Roles (stored in `profiles.role`, read via `public.get_my_role()`): `admin` · `
 ## Security
 
 - RLS is on every table — security is enforced at the DB level, not the app level
-- **`profiles` SELECT:** Each user may read their own row; **only `admin`** may read **other** users' `profiles` rows (cross-team PII). Operational roles still use their own row and non-profile tables per existing policies.
+- **`profiles` SELECT:** Each user may read their own row; **`admin`** may read **any** other user's `profiles` row. **`manager`** may read **any** `profiles` row for **Settings → Users** (same listing scope as admin; admin-only mutations stay behind `listMode === 'admin'` in the UI). Operational roles otherwise use their own row and non-profile tables per existing policies.
 - **Single admin:** One `profiles.role = 'admin'` row (partial unique index). Create that user in **Supabase Dashboard** with **User metadata** JSON: `{ "is_bootstrap_admin": true, "role": "admin", "full_name": "Your Name" }` so `handle_new_user` assigns admin and `require_password_change = false`. Everyone else is invited (`inviteUserByEmail`) from **Settings** in the app. `public.bootstrap_signup_allowed()` always returns `false` (RPC kept for compatibility); disable public sign-up in the Supabase Auth dashboard for defense in depth.
 - **First sign-in:** Invited users have `profiles.require_password_change = true` until they set a password; cleared only via **service role** (Server Action + `adminClient`), enforced by a DB trigger.
 - **Email links:** Set **`NEXT_PUBLIC_SITE_URL`** to your deployed origin so invite/reset `redirectTo` URLs match the Supabase redirect allow-list (see `.env.example`).
@@ -89,12 +89,12 @@ Marketing tokens live in `app/globals.css` (`--marketing-*`, `--shadow-*`, etc.)
 
 **Page container max-widths:**
 
-| Page type                         | Max-width   | Examples                                            |
-| --------------------------------- | ----------- | --------------------------------------------------- |
-| List / data-table pages           | `max-w-6xl` | OrdersList, InvoicesList, EarningsView              |
-| Detail / form pages               | `max-w-4xl` | OrderDetailView, InvoiceDetailView, SiteListingForm |
-| Narrow form / checkout            | `max-w-2xl` | ProfileView, CheckoutView                           |
-| Card-shell full-column components | none        | SitesCatalog, UsersManagement, CategoriesManagement |
+| Page type                         | Max-width   | Examples                                                        |
+| --------------------------------- | ----------- | --------------------------------------------------------------- |
+| List / data-table pages           | `max-w-6xl` | OrdersList, InvoicesList, EarningsView                          |
+| Detail / form pages               | `max-w-4xl` | OrderDetailView, InvoiceDetailView, SiteListingForm             |
+| Narrow form / checkout            | `max-w-2xl` | ProfileView, CheckoutView                                       |
+| Card-shell full-column components | none        | SitesCatalog, OrdersList, UsersManagement, CategoriesManagement |
 
 Card-shell components (those that own their own border/bg container) do not add a max-width — the parent layout column constrains them.
 

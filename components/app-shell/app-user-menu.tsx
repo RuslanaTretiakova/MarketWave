@@ -64,9 +64,9 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
       <DropdownMenuTrigger
         type="button"
         className={cn(
-          'inline-flex size-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0',
-          'cursor-pointer transition-opacity outline-none hover:opacity-90',
-          'focus-visible:ring-ring focus-visible:ring-offset-background ring-offset-background focus-visible:ring-3 focus-visible:ring-offset-2'
+          'relative inline-flex size-10 min-h-10 min-w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-0 bg-transparent p-0',
+          'hover:bg-muted/80 cursor-pointer transition-colors outline-none',
+          'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2'
         )}
         aria-label={`Account menu for ${lineName}`}
       >
@@ -74,6 +74,7 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
           key={avatarUrl ?? '__none__'}
           avatarUrl={avatarUrl}
           initials={initials}
+          sizeClass="size-full min-h-0 min-w-0"
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">

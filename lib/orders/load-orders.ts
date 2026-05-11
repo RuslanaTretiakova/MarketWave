@@ -14,6 +14,7 @@ export type OrderListRow = {
   status: OrderStatus
   site_domain: string
   site_category: string
+  site_dr: number | null
   price: number
   publish_date: string | null
   created_at: string
@@ -51,7 +52,7 @@ export async function loadOrdersPage(
     let q = supabase
       .from('orders')
       .select(
-        'id, status, site_domain, site_category, price, publish_date, created_at, user_id, copywriter_id',
+        'id, status, site_domain, site_category, site_dr, price, publish_date, created_at, user_id, copywriter_id',
         {
           count: 'exact',
         }
@@ -165,6 +166,7 @@ export async function loadOrdersPage(
       status: r.status,
       site_domain: r.site_domain,
       site_category: r.site_category,
+      site_dr: r.site_dr,
       price: r.price,
       publish_date: r.publish_date,
       created_at: r.created_at,

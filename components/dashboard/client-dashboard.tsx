@@ -17,11 +17,13 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import {
   AttentionTableCard,
   KpiCard,
+  NotificationsSummaryCard,
   PipelineCard,
   QuickActionsBar,
   SideListCard,
 } from '@/components/dashboard/_shared'
 import type { ClientDashboardData } from '@/lib/dashboard/load-client-dashboard'
+import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
@@ -37,9 +39,11 @@ function moneyUSD(n: number) {
 export function ClientDashboard({
   data,
   greetingName,
+  unreadByEvent,
 }: {
   data: ClientDashboardData
   greetingName: string | null
+  unreadByEvent?: UnreadByEvent
 }) {
   const who = greetingName?.trim() || 'there'
   return (
@@ -50,7 +54,7 @@ export function ClientDashboard({
         action={
           <Link
             href="/sites"
-            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'rounded-xl')}
+            className={cn(buttonVariants({ variant: 'cta', size: 'xl' }), 'rounded-xl')}
           >
             <Globe className="size-4" aria-hidden />
             Browse catalog
@@ -58,9 +62,10 @@ export function ClientDashboard({
         }
       />
 
+      {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
+
       <QuickActionsBar
         actions={[
-          { href: '/sites', label: 'Browse catalog', icon: Globe, variant: 'default' },
           { href: '/cart', label: 'View cart', icon: ShoppingCart, variant: 'outline' },
           { href: '/orders', label: 'My orders', icon: ClipboardList, variant: 'outline' },
           { href: '/invoices', label: 'My invoices', icon: Receipt, variant: 'outline' },
@@ -73,12 +78,16 @@ export function ClientDashboard({
           label="Orders in flight"
           value={String(data.ordersInFlight)}
           icon={ClipboardList}
+          href="/orders"
+          ariaLabel={`Orders in flight: ${data.ordersInFlight}. Open orders.`}
           tone="primary"
         />
         <KpiCard
           label="Awaiting your approval"
           value={String(data.pendingApprovals)}
           icon={Inbox}
+          href="/orders?status=content_sent"
+          ariaLabel={`Awaiting your approval: ${data.pendingApprovals}. Open orders awaiting approval.`}
           showDelta={data.pendingApprovals > 0}
           delta="Action required"
           deltaClassName="text-accent"
@@ -88,12 +97,16 @@ export function ClientDashboard({
           label="Completed orders"
           value={String(data.ordersCompleted)}
           icon={CheckCircle2}
+          href="/orders?status=completed"
+          ariaLabel={`Completed orders: ${data.ordersCompleted}. Open completed orders.`}
           tone="primaryMuted"
         />
         <KpiCard
           label="Open invoices"
           value={moneyUSD(data.openInvoiceTotal)}
           icon={Receipt}
+          href="/invoices"
+          ariaLabel={`Open invoices: ${moneyUSD(data.openInvoiceTotal)}. Open invoices.`}
           showDelta={data.openInvoiceCount > 0}
           delta={`${data.openInvoiceCount} open`}
           deltaClassName="text-muted-foreground"

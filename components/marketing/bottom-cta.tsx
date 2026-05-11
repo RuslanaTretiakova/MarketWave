@@ -9,7 +9,7 @@ export function BottomCTA() {
     <section className="marketing-section-screen px-block py-layout sm:px-section bg-(--marketing-page-bg)">
       <div className="max-w-marketing mx-auto">
         <div className="mx-auto max-w-3xl lg:max-w-5xl">
-          <div className="border-border/40 shadow-soft px-section py-layout sm:px-layout sm:py-section lg:px-hero lg:py-hero xl:px-hero-wide xl:py-hero-wide rounded-[28px] border bg-(--marketing-mint-panel) text-center lg:rounded-4xl">
+          <div className="border-border/40 shadow-soft p-section sm:px-layout sm:py-section lg:px-hero lg:py-hero xl:px-hero-wide xl:py-hero-wide rounded-[28px] border bg-(--marketing-mint-panel) text-center lg:rounded-4xl">
             <p className="mb-block lg:mb-layout font-mono text-xs font-semibold tracking-wider text-(--marketing-teal-accent) uppercase lg:text-sm">
               / Welcome back
             </p>

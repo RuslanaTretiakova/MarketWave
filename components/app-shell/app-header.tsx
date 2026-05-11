@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, PanelLeft } from 'lucide-react'
+import { Bell, Menu, PanelLeft } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebarNavPanel } from '@/components/app-shell/app-sidebar'
@@ -19,12 +20,14 @@ export function AppHeader({
   user,
   navItems,
   navBadges,
+  notificationsUnreadCount = 0,
   sidebarCollapsed,
   onToggleSidebarCollapsed,
 }: {
   user: AppShellUser
   navItems: AppNavItem[]
   navBadges?: Record<string, number>
+  notificationsUnreadCount?: number
   sidebarCollapsed: boolean
   onToggleSidebarCollapsed: () => void
 }) {
@@ -33,6 +36,8 @@ export function AppHeader({
   const pageTitle = navTitleForPath(pathname, navItems)
   const { first } = splitDisplayName(user.fullName, user.email)
   const firstName = first.trim() || 'there'
+  const onNotificationsPage =
+    pathname === '/notifications' || pathname.startsWith('/notifications/')
 
   return (
     <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between border-b py-2 backdrop-blur-md md:h-14 md:min-h-0 md:py-0">
@@ -87,7 +92,37 @@ export function AppHeader({
           </span>
         </h1>
       </div>
-      <AppUserMenu key={`${user.id}:${user.avatarUrl ?? ''}`} user={user} />
+      <div
+        className={cn(
+          'flex shrink-0 items-center gap-3 rounded-full border-0 bg-transparent px-0 py-0 shadow-none'
+        )}
+      >
+        <Link
+          href="/notifications"
+          className={cn(
+            'relative inline-flex size-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full transition-colors outline-none',
+            'text-foreground hover:bg-muted/80',
+            'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
+            onNotificationsPage && 'bg-muted/70 text-foreground'
+          )}
+          aria-label={
+            notificationsUnreadCount > 0
+              ? `Notifications, ${notificationsUnreadCount} unread`
+              : 'Notifications'
+          }
+        >
+          <Bell className="size-4.5 stroke-[1.75]" aria-hidden />
+          {notificationsUnreadCount > 0 ? (
+            <span
+              className="bg-destructive text-destructive-foreground ring-background absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.625rem] leading-none font-bold ring-2"
+              aria-hidden
+            >
+              {notificationsUnreadCount > 9 ? '9+' : notificationsUnreadCount}
+            </span>
+          ) : null}
+        </Link>
+        <AppUserMenu key={`${user.id}:${user.avatarUrl ?? ''}`} user={user} />
+      </div>
     </header>
   )
 }

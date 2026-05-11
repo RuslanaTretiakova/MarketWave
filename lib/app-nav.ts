@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList,
-  Bell,
   DollarSign,
   Globe,
   LayoutDashboard,
@@ -30,7 +29,6 @@ const cart: AppNavItem = { href: '/cart', label: 'Cart', Icon: ShoppingCart }
 const users: AppNavItem = { href: '/settings/users', label: 'Users', Icon: Users }
 const categories: AppNavItem = { href: '/settings/categories', label: 'Categories', Icon: Tags }
 const chats: AppNavItem = { href: '/chats', label: 'Chats', Icon: MessageSquare }
-const notifications: AppNavItem = { href: '/notifications', label: 'Notifications', Icon: Bell }
 const earnings: AppNavItem = { href: '/earnings', label: 'Earnings', Icon: DollarSign }
 
 /** All items — kept for backwards-compat and active-state helpers. */
@@ -43,7 +41,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   users,
   categories,
   chats,
-  notifications,
   earnings,
 ]
 
@@ -51,15 +48,15 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 export function getAppNavItems(role: AppNavRole): AppNavItem[] {
   switch (role) {
     case 'client':
-      return [dashboard, sites, cart, orders, invoices, chats, notifications]
+      return [dashboard, sites, cart, orders, invoices, chats]
     case 'admin':
-      return [dashboard, users, categories, sites, orders, invoices, chats, notifications, earnings]
+      return [dashboard, users, categories, sites, orders, invoices, chats, earnings]
     case 'manager':
-      return [dashboard, sites, orders, invoices, chats, notifications, earnings]
+      return [dashboard, users, sites, orders, invoices, chats, earnings]
     case 'sourcer':
-      return [dashboard, sites, chats, notifications, earnings]
+      return [dashboard, sites, chats, earnings]
     case 'copywriter':
-      return [dashboard, orders, chats, notifications]
+      return [dashboard, orders, chats]
     default:
       return [dashboard, sites, orders]
   }
@@ -82,6 +79,10 @@ function settingsAreaTitle(pathname: string): string | undefined {
 export function navTitleForPath(pathname: string, items: AppNavItem[]): string {
   const settingsTitle = settingsAreaTitle(pathname)
   if (settingsTitle !== undefined) return settingsTitle
+
+  if (pathname === '/notifications' || pathname.startsWith('/notifications/')) {
+    return 'Notifications'
+  }
 
   return matchingNavItem(pathname, items)?.label ?? 'Dashboard'
 }

@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -56,8 +59,44 @@ function StripInner() {
 }
 
 export function LandingWorkflowStrip() {
+  const [marqueeRevealed, setMarqueeRevealed] = useState(false)
+
+  useEffect(() => {
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+    if (reduced) {
+      const id = requestAnimationFrame(() => setMarqueeRevealed(true))
+      return () => cancelAnimationFrame(id)
+    }
+
+    const onScroll = () => {
+      if (window.scrollY > 16 || window.pageYOffset > 16) {
+        setMarqueeRevealed(true)
+        window.removeEventListener('scroll', onScroll)
+      }
+    }
+
+    const id = requestAnimationFrame(onScroll)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      cancelAnimationFrame(id)
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [])
+
   return (
-    <div className="border-border/40 border-y bg-(--marketing-page-bg)">
+    <div
+      className={cn(
+        'border-border/40 border-y bg-(--marketing-page-bg) transition-[opacity,transform,max-height,padding] duration-500 ease-out motion-reduce:transition-none',
+        'max-lg:translate-y-0 max-lg:opacity-100',
+        'lg:mt-8',
+        marqueeRevealed
+          ? 'lg:max-h-40 lg:translate-y-0 lg:opacity-100'
+          : 'lg:pointer-events-none lg:max-h-0 lg:translate-y-1 lg:overflow-hidden lg:border-y-0 lg:opacity-0'
+      )}
+    >
       <div className="marketing-marquee-static-row">
         <WorkflowStageCluster />
       </div>

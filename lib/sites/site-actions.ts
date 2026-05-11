@@ -366,6 +366,7 @@ export async function updateSite(
       patch.status = 'pending'
       patch.needs_changes_by = null
       patch.needs_changes_at = null
+      patch.needs_changes_comment = null
       patch.approved_by = null
       patch.approved_at = null
     }
@@ -410,6 +411,8 @@ export type SiteAdminTransition = 'needs_changes' | 'approve' | 'archive' | 'una
 export async function changeSiteStatus(params: {
   siteId: string
   transition: SiteAdminTransition
+  /** Required (trimmed) when transition is needs_changes; ignored for other transitions. */
+  comment?: string | null
 }): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getSessionContext()
   if ('error' in ctx) {
@@ -419,6 +422,14 @@ export async function changeSiteStatus(params: {
 
   if (role !== 'admin' && role !== 'manager') {
     return { ok: false, message: 'Only admin or manager can change site status.' }
+  }
+
+  const commentTrimmed = params.comment?.trim() ?? ''
+  if (params.transition === 'needs_changes' && !commentTrimmed) {
+    return {
+      ok: false,
+      message: 'A comment is required when marking the listing as needs changes.',
+    }
   }
 
   const nowIso = new Date().toISOString()
@@ -431,6 +442,7 @@ export async function changeSiteStatus(params: {
         status: 'needs_changes',
         needs_changes_by: userId,
         needs_changes_at: nowIso,
+        needs_changes_comment: commentTrimmed,
         approved_by: null,
         approved_at: null,
       }
@@ -442,11 +454,13 @@ export async function changeSiteStatus(params: {
         approved_at: nowIso,
         needs_changes_by: null,
         needs_changes_at: null,
+        needs_changes_comment: null,
       }
       break
     case 'archive':
       patch = {
         status: 'archived',
+        needs_changes_comment: null,
       }
       break
     case 'unarchive':

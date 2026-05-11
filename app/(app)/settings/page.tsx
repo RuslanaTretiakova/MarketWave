@@ -50,12 +50,14 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      {profile?.role === 'admin' ? (
+      {(profile?.role === 'admin' || profile?.role === 'manager') && (
         <Card>
           <CardHeader>
-            <CardTitle>Team & users</CardTitle>
+            <CardTitle>{profile?.role === 'admin' ? 'Team & users' : 'Users'}</CardTitle>
             <CardDescription>
-              Invite teammates, assign roles, and manage access from the Users workspace.
+              {profile?.role === 'admin'
+                ? 'Invite teammates, assign roles, and manage access from the Users workspace.'
+                : 'Browse everyone in the workspace. Admin-only changes still require an admin.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -63,11 +65,11 @@ export default async function SettingsPage() {
               href="/settings/users"
               className={cn(buttonVariants({ variant: 'cta', size: 'default' }))}
             >
-              Open user management
+              {profile?.role === 'admin' ? 'Open user management' : 'Open users'}
             </Link>
           </CardContent>
         </Card>
-      ) : null}
+      )}
     </div>
   )
 }

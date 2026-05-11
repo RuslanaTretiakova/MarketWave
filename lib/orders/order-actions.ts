@@ -194,7 +194,8 @@ function normalizePublishedUrl(
 
 export async function markPublished(
   orderId: string,
-  publishedUrl: string
+  publishedUrl: string,
+  publishDate?: string | null
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getSessionContext()
   if ('error' in ctx) return { ok: false, message: ctx.error }
@@ -205,7 +206,16 @@ export async function markPublished(
   const urlCheck = normalizePublishedUrl(publishedUrl)
   if (!urlCheck.ok) return urlCheck
 
-  const res = await updateOrderStatus(orderId, 'published', { published_url: urlCheck.url })
+  if (publishDate && !/^\d{4}-\d{2}-\d{2}$/.test(publishDate)) {
+    return { ok: false, message: 'Publish date must be a valid date (YYYY-MM-DD).' }
+  }
+
+  const extra: Record<string, unknown> = { published_url: urlCheck.url }
+  if (publishDate !== undefined) {
+    extra.publish_date = publishDate || null
+  }
+
+  const res = await updateOrderStatus(orderId, 'published', extra)
   if (res.ok) revalidateOrder(orderId)
   return res
 }
