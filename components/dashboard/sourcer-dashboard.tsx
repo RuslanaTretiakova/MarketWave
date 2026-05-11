@@ -19,12 +19,13 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import {
   AttentionTableCard,
   KpiCard,
-  PipelineCard,
+  NotificationsSummaryCard,
   QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
 import type { SourcerDashboardData } from '@/lib/dashboard/load-sourcer-dashboard'
+import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { SITE_STATUS_CHIP, SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import { cn } from '@/lib/utils'
 
@@ -40,9 +41,11 @@ function safePublicSiteUrl(domain: string): string | null {
 
 export function SourcerDashboard({
   data,
+  unreadByEvent,
 }: {
   data: SourcerDashboardData
   greetingName: string | null
+  unreadByEvent?: UnreadByEvent
 }) {
   const submittedDeltaShow = data.submittedPrevMonth > 0
   const submittedDeltaText =
@@ -55,21 +58,15 @@ export function SourcerDashboard({
   const approvalDeltaShow =
     data.approvalRateDeltaPoints !== null && data.approvalRateDeltaPoints !== 0
 
-  const pipelineStages = data.pipeline.map((s) => ({
-    key: s.status,
-    label: s.label,
-    count: s.count,
-  }))
-
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <PageHeader
         title="Sourcing status overview"
-        description="Check submission volume, review queue, and listing outcomes at a glance."
+        description="Volume, listing health, and trends — use Site catalog filters for counts by status."
         action={
           <Link
             href="/sites/new"
-            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'rounded-xl')}
+            className={cn(buttonVariants({ variant: 'cta', size: 'xl' }), 'rounded-xl')}
           >
             <Plus className="size-4" aria-hidden />
             Submit site
@@ -77,10 +74,11 @@ export function SourcerDashboard({
         }
       />
 
+      {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
+
       <QuickActionsBar
         actions={[
-          { href: '/sites/new', label: 'Submit site', icon: Plus, variant: 'default' },
-          { href: '/sites', label: 'Open catalog', icon: Globe, variant: 'outline' },
+          { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
           {
             label: 'Find prospects',
             icon: Search,
@@ -103,6 +101,8 @@ export function SourcerDashboard({
           label="Sites submitted (mo)"
           value={String(data.submittedThisMonth)}
           icon={Upload}
+          href="/sites"
+          ariaLabel={`Sites submitted this month: ${data.submittedThisMonth}. Open site catalog.`}
           showDelta={submittedDeltaShow}
           delta={submittedDeltaText}
           deltaLabel="vs last month"
@@ -116,21 +116,27 @@ export function SourcerDashboard({
           tone="primary"
         />
         <KpiCard
-          label="Live listings"
+          label="Active in catalog"
           value={String(data.sitesActive)}
           icon={CheckCircle2}
+          href="/sites?status=active"
+          ariaLabel={`Active in catalog: ${data.sitesActive}. Open active sites.`}
           tone="primaryMuted"
         />
         <KpiCard
-          label="Awaiting review"
+          label="Pending review"
           value={String(data.sitesPendingReview)}
           icon={Clock}
+          href="/sites?status=pending"
+          ariaLabel={`Pending review: ${data.sitesPendingReview}. Open pending sites.`}
           tone="muted"
         />
         <KpiCard
           label="Approval rate"
           value={data.approvalRatePercent !== null ? `${data.approvalRatePercent}%` : '—'}
           icon={TrendingUp}
+          href="/sites"
+          ariaLabel="Approval rate. Open site catalog."
           showDelta={approvalDeltaShow}
           delta={
             data.approvalRateDeltaPoints !== null && data.approvalRateDeltaPoints > 0
@@ -151,27 +157,17 @@ export function SourcerDashboard({
         />
       </div>
 
-      <PipelineCard
-        title="Catalog pipeline"
-        description="Live counts by listing stage — sites created in the last 30 days"
-        stages={pipelineStages}
-        pipelineMax={data.pipelineMax}
-        link={{ href: '/sites', label: 'View catalog' }}
-        gridClassName="sm:grid-cols-2 lg:grid-cols-4"
-      />
-
       <div className="gap-block grid lg:grid-cols-3">
         <AttentionTableCard
           title="Recent submissions"
-          description="Sites you submitted to the catalog"
-          link={{ href: '/sites', label: 'All sites' }}
+          description="Your latest submitted sites — open Site catalog for the full list."
+          link={{ href: '/sites', label: 'Site catalog' }}
           columns={[
             { key: 'domain', label: 'Domain' },
             { key: 'dr', label: 'DR' },
             { key: 'category', label: 'Category' },
             { key: 'price', label: 'Price' },
             { key: 'status', label: 'Status' },
-            { key: 'actions', label: 'Actions', align: 'right' },
           ]}
           rows={data.recentSubmissions}
           emptyState={
@@ -189,10 +185,26 @@ export function SourcerDashboard({
             const url = safePublicSiteUrl(row.domain)
             return (
               <TableRow key={row.id} className="border-border">
-                <TableCell className="max-w-44 truncate font-medium">
-                  <Link href={`/sites/${row.id}`} className="text-primary hover:underline">
-                    {row.domain}
-                  </Link>
+                <TableCell className="max-w-52 font-medium">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Link
+                      href={`/sites/${row.id}`}
+                      className="text-primary truncate hover:underline"
+                    >
+                      {row.domain}
+                    </Link>
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground inline-flex shrink-0"
+                        aria-label={`Open ${row.domain} in new tab`}
+                      >
+                        <ExternalLink className="size-4" />
+                      </a>
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground tabular-nums">
                   {row.dr !== null && row.dr !== undefined ? row.dr : '—'}
@@ -214,27 +226,6 @@ export function SourcerDashboard({
                   >
                     {SITE_STATUS_LABEL[row.status]}
                   </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="inline-flex items-center justify-end gap-2">
-                    <Link
-                      href={`/sites/${row.id}`}
-                      className="text-primary text-xs font-medium hover:underline"
-                    >
-                      See details
-                    </Link>
-                    {url ? (
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-foreground inline-flex"
-                        aria-label={`Open ${row.domain} in new tab`}
-                      >
-                        <ExternalLink className="size-4" />
-                      </a>
-                    ) : null}
-                  </div>
                 </TableCell>
               </TableRow>
             )
@@ -263,12 +254,13 @@ export function SourcerDashboard({
             <WeeklyTrendChart
               counts={data.weeklySubmissionCounts}
               emptyTitle="No submissions in the last 12 weeks."
-              emptyHint="New catalog submissions will appear here over time."
+              emptyHint="New site submissions will appear here over time."
             />
           </SideListCard>
 
           <SideListCard
             title="Today's tasks"
+            description="Follow-ups and reminders will appear here first once scheduling is available."
             badge={
               <span
                 className="text-muted-foreground inline-flex items-center gap-1 font-sans text-xs font-medium"
@@ -285,6 +277,17 @@ export function SourcerDashboard({
               <p className="max-w-xs text-xs leading-relaxed">
                 No tasks for today. We&apos;ll surface follow-ups here when task scheduling is
                 available.
+              </p>
+              <p className="text-muted-foreground mt-inset text-xs">
+                <Link href="/chats" className="text-primary font-medium hover:underline">
+                  Open chats
+                </Link>
+                <span aria-hidden className="mx-1.5">
+                  ·
+                </span>
+                <Link href="/notifications" className="text-primary font-medium hover:underline">
+                  Notifications
+                </Link>
               </p>
             </div>
           </SideListCard>

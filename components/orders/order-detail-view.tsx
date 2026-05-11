@@ -152,6 +152,8 @@ export function OrderDetailView({
               initialAnchorText={order.anchor_text}
               initialTargetUrl={order.target_url}
               initialClientNotes={order.client_notes}
+              siteDomain={order.site_domain}
+              price={order.price}
               triggerVariant="button"
             />
           </div>

@@ -9,7 +9,8 @@ import { logAuthError } from '@/lib/errors/log-auth-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/types'
-import { getSiteOrigin, productionServerEmailRedirectBlockedMessage } from '@/lib/site-url'
+import { getInviteEmailRedirectTo } from '@/lib/auth/invite-email-redirect'
+import { productionServerEmailRedirectBlockedMessage } from '@/lib/site-url'
 import { normalizeEmail } from '@/lib/validation/email'
 import { ORG_INVITABLE_ROLES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 
@@ -100,15 +101,13 @@ export async function inviteTeamMember(input: {
       return { ok: false, message: redirectBlock }
     }
 
-    const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/first-login-password')}&flow=${encodeURIComponent('invite')}`
-
     const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: {
         role,
         full_name: input.fullName?.trim() || null,
         is_bootstrap_admin: false,
       },
-      redirectTo,
+      redirectTo: getInviteEmailRedirectTo(),
     })
 
     if (error) {
@@ -190,15 +189,13 @@ export async function resendTeamInvite(input: { email: string }): Promise<Invite
       return { ok: false, message: redirectBlock }
     }
 
-    const redirectTo = `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent('/auth/first-login-password')}&flow=${encodeURIComponent('invite')}`
-
     const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: {
         role,
         full_name: (match.user_metadata?.full_name as string | undefined) ?? null,
         is_bootstrap_admin: false,
       },
-      redirectTo,
+      redirectTo: getInviteEmailRedirectTo(),
     })
 
     if (error) {

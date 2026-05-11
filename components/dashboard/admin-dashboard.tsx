@@ -8,7 +8,6 @@ import {
   Receipt,
   Tags,
   TrendingUp,
-  UserPlus,
   Users,
 } from 'lucide-react'
 
@@ -18,12 +17,14 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import {
   AttentionTableCard,
   KpiCard,
+  NotificationsSummaryCard,
   PipelineCard,
   QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
 import type { AdminDashboardData } from '@/lib/dashboard/load-admin-dashboard'
+import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import { cn } from '@/lib/utils'
 
@@ -35,7 +36,13 @@ function moneyUSD(n: number) {
   })
 }
 
-export function AdminDashboard({ data }: { data: AdminDashboardData }) {
+export function AdminDashboard({
+  data,
+  unreadByEvent,
+}: {
+  data: AdminDashboardData
+  unreadByEvent?: UnreadByEvent
+}) {
   const completedDeltaShow = data.ordersCompletedPrevMonth > 0
   const completedDeltaText =
     data.ordersCompletedDelta === 0
@@ -52,17 +59,18 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
         action={
           <Link
             href="/settings/users"
-            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'rounded-xl')}
+            className={cn(buttonVariants({ variant: 'cta', size: 'xl' }), 'rounded-xl')}
           >
-            <UserPlus className="size-4" aria-hidden />
-            Invite user
+            <Users className="size-4" aria-hidden />
+            Manage users
           </Link>
         }
       />
 
+      {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
+
       <QuickActionsBar
         actions={[
-          { href: '/settings/users', label: 'Manage users', icon: Users, variant: 'default' },
           { href: '/settings/categories', label: 'Categories', icon: Tags, variant: 'outline' },
           { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
           { href: '/invoices', label: 'Invoices', icon: Receipt, variant: 'outline' },
@@ -75,18 +83,24 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
           label="Active orders"
           value={String(data.totalActiveOrders)}
           icon={ClipboardList}
+          href="/orders"
+          ariaLabel={`Active orders: ${data.totalActiveOrders}. Open orders.`}
           tone="primary"
         />
         <KpiCard
           label="Sites in review"
           value={String(data.sitesInReview)}
           icon={Globe}
+          href="/sites?status=pending"
+          ariaLabel={`Sites in review: ${data.sitesInReview}. Open pending sites.`}
           tone="muted"
         />
         <KpiCard
           label="Open invoices"
           value={moneyUSD(data.pendingInvoiceTotal)}
           icon={Receipt}
+          href="/invoices"
+          ariaLabel={`Open invoices: ${moneyUSD(data.pendingInvoiceTotal)}. Open invoices.`}
           showDelta={data.pendingInvoiceCount > 0}
           delta={`${data.pendingInvoiceCount} open`}
           deltaClassName="text-muted-foreground"
@@ -96,6 +110,8 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
           label="Paid revenue"
           value={moneyUSD(data.paidRevenue)}
           icon={DollarSign}
+          href="/invoices?status=paid"
+          ariaLabel={`Paid revenue: ${moneyUSD(data.paidRevenue)}. Open paid invoices.`}
           showDelta={data.paidInvoices > 0}
           delta={`${data.paidInvoices} invoices`}
           deltaClassName="text-muted-foreground"

@@ -50,6 +50,27 @@ type DialogKind =
   | 'delete_order'
   | null
 
+function OrderSummaryBanner({
+  domain,
+  status,
+  price,
+}: {
+  domain?: string
+  status: string
+  price?: number
+}) {
+  if (!domain) return null
+  return (
+    <div className="bg-muted/50 border-border mb-2 rounded-md border px-3 py-2 text-sm">
+      <p className="text-foreground font-medium">{domain}</p>
+      <p className="text-muted-foreground text-xs">
+        {ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] ?? status}
+        {price !== undefined && ` · $${price.toFixed(2)}`}
+      </p>
+    </div>
+  )
+}
+
 export function OrderActionsMenu({
   context,
   orderId,
@@ -60,6 +81,8 @@ export function OrderActionsMenu({
   initialAnchorText,
   initialTargetUrl,
   initialClientNotes,
+  siteDomain,
+  price,
   triggerVariant = 'icon',
 }: {
   context: OrderActionContext
@@ -71,6 +94,8 @@ export function OrderActionsMenu({
   initialAnchorText?: string | null
   initialTargetUrl?: string | null
   initialClientNotes?: string | null
+  siteDomain?: string
+  price?: number
   triggerVariant?: 'icon' | 'button'
 }) {
   const [pending, startTransition] = useTransition()
@@ -78,6 +103,7 @@ export function OrderActionsMenu({
   const [error, setError] = useState<string | null>(null)
   const [changeComment, setChangeComment] = useState('')
   const [publishedUrl, setPublishedUrl] = useState('')
+  const [publishDateForPublish, setPublishDateForPublish] = useState(initialPublishDate ?? '')
   const [copywriterId, setCopywriterId] = useState(context.copywriterId ?? '')
   const [publishDate, setPublishDate] = useState(initialPublishDate ?? '')
   const [anchorText, setAnchorText] = useState(initialAnchorText ?? '')
@@ -332,26 +358,45 @@ export function OrderActionsMenu({
           if (!open) {
             setDialog(null)
             setPublishedUrl('')
+            setPublishDateForPublish(initialPublishDate ?? '')
             setError(null)
           }
         }}
         title="Mark published"
-        description="Provide the public URL of the published page."
+        description="Provide the public URL and confirm the publish date."
         middle={
-          <input
-            type="url"
-            value={publishedUrl}
-            onChange={(event) => setPublishedUrl(event.target.value)}
-            placeholder="https://example.com/post"
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-md border px-3 text-sm"
-          />
+          <div className="gap-inset flex flex-col">
+            <OrderSummaryBanner domain={siteDomain} status={context.status} price={price} />
+            <label className="gap-1 text-sm">
+              <span className="text-muted-foreground">Published URL</span>
+              <input
+                type="url"
+                value={publishedUrl}
+                onChange={(event) => setPublishedUrl(event.target.value)}
+                placeholder="https://example.com/post"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground h-9 w-full rounded-md border px-3 text-sm"
+              />
+            </label>
+            <label className="gap-1 text-sm">
+              <span className="text-muted-foreground">Publish date</span>
+              <input
+                type="date"
+                value={publishDateForPublish}
+                onChange={(event) => setPublishDateForPublish(event.target.value)}
+                className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
+              />
+            </label>
+          </div>
         }
         confirmVariant="cta"
         confirmLabel={pending ? 'Publishing…' : 'Publish'}
         confirmDisabled={!publishedUrl.trim()}
         busy={pending}
         onConfirm={() =>
-          runAction(() => markPublished(orderId, publishedUrl), 'Order marked published.')
+          runAction(
+            () => markPublished(orderId, publishedUrl, publishDateForPublish || null),
+            'Order marked published.'
+          )
         }
       />
 
@@ -366,18 +411,21 @@ export function OrderActionsMenu({
         title="Assign copywriter"
         description="Choose a copywriter for this order."
         middle={
-          <select
-            value={copywriterId}
-            onChange={(event) => setCopywriterId(event.target.value)}
-            className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
-          >
-            <option value="">Unassigned</option>
-            {(copywriterOptions ?? []).map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.full_name ?? option.email ?? option.id.slice(0, 8)}
-              </option>
-            ))}
-          </select>
+          <>
+            <OrderSummaryBanner domain={siteDomain} status={context.status} price={price} />
+            <select
+              value={copywriterId}
+              onChange={(event) => setCopywriterId(event.target.value)}
+              className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
+            >
+              <option value="">Unassigned</option>
+              {(copywriterOptions ?? []).map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.full_name ?? option.email ?? option.id.slice(0, 8)}
+                </option>
+              ))}
+            </select>
+          </>
         }
         confirmVariant="cta"
         confirmLabel={pending ? 'Saving…' : 'Save'}

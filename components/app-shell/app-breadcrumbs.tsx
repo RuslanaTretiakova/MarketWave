@@ -126,6 +126,8 @@ export function AppBreadcrumbs({ navItems }: { navItems: AppNavItem[] }) {
 
   const crumbs = buildCrumbs(pathname, navItems)
   if (crumbs.length === 0) return null
+  // Top-level routes (e.g. /dashboard, /orders) duplicate the sidebar; show crumbs only when nested.
+  if (crumbs.length < 2) return null
 
   return (
     <Breadcrumb className="mb-layout">

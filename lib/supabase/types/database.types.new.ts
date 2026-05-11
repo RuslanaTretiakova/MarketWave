@@ -938,6 +938,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          last_automated_invite_reminder_at: string | null
           phone: string | null
           require_password_change: boolean
           role: Database['public']['Enums']['user_role']
@@ -952,6 +953,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          last_automated_invite_reminder_at?: string | null
           phone?: string | null
           require_password_change?: boolean
           role: Database['public']['Enums']['user_role']
@@ -966,6 +968,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          last_automated_invite_reminder_at?: string | null
           phone?: string | null
           require_password_change?: boolean
           role?: Database['public']['Enums']['user_role']

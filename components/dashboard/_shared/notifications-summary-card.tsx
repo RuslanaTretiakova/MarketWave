@@ -1,0 +1,68 @@
+import Link from 'next/link'
+import { ArrowUpRight, Bell } from 'lucide-react'
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { NotificationEvent, UnreadByEvent } from '@/lib/notifications/load-notifications'
+
+const EVENT_LABELS: Record<NotificationEvent, string> = {
+  copywriter_assigned: 'New assignments',
+  copywriter_reassigned: 'Reassignments',
+  content_submitted: 'Content submitted',
+  changes_requested: 'Changes requested',
+  content_approved: 'Content approved',
+  order_published: 'Orders published',
+  invoice_paid: 'Invoices paid',
+}
+
+const EVENT_TONE: Record<NotificationEvent, string> = {
+  copywriter_assigned: 'bg-primary-soft text-primary-ink',
+  copywriter_reassigned: 'bg-primary-soft/80 text-primary-ink',
+  content_submitted: 'bg-primary-soft text-primary-ink',
+  changes_requested: 'bg-accent-soft text-accent',
+  content_approved: 'bg-primary-soft text-primary-ink',
+  order_published: 'bg-muted text-muted-foreground',
+  invoice_paid: 'bg-muted text-muted-foreground',
+}
+
+export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) {
+  const entries = (Object.entries(counts) as [NotificationEvent, number][]).filter(([, n]) => n > 0)
+  if (entries.length === 0) return null
+
+  const total = entries.reduce((sum, [, n]) => sum + n, 0)
+
+  return (
+    <Card className="border-border rounded-2xl shadow-none">
+      <CardHeader className="gap-inset border-border border-b pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="bg-destructive/10 text-destructive inline-flex size-8 items-center justify-center rounded-lg">
+              <Bell className="size-4" aria-hidden />
+            </span>
+            <CardTitle className="font-heading text-lg tracking-tight">
+              {total} unread notification{total !== 1 ? 's' : ''}
+            </CardTitle>
+          </div>
+          <Link
+            href="/notifications"
+            className="text-primary inline-flex items-center gap-1 font-sans text-sm font-medium hover:underline"
+          >
+            View all
+            <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-4 pb-4">
+        <div className="flex flex-wrap gap-2">
+          {entries.map(([event, count]) => (
+            <span
+              key={event}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-xs font-semibold tabular-nums ${EVENT_TONE[event]}`}
+            >
+              {count} {EVENT_LABELS[event]}
+            </span>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

@@ -120,12 +120,15 @@ function AccountManagerCard({
 }
 
 export function UserDetailClient({
+  viewerRole = 'admin',
   row,
   currentUserId,
   copywriterCandidates,
   counts,
   managerOptions = [],
+  accountManagerLabel,
 }: {
+  viewerRole?: 'admin' | 'manager'
   row: OrgUserRowJson
   currentUserId: string
   copywriterCandidates: OrgUserRowJson[]
@@ -135,8 +138,11 @@ export function UserDetailClient({
     sourcerSitesCount: number
   }
   managerOptions?: ManagerOptionRow[]
+  /** When `viewerRole` is manager: display name for `row.account_manager_id` (read-only). */
+  accountManagerLabel?: string | null
 }) {
   const router = useRouter()
+  const isAdminView = viewerRole === 'admin'
   const [editOpen, setEditOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [formMessage, setFormMessage] = useState<string | null>(null)
@@ -282,7 +288,7 @@ export function UserDetailClient({
         )}
       >
         <ArrowLeft className="size-4" aria-hidden />
-        All users
+        {isAdminView ? 'All users' : 'Users'}
       </Link>
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
@@ -308,42 +314,46 @@ export function UserDetailClient({
             </div>
           </div>
           <div className="gap-inset flex shrink-0 flex-wrap">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              Edit profile
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!canResend || rowBusy}
-              onClick={() => setResendOpen(true)}
-            >
-              <Mail className="size-4" aria-hidden />
-              Resend invite
-            </Button>
-            {isUserBanned(row) ? (
-              <Button
-                type="button"
-                variant="cta"
-                size="sm"
-                disabled={!canToggleAccess || activateBusy || rowBusy}
-                onClick={() => setActivateOpen(true)}
-              >
-                <UserPlus className="size-4" aria-hidden />
-                Activate
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                disabled={!canToggleAccess || rowBusy}
-                onClick={() => void beginDisable()}
-              >
-                <UserMinus className="size-4" aria-hidden />
-                Disable
-              </Button>
-            )}
+            {isAdminView ? (
+              <>
+                <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                  Edit profile
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canResend || rowBusy}
+                  onClick={() => setResendOpen(true)}
+                >
+                  <Mail className="size-4" aria-hidden />
+                  Resend invite
+                </Button>
+                {isUserBanned(row) ? (
+                  <Button
+                    type="button"
+                    variant="cta"
+                    size="sm"
+                    disabled={!canToggleAccess || activateBusy || rowBusy}
+                    onClick={() => setActivateOpen(true)}
+                  >
+                    <UserPlus className="size-4" aria-hidden />
+                    Activate
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    disabled={!canToggleAccess || rowBusy}
+                    onClick={() => void beginDisable()}
+                  >
+                    <UserMinus className="size-4" aria-hidden />
+                    Disable
+                  </Button>
+                )}
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -445,12 +455,28 @@ export function UserDetailClient({
       </Card>
 
       {row.role === 'client' ? (
-        <AccountManagerCard
-          key={`${row.id}-${row.account_manager_id ?? 'none'}`}
-          clientId={row.id}
-          initialManagerId={row.account_manager_id}
-          managers={managerOptions}
-        />
+        isAdminView ? (
+          <AccountManagerCard
+            key={`${row.id}-${row.account_manager_id ?? 'none'}`}
+            clientId={row.id}
+            initialManagerId={row.account_manager_id}
+            managers={managerOptions}
+          />
+        ) : (
+          <Card className="border-border/60 shadow-soft ring-border/60 gap-0 rounded-2xl py-0 ring-1">
+            <CardHeader className="border-border/60 gap-inset px-section pb-block pt-section border-b">
+              <CardTitle className="font-display text-lg font-semibold">Account manager</CardTitle>
+              <CardDescription>
+                Assigned by an admin for Sales onboarding. You cannot change this assignment here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="gap-block px-section py-section flex flex-col">
+              <p className="text-foreground text-sm">
+                {accountManagerLabel?.trim() ? accountManagerLabel : 'Not assigned'}
+              </p>
+            </CardContent>
+          </Card>
+        )
       ) : null}
 
       {formMessage ? (
@@ -464,43 +490,51 @@ export function UserDetailClient({
         </p>
       ) : null}
 
-      <EditUserSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        target={row}
-        onSaved={() => router.refresh()}
-      />
+      {isAdminView ? (
+        <EditUserSheet
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          target={row}
+          onSaved={() => router.refresh()}
+        />
+      ) : null}
 
-      <AdminUserDisableDialog
-        state={disableDialog}
-        busy={disableBusy}
-        copywriterReplacementOptions={copywriterReplacementOptions}
-        onOpenChange={(open) => {
-          if (!open) setDisableDialog(null)
-        }}
-        onReplacementChange={(replacementId) =>
-          setDisableDialog((prev) =>
-            prev?.mode === 'reassign' ? { ...prev, replacementId } : prev
-          )
-        }
-        onConfirm={() => void confirmDisable()}
-      />
+      {isAdminView ? (
+        <AdminUserDisableDialog
+          state={disableDialog}
+          busy={disableBusy}
+          copywriterReplacementOptions={copywriterReplacementOptions}
+          onOpenChange={(open) => {
+            if (!open) setDisableDialog(null)
+          }}
+          onReplacementChange={(replacementId) =>
+            setDisableDialog((prev) =>
+              prev?.mode === 'reassign' ? { ...prev, replacementId } : prev
+            )
+          }
+          onConfirm={() => void confirmDisable()}
+        />
+      ) : null}
 
-      <AdminUserActivateDialog
-        open={activateOpen}
-        busy={activateBusy}
-        displayName={name}
-        onOpenChange={setActivateOpen}
-        onConfirm={() => void confirmActivate()}
-      />
+      {isAdminView ? (
+        <AdminUserActivateDialog
+          open={activateOpen}
+          busy={activateBusy}
+          displayName={name}
+          onOpenChange={setActivateOpen}
+          onConfirm={() => void confirmActivate()}
+        />
+      ) : null}
 
-      <AdminUserResendInviteDialog
-        open={resendOpen}
-        busy={resendBusy}
-        email={resendEmail || email}
-        onOpenChange={setResendOpen}
-        onConfirm={() => void confirmResend()}
-      />
+      {isAdminView ? (
+        <AdminUserResendInviteDialog
+          open={resendOpen}
+          busy={resendBusy}
+          email={resendEmail || email}
+          onOpenChange={setResendOpen}
+          onConfirm={() => void confirmResend()}
+        />
+      ) : null}
     </div>
   )
 }

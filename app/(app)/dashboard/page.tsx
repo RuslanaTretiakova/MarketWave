@@ -10,6 +10,7 @@ import { loadClientDashboard } from '@/lib/dashboard/load-client-dashboard'
 import { loadCopywriterDashboard } from '@/lib/dashboard/load-copywriter-dashboard'
 import { loadManagerDashboard } from '@/lib/dashboard/load-manager-dashboard'
 import { loadSourcerDashboard } from '@/lib/dashboard/load-sourcer-dashboard'
+import { loadUnreadNotificationsByEvent } from '@/lib/notifications/load-notifications'
 import { createClient } from '@/lib/supabase/server'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
 
@@ -32,28 +33,41 @@ export default async function DashboardPage() {
   const role = profile?.role ?? 'client'
   const greetingName = profile?.full_name ?? user.user_metadata?.full_name ?? null
   const supabase = await createClient()
+  const unreadByEvent = await loadUnreadNotificationsByEvent(supabase, user.id)
 
   switch (role) {
     case 'admin': {
       const data = await loadAdminDashboard(supabase)
-      return <AdminDashboard data={data} />
+      return <AdminDashboard data={data} unreadByEvent={unreadByEvent} />
     }
     case 'manager': {
       const data = await loadManagerDashboard(supabase)
-      return <ManagerDashboard data={data} greetingName={greetingName} />
+      return (
+        <ManagerDashboard data={data} greetingName={greetingName} unreadByEvent={unreadByEvent} />
+      )
     }
     case 'sourcer': {
       const data = await loadSourcerDashboard(supabase, user.id)
-      return <SourcerDashboard data={data} greetingName={greetingName} />
+      return (
+        <SourcerDashboard data={data} greetingName={greetingName} unreadByEvent={unreadByEvent} />
+      )
     }
     case 'copywriter': {
       const data = await loadCopywriterDashboard(supabase, user.id)
-      return <CopywriterDashboard data={data} greetingName={greetingName} />
+      return (
+        <CopywriterDashboard
+          data={data}
+          greetingName={greetingName}
+          unreadByEvent={unreadByEvent}
+        />
+      )
     }
     case 'client':
     default: {
       const data = await loadClientDashboard(supabase, user.id)
-      return <ClientDashboard data={data} greetingName={greetingName} />
+      return (
+        <ClientDashboard data={data} greetingName={greetingName} unreadByEvent={unreadByEvent} />
+      )
     }
   }
 }

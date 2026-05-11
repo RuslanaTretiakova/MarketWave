@@ -1,19 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { SiteStatus } from '@/lib/sites/site-status-labels'
 import type { Database } from '@/lib/supabase/types'
-
-/** Listing lifecycle stages (sites created in the last 30 days), honest labels. */
-export const SOURCER_PIPELINE_STAGES: {
-  status: SiteStatus
-  label: string
-  shortLabel: string
-}[] = [
-  { status: 'pending', label: 'Pending', shortLabel: 'New' },
-  { status: 'needs_changes', label: 'Needs changes', shortLabel: 'Changes' },
-  { status: 'active', label: 'Live', shortLabel: 'Live' },
-  { status: 'archived', label: 'Archived', shortLabel: 'Archived' },
-]
 
 export type SourcerRecentSubmission = {
   id: string
@@ -45,8 +32,6 @@ export type SourcerDashboardData = {
    * Omitted when baseline is unavailable — UI hides delta.
    */
   approvalRateDeltaPoints: number | null
-  pipeline: { status: SiteStatus; label: string; shortLabel: string; count: number }[]
-  pipelineMax: number
   recentSubmissions: SourcerRecentSubmission[]
   /** 12 weekly buckets, oldest first */
   weeklySubmissionCounts: number[]
@@ -76,9 +61,6 @@ export async function loadSourcerDashboard(
   const now = new Date()
   const { startThisMonth, startNextMonth, startPrevMonth } = monthBounds(now)
 
-  const thirtyDaysAgo = new Date(now)
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
   const twelveWeeksAgo = new Date(now)
   twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 12 * 7)
 
@@ -88,10 +70,6 @@ export async function loadSourcerDashboard(
     sitesActive,
     sitesPendingReview,
     nonArchived,
-    pipelinePending,
-    pipelineNeedsChanges,
-    pipelineActive,
-    pipelineArchived,
     recentResult,
     createdAtRows,
     activeThisMonth,
@@ -130,34 +108,6 @@ export async function loadSourcerDashboard(
       .select('id', { count: 'exact', head: true })
       .eq('sourcer_id', userId)
       .neq('status', 'archived')
-      .then((r) => ({ count: r.count })),
-    supabase
-      .from('sites')
-      .select('id', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
-      .eq('status', 'pending')
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .then((r) => ({ count: r.count })),
-    supabase
-      .from('sites')
-      .select('id', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
-      .eq('status', 'needs_changes')
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .then((r) => ({ count: r.count })),
-    supabase
-      .from('sites')
-      .select('id', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
-      .eq('status', 'active')
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .then((r) => ({ count: r.count })),
-    supabase
-      .from('sites')
-      .select('id', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
-      .eq('status', 'archived')
-      .gte('created_at', thirtyDaysAgo.toISOString())
       .then((r) => ({ count: r.count })),
     supabase
       .from('sites')
@@ -224,19 +174,6 @@ export async function loadSourcerDashboard(
     approvalRateDeltaPoints = Math.round((rateThis - ratePrev) * 10) / 10
   }
 
-  const pipelineCounts = new Map<SiteStatus, number>([
-    ['pending', pipelinePending.count ?? 0],
-    ['needs_changes', pipelineNeedsChanges.count ?? 0],
-    ['active', pipelineActive.count ?? 0],
-    ['archived', pipelineArchived.count ?? 0],
-  ])
-
-  const pipeline = SOURCER_PIPELINE_STAGES.map((s) => ({
-    ...s,
-    count: pipelineCounts.get(s.status) ?? 0,
-  }))
-  const pipelineMax = Math.max(1, ...pipeline.map((p) => p.count))
-
   const recentSubmissions: SourcerRecentSubmission[] =
     recentResult.error || !recentResult.data
       ? []
@@ -280,8 +217,6 @@ export async function loadSourcerDashboard(
     sitesPendingReview: sitesPendingReview.count ?? 0,
     approvalRatePercent,
     approvalRateDeltaPoints,
-    pipeline,
-    pipelineMax,
     recentSubmissions,
     weeklySubmissionCounts,
     trendRecentSixWeeksTotal,

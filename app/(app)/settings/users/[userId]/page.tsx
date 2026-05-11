@@ -4,7 +4,9 @@ import { UserDetailClient } from '@/components/settings/user-detail-client'
 import {
   loadOrgCopywriterCandidatesForAdmin,
   loadOrgUserAssignmentCountsForAdmin,
+  loadOrgUserAssignmentCountsForManager,
   loadOrgUserRowForAdmin,
+  loadOrgUserRowForManager,
 } from '@/lib/org-users/load-org-users'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -34,45 +36,80 @@ export default async function SettingsUserDetailPage(props: {
     .eq('id', user.id)
     .maybeSingle()
 
-  if (profile?.role !== 'admin') {
+  const viewerRole = profile?.role
+  if (viewerRole !== 'admin' && viewerRole !== 'manager') {
     notFound()
   }
 
-  const row = await loadOrgUserRowForAdmin(userId)
+  if (viewerRole === 'admin') {
+    const row = await loadOrgUserRowForAdmin(userId)
+    if (!row || 'forbidden' in row) {
+      notFound()
+    }
+
+    const counts = await loadOrgUserAssignmentCountsForAdmin(userId)
+    if ('forbidden' in counts) {
+      notFound()
+    }
+
+    const { data: managerOptions } = await adminClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'manager')
+      .order('full_name', { ascending: true })
+
+    let copywriterCandidates
+    try {
+      const result = await loadOrgCopywriterCandidatesForAdmin()
+      if ('forbidden' in result) {
+        notFound()
+      }
+      copywriterCandidates = result
+    } catch (err) {
+      console.error('[settings/users/detail] loadOrgCopywriterCandidatesForAdmin', err)
+      throw err instanceof Error ? err : new Error('Failed to load copywriter candidates.')
+    }
+
+    return (
+      <UserDetailClient
+        viewerRole="admin"
+        row={row}
+        currentUserId={user.id}
+        copywriterCandidates={copywriterCandidates}
+        counts={counts}
+        managerOptions={managerOptions ?? []}
+      />
+    )
+  }
+
+  const row = await loadOrgUserRowForManager(userId)
   if (!row || 'forbidden' in row) {
     notFound()
   }
 
-  const counts = await loadOrgUserAssignmentCountsForAdmin(userId)
+  const counts = await loadOrgUserAssignmentCountsForManager(userId)
   if ('forbidden' in counts) {
     notFound()
   }
 
-  const { data: managerOptions } = await adminClient
-    .from('profiles')
-    .select('id, full_name, email')
-    .eq('role', 'manager')
-    .order('full_name', { ascending: true })
-
-  let copywriterCandidates
-  try {
-    const result = await loadOrgCopywriterCandidatesForAdmin()
-    if ('forbidden' in result) {
-      notFound()
-    }
-    copywriterCandidates = result
-  } catch (err) {
-    console.error('[settings/users/detail] loadOrgCopywriterCandidatesForAdmin', err)
-    throw err instanceof Error ? err : new Error('Failed to load copywriter candidates.')
+  let accountManagerLabel: string | null = null
+  if (row.account_manager_id) {
+    const { data: mgr } = await adminClient
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', row.account_manager_id)
+      .maybeSingle()
+    accountManagerLabel = mgr?.full_name?.trim() || mgr?.email?.trim() || null
   }
 
   return (
     <UserDetailClient
+      viewerRole="manager"
       row={row}
       currentUserId={user.id}
-      copywriterCandidates={copywriterCandidates}
+      copywriterCandidates={[]}
       counts={counts}
-      managerOptions={managerOptions ?? []}
+      accountManagerLabel={accountManagerLabel}
     />
   )
 }

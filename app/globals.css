@@ -311,19 +311,14 @@
   }
 }
 
+/** Hero mock “Order” card — soft vertical drift; rotation baked in so keyframes don’t fight Tailwind rotate. */
 @keyframes float-y {
   0%,
   100% {
-    transform: translateY(0);
-  }
-  25% {
-    transform: translateY(-10px);
+    transform: translate3d(0, 0, 0) rotate(-4deg);
   }
   50% {
-    transform: translateY(0);
-  }
-  75% {
-    transform: translateY(10px);
+    transform: translate3d(0, -7px, 0) rotate(-4deg);
   }
 }
 
@@ -496,7 +491,15 @@
   }
 
   .animate-float {
-    animation: float-y 5s ease-in-out infinite;
+    animation: float-y 6.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float {
+      animation: none;
+      will-change: auto;
+    }
   }
 
   .animate-pulse-dot {
