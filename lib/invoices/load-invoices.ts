@@ -64,6 +64,10 @@ function isMissingInvoiceItemsTable(message: string): boolean {
   )
 }
 
+function quotePostgrestFilterValue(value: string): string {
+  return '"' + value.replace(/"/g, '\\"') + '"'
+}
+
 function normalizeSentAt<T extends { sent_at?: string | null }>(
   row: T
 ): T & { sent_at: string | null } {
@@ -149,6 +153,29 @@ export async function loadInvoicesPage(
   let rows: InvoiceListRow[] = []
   let totalCount = 0
 
+  // Resolve client name/email filter to a concrete list of order IDs before the main query.
+  // This keeps pagination count accurate (the in-memory approach set totalCount = rows.length
+  // for only the current page, silently breaking multi-page navigation).
+  let clientOrderIds: string[] | null = null
+  const safeClient = sanitizeIlikePattern(params.client)
+  if (safeClient.length > 0 && (role === 'admin' || role === 'manager')) {
+    const pat = `%${safeClient}%`
+    const quoted = quotePostgrestFilterValue(pat)
+    const { data: matchingProfiles } = await adminClient
+      .from('profiles')
+      .select('id')
+      .or(`full_name.ilike.${quoted},email.ilike.${quoted}`)
+    const userIds = (matchingProfiles ?? []).map((p) => p.id)
+    if (userIds.length === 0) return { rows: [], totalCount: 0 }
+    const { data: matchingOrders } = await adminClient
+      .from('orders')
+      .select('id')
+      .in('user_id', userIds)
+    const orderIds = (matchingOrders ?? []).map((o) => o.id)
+    if (orderIds.length === 0) return { rows: [], totalCount: 0 }
+    clientOrderIds = orderIds
+  }
+
   for (let attempt = 0; attempt < 2; attempt++) {
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
@@ -169,6 +196,7 @@ export async function loadInvoicesPage(
           count: 'exact',
         })
 
+      if (clientOrderIds !== null) q = q.in('order_id', clientOrderIds)
       if (params.status) q = q.eq('status', params.status)
       if (params.minAmount !== undefined) q = q.gte('amount', params.minAmount)
       if (params.maxAmount !== undefined) q = q.lte('amount', params.maxAmount)
@@ -300,17 +328,6 @@ export async function loadInvoicesPage(
         billing_period_label: billingPeriodLabel,
       }
     })
-
-    const safeClient = sanitizeIlikePattern(params.client)
-    if (safeClient.length > 0 && (role === 'admin' || role === 'manager')) {
-      const needle = safeClient.toLowerCase()
-      rows = rows.filter((row) => {
-        const name = (row.client_name ?? '').toLowerCase()
-        const email = (row.client_email ?? '').toLowerCase()
-        return name.includes(needle) || email.includes(needle)
-      })
-      totalCount = rows.length
-    }
 
     break
   }
