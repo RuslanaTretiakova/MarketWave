@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Menu } from 'lucide-react'
 
 import { MarketingUserMenu } from '@/components/site/marketing-user-menu'
 import { SiteBrandLink } from '@/components/brand/site-brand-link'
