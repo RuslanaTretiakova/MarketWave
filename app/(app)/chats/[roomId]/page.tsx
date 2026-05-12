@@ -44,7 +44,7 @@ export default async function ChatRoomPage(props: {
   const filters = chatListFiltersFromSearchParams(sp)
   const [rooms, room] = await Promise.all([
     loadChatRooms(user.id, filters),
-    loadChatRoom(roomId, user.id, profile.role),
+    loadChatRoom(roomId, user.id),
   ])
 
   if (!room) notFound()

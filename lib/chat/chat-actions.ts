@@ -101,14 +101,14 @@ async function assertCanMutateStandardRoom(
   if (!canEditChatMetadata(meta.channel)) {
     return { ok: false, message: 'Action forbidden: only Standard chats can be changed.' }
   }
-  if (meta.system_managed && auth.role !== 'admin') {
+  if (meta.system_managed) {
     return { ok: false, message: 'Action forbidden: this chat is managed by the system.' }
   }
   if (opts.requireActive && !canSendMessages(meta.status)) {
     return { ok: false, message: 'This chat is archived.' }
   }
   const member = await isParticipant(meta.id, auth.userId)
-  if (!member && auth.role !== 'admin') {
+  if (!member) {
     return { ok: false, message: 'You are not a participant of this room.' }
   }
   return { ok: true }
@@ -141,7 +141,7 @@ export async function sendMessage(
   }
 
   const ok = await isParticipant(input.roomId, auth.userId)
-  if (!ok && auth.role !== 'admin') {
+  if (!ok) {
     return { ok: false, message: 'You are not a participant of this room.' }
   }
 
@@ -191,7 +191,7 @@ export async function markRoomRead(
   if (!auth.ok) return auth
 
   const ok = await isParticipant(roomId, auth.userId)
-  if (!ok && auth.role !== 'admin') {
+  if (!ok) {
     return { ok: false, message: 'You are not a participant of this room.' }
   }
 
@@ -412,7 +412,7 @@ export async function archiveChat(
   }
 
   const member = await isParticipant(roomId, auth.userId)
-  if (!member && auth.role !== 'admin') {
+  if (!member) {
     return { ok: false, message: 'You are not a participant of this room.' }
   }
 
@@ -440,7 +440,7 @@ export async function unarchiveChat(
   }
 
   const member = await isParticipant(roomId, auth.userId)
-  if (!member && auth.role !== 'admin') {
+  if (!member) {
     return { ok: false, message: 'You are not a participant of this room.' }
   }
 
@@ -502,7 +502,7 @@ export async function getAttachmentDownloadUrl(
 
   const roomId = storagePath.split('/')[0]
   const ok = await isParticipant(roomId, auth.userId)
-  if (!ok && auth.role !== 'admin') {
+  if (!ok) {
     return { ok: false, message: 'You do not have access to this file.' }
   }
 

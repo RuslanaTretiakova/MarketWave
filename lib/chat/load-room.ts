@@ -14,11 +14,7 @@ const MESSAGE_PAGE_SIZE = 100
  * `chat_message_reads` table stores per-message “read by” rows synced from that marker
  * (see migration). Below we load `read_by` only for messages you sent.
  */
-export async function loadChatRoom(
-  roomId: string,
-  userId: string,
-  role: Database['public']['Enums']['user_role']
-): Promise<ChatRoomDetail | null> {
+export async function loadChatRoom(roomId: string, userId: string): Promise<ChatRoomDetail | null> {
   const { data: membership } = await adminClient
     .from('chat_room_participants')
     .select('user_id')
@@ -26,8 +22,7 @@ export async function loadChatRoom(
     .eq('user_id', userId)
     .maybeSingle()
 
-  const isAdmin = role === 'admin'
-  if (!membership && !isAdmin) return null
+  if (!membership) return null
 
   const [roomResult, participantsResult, messagesResult, readResult] = await Promise.all([
     adminClient

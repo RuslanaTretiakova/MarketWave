@@ -9,7 +9,13 @@ import { FormControlInput } from '@/components/ui/form-control'
 import { createStandardGroupChat } from '@/lib/chat/chat-actions'
 import { searchProfilesForChatAction } from '@/lib/chat/search-participants'
 
-export function CreateStandardChatForm({ currentUserId }: { currentUserId: string }) {
+export function CreateStandardChatForm({
+  currentUserId,
+  onSuccess,
+}: {
+  currentUserId: string
+  onSuccess?: () => void
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [title, setTitle] = useState('')
@@ -52,7 +58,7 @@ export function CreateStandardChatForm({ currentUserId }: { currentUserId: strin
 
   return (
     <form
-      className="border-border bg-muted/20 gap-block flex flex-col rounded-lg border p-3"
+      className="gap-inset flex flex-col"
       onSubmit={(e) => {
         e.preventDefault()
         startTransition(async () => {
@@ -68,12 +74,12 @@ export function CreateStandardChatForm({ currentUserId }: { currentUserId: strin
           setTitle('')
           setParticipantIds([])
           setLabels({})
+          onSuccess?.()
           router.push(`/chats/${res.roomId}`)
           router.refresh()
         })
       }}
     >
-      <p className="text-foreground text-sm font-medium">Create chat</p>
       <div className="gap-inset flex flex-wrap items-end">
         <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Title (optional)</span>
