@@ -76,7 +76,7 @@ export function MenuActionDialog({
           {description != null ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         {middle}
-        <DialogFooter className={cn('gap-2 sm:gap-3', footerClassName)}>
+        <DialogFooter className={footerClassName}>
           <Button type="button" variant="outline" disabled={busy} onClick={handleCancel}>
             {cancelLabel}
           </Button>

@@ -38,6 +38,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN?.trim().toLowerCase() === 'true'
 
   const testRoles = ['sourcer', 'manager', 'client', 'copywriter'] as const
+  const adminEmail = 'ruslana.tretiakova@archysoft.com'
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,6 +72,34 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       router.push(safeReturnPath(redirectTo))
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function onAdminLogin() {
+    setError(null)
+    setEmailError(null)
+    setPasswordError(null)
+    setTestLoginLoading('admin')
+    try {
+      const prep = await ensureTestUsersForLogin()
+      if (!prep.ok) {
+        setError(prep.message)
+        return
+      }
+      const supabase = createClient()
+      const { error: signError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: prep.passwordHint,
+      })
+      if (signError) {
+        const mapped = mapAuthError(signError)
+        reportAuthErrorClient(mapped, 'auth/admin-test-sign-in')
+        setError(mapped.message)
+        return
+      }
+      router.push(safeReturnPath(redirectTo))
+    } finally {
+      setTestLoginLoading(null)
     }
   }
 
@@ -202,6 +231,18 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
             <p className="text-foreground text-sm font-medium">Quick test login</p>
           </div>
           <div className="mt-2 flex items-center gap-2 overflow-x-auto" suppressHydrationWarning>
+            <button
+              type="button"
+              disabled={Boolean(testLoginLoading)}
+              onClick={onAdminLogin}
+              className="inline-flex items-center justify-center rounded-full"
+            >
+              {testLoginLoading === 'admin' ? (
+                <span className="text-xs">Signing in…</span>
+              ) : (
+                <RoleBadge role="admin" />
+              )}
+            </button>
             {testRoles.map((role) => (
               <button
                 key={role}

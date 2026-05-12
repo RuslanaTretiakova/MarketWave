@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { createNotifications } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -41,6 +42,12 @@ export async function assignCopywriter(
     }
   }
 
+  const { data: order } = await adminClient
+    .from('orders')
+    .select('copywriter_id, site_domain')
+    .eq('id', orderId)
+    .maybeSingle()
+
   const { error } = await adminClient
     .from('orders')
     .update({
@@ -51,7 +58,24 @@ export async function assignCopywriter(
 
   if (error) return { ok: false, message: error.message ?? 'Could not assign copywriter.' }
 
+  if (copywriterId) {
+    const isReassignment = order?.copywriter_id != null && order.copywriter_id !== copywriterId
+    const domain = order?.site_domain ?? 'an order'
+
+    void createNotifications({
+      event: isReassignment ? 'copywriter_reassigned' : 'copywriter_assigned',
+      title: isReassignment ? 'Copywriter reassigned' : 'Copywriter assigned',
+      message: isReassignment
+        ? `You have been assigned to ${domain} (reassigned from another copywriter).`
+        : `You have been assigned to write content for ${domain}.`,
+      recipientUserIds: isReassignment ? [copywriterId, order?.copywriter_id] : [copywriterId],
+      actorUserId: user.id,
+      orderId,
+    })
+  }
+
   revalidatePath('/orders')
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/notifications')
   return { ok: true }
 }

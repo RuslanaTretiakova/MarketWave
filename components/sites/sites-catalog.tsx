@@ -788,18 +788,43 @@ export function SitesCatalog({
                           data-row-actions
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <SiteCatalogRowActions
-                            row={row}
-                            canUseCart={canUseCart}
-                            canAdminStatus={canAdminStatus}
-                            cartSiteIdSet={cartSiteIdSet}
-                            addingSiteId={addingSiteId}
-                            removingSiteId={removingSiteId}
-                            addCart={addCart}
-                            removeFromCart={removeFromCart}
-                            editAllowed={editAllowed(row)}
-                            onOpenChangeStatus={openChangeStatusDialog}
-                          />
+                          <div className="flex items-center justify-end gap-1">
+                            {canUseCart && cartSiteIdSet.has(row.id) ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-destructive gap-1.5"
+                                disabled={removingSiteId === row.id}
+                                onClick={() => removeFromCart(row.id, row.domain)}
+                                aria-label={`Remove ${row.domain} from cart`}
+                              >
+                                <Trash2 className="size-4 shrink-0" aria-hidden />
+                                <span className="hidden lg:inline">Remove</span>
+                              </Button>
+                            ) : canUseCart ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-foreground gap-1.5"
+                                disabled={row.status !== 'active' || addingSiteId === row.id}
+                                onClick={() => addCart(row.id, row.domain)}
+                                aria-label={`Add ${row.domain} to cart`}
+                              >
+                                <ShoppingCart className="size-4 shrink-0" aria-hidden />
+                                <span className="hidden lg:inline">
+                                  {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
+                                </span>
+                              </Button>
+                            ) : null}
+                            <SiteCatalogRowActions
+                              row={row}
+                              canAdminStatus={canAdminStatus}
+                              editAllowed={editAllowed(row)}
+                              onOpenChangeStatus={openChangeStatusDialog}
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -844,16 +869,35 @@ export function SitesCatalog({
                             </div>
                           </div>
                         </Button>
-                        <div data-row-actions className="shrink-0">
+                        <div data-row-actions className="flex shrink-0 items-center gap-1">
+                          {canUseCart && cartSiteIdSet.has(row.id) ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-destructive"
+                              disabled={removingSiteId === row.id}
+                              onClick={() => removeFromCart(row.id, row.domain)}
+                              aria-label={`Remove ${row.domain} from cart`}
+                            >
+                              <Trash2 className="size-4" aria-hidden />
+                            </Button>
+                          ) : canUseCart ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              disabled={row.status !== 'active' || addingSiteId === row.id}
+                              onClick={() => addCart(row.id, row.domain)}
+                              aria-label={`Add ${row.domain} to cart`}
+                            >
+                              <ShoppingCart className="size-4" aria-hidden />
+                            </Button>
+                          ) : null}
                           <SiteCatalogRowActions
                             row={row}
-                            canUseCart={canUseCart}
                             canAdminStatus={canAdminStatus}
-                            cartSiteIdSet={cartSiteIdSet}
-                            addingSiteId={addingSiteId}
-                            removingSiteId={removingSiteId}
-                            addCart={addCart}
-                            removeFromCart={removeFromCart}
                             editAllowed={editAllowed(row)}
                             onOpenChangeStatus={openChangeStatusDialog}
                           />

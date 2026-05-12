@@ -8,24 +8,19 @@ import { toast } from 'sonner'
 
 import { CartItemRow } from '@/components/cart/cart-item-row'
 import { buttonVariants } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import {
-  removeCartItem,
-  updateCartItemDetails,
-  updateCartItemPublishDate,
-} from '@/lib/cart/cart-actions'
+import { removeCartItem, updateCartItemDetails } from '@/lib/cart/cart-actions'
 import {
   CART_NON_ACTIVE_SITE_DISCLAIMER,
   hasNonActiveSiteInCart,
 } from '@/lib/cart/cart-site-availability'
 import type { CartItemRow as CartItemRowType } from '@/lib/cart/load-cart'
+import { createOrderFromCartItem } from '@/lib/orders/create-orders-action'
 import { cn } from '@/lib/utils'
 
 export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) {
   const router = useRouter()
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null)
-
-  const total = initialItems.reduce((sum, item) => sum + item.site_price, 0)
+  const [creatingOrderItemId, setCreatingOrderItemId] = useState<string | null>(null)
 
   function handleRemove(id: string) {
     setMutatingItemId(id)
@@ -43,46 +38,45 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
     })()
   }
 
-  function handlePublishDateChange(id: string, date: string | null) {
-    setMutatingItemId(id)
-    void (async () => {
-      try {
-        const res = await updateCartItemPublishDate(id, date)
-        if (!res.ok) toast.error(res.message)
-        else router.refresh()
-      } finally {
-        setMutatingItemId(null)
-      }
-    })()
-  }
-
   function handleDetailsChange(
     id: string,
     details: {
       publishMonth?: string | null
       anchorText?: string | null
-      targetUrl?: string | null
       clientNotes?: string | null
     }
   ) {
-    setMutatingItemId(id)
+    void (async () => {
+      const res = await updateCartItemDetails({ itemId: id, ...details })
+      if (!res.ok) toast.error(res.message)
+    })()
+  }
+
+  function handleCreateSingleOrder(cartItemId: string) {
+    const item = initialItems.find((i) => i.id === cartItemId)
+    setCreatingOrderItemId(cartItemId)
     void (async () => {
       try {
-        const res = await updateCartItemDetails({ itemId: id, ...details })
-        if (!res.ok) toast.error(res.message)
-        else router.refresh()
+        const res = await createOrderFromCartItem(cartItemId)
+        if (!res.ok) {
+          toast.error(res.message)
+          return
+        }
+        toast.success('Order placed successfully.', {
+          description: item?.site_domain,
+        })
+        router.refresh()
       } finally {
-        setMutatingItemId(null)
+        setCreatingOrderItemId(null)
       }
     })()
   }
 
-  const anyMutating = mutatingItemId !== null
   const checkoutBlocked = hasNonActiveSiteInCart(initialItems)
 
   if (initialItems.length === 0) {
     return (
-      <Card className="py-hero gap-block flex flex-col items-center text-center">
+      <div className="py-hero gap-block flex flex-col items-center text-center">
         <ShoppingCart className="text-muted-foreground size-10" />
         <div className="space-y-inset">
           <p className="text-foreground font-semibold">Your cart is empty</p>
@@ -90,10 +84,13 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
             Browse the site catalog to add sites to your cart.
           </p>
         </div>
-        <Link href="/sites" className={cn(buttonVariants({ variant: 'cta' }), 'mt-block')}>
+        <Link
+          href="/sites"
+          className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'mt-block h-10')}
+        >
           Browse site catalog
         </Link>
-      </Card>
+      </div>
     )
   }
 
@@ -104,48 +101,22 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
           className="border-destructive/40 bg-destructive/5 text-foreground px-section py-block rounded-xl border text-sm leading-relaxed"
           role="alert"
         >
-          <p className="font-medium">Checkout unavailable</p>
+          <p className="font-medium">Order creation unavailable</p>
           <p className="text-muted-foreground mt-inset">{CART_NON_ACTIVE_SITE_DISCLAIMER}</p>
         </div>
       ) : null}
-      <Card className="overflow-hidden p-0">
+      <div className="space-y-block">
         {initialItems.map((item) => (
           <CartItemRow
             key={item.id}
             item={item}
             onRemove={handleRemove}
-            onPublishDateChange={handlePublishDateChange}
             onDetailsChange={handleDetailsChange}
+            onCreateOrder={handleCreateSingleOrder}
             pending={mutatingItemId === item.id}
+            creatingOrder={creatingOrderItemId === item.id}
           />
         ))}
-      </Card>
-
-      <div className="border-border bg-muted/25 px-section py-block flex items-center justify-between rounded-xl border">
-        <div>
-          <p className="text-muted-foreground text-sm">Total</p>
-          <p className="text-foreground text-2xl font-semibold tabular-nums">${total.toFixed(2)}</p>
-        </div>
-        {checkoutBlocked || anyMutating ? (
-          <span
-            className={cn(
-              buttonVariants({ variant: 'cta', size: 'default' }),
-              'pointer-events-none cursor-not-allowed opacity-60'
-            )}
-            title={
-              checkoutBlocked ? 'Remove sites that are not Active before checkout.' : undefined
-            }
-          >
-            Proceed to checkout
-          </span>
-        ) : (
-          <Link
-            href="/cart/checkout"
-            className={buttonVariants({ variant: 'cta', size: 'default' })}
-          >
-            Proceed to checkout
-          </Link>
-        )}
       </div>
     </div>
   )

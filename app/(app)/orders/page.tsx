@@ -58,10 +58,14 @@ export default async function OrdersPage(props: { searchParams: Promise<SearchPa
     : undefined
 
   const isStaff = profile.role === 'admin' || profile.role === 'manager'
+  const isCopywriter = profile.role === 'copywriter'
   // UUID v4 sanity check; falsy strings are ignored
   const validUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-  const copywriterId =
-    isStaff && copywriterRaw && validUuid.test(copywriterRaw) ? copywriterRaw : undefined
+  const copywriterId = isCopywriter
+    ? user.id
+    : isStaff && copywriterRaw && validUuid.test(copywriterRaw)
+      ? copywriterRaw
+      : undefined
   const clientId = isStaff && clientRaw && validUuid.test(clientRaw) ? clientRaw : undefined
   const publishDate =
     publishDateRaw && /^\d{4}-\d{2}-\d{2}$/.test(publishDateRaw) ? publishDateRaw : undefined

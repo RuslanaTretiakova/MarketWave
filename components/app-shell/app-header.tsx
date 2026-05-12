@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Menu, PanelLeft } from 'lucide-react'
+import { Bell, Menu, PanelLeft, ShoppingCart } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebarNavPanel } from '@/components/app-shell/app-sidebar'
@@ -21,6 +21,7 @@ export function AppHeader({
   navItems,
   navBadges,
   notificationsUnreadCount = 0,
+  cartItemCount = 0,
   sidebarCollapsed,
   onToggleSidebarCollapsed,
 }: {
@@ -28,6 +29,7 @@ export function AppHeader({
   navItems: AppNavItem[]
   navBadges?: Record<string, number>
   notificationsUnreadCount?: number
+  cartItemCount?: number
   sidebarCollapsed: boolean
   onToggleSidebarCollapsed: () => void
 }) {
@@ -38,6 +40,8 @@ export function AppHeader({
   const firstName = first.trim() || 'there'
   const onNotificationsPage =
     pathname === '/notifications' || pathname.startsWith('/notifications/')
+  const onCartPage = pathname === '/cart' || pathname.startsWith('/cart/')
+  const isClient = user.role === 'client'
 
   return (
     <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between border-b py-2 backdrop-blur-md md:h-14 md:min-h-0 md:py-0">
@@ -97,6 +101,32 @@ export function AppHeader({
           'flex shrink-0 items-center gap-3 rounded-full border-0 bg-transparent px-0 py-0 shadow-none'
         )}
       >
+        {isClient ? (
+          <Link
+            href="/cart"
+            className={cn(
+              'relative inline-flex size-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full transition-colors outline-none',
+              'text-foreground hover:bg-muted/80',
+              'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
+              onCartPage && 'bg-muted/70 text-foreground'
+            )}
+            aria-label={
+              cartItemCount > 0
+                ? `Cart, ${cartItemCount} item${cartItemCount > 1 ? 's' : ''}`
+                : 'Cart'
+            }
+          >
+            <ShoppingCart className="size-4.5 stroke-[1.75]" aria-hidden />
+            {cartItemCount > 0 ? (
+              <span
+                className="bg-primary text-primary-foreground ring-background absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.625rem] leading-none font-bold ring-2"
+                aria-hidden
+              >
+                {cartItemCount > 9 ? '9+' : cartItemCount}
+              </span>
+            ) : null}
+          </Link>
+        ) : null}
         <Link
           href="/notifications"
           className={cn(

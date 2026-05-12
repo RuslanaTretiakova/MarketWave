@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { NotificationEvent, UnreadByEvent } from '@/lib/notifications/load-notifications'
 
 const EVENT_LABELS: Record<NotificationEvent, string> = {
+  order_created: 'New orders',
   copywriter_assigned: 'New assignments',
   copywriter_reassigned: 'Reassignments',
   content_submitted: 'Content submitted',
@@ -12,9 +13,14 @@ const EVENT_LABELS: Record<NotificationEvent, string> = {
   content_approved: 'Content approved',
   order_published: 'Orders published',
   invoice_paid: 'Invoices paid',
+  site_needs_changes: 'Site changes needed',
+  site_approved: 'Sites approved',
+  site_archived: 'Sites archived',
+  site_unarchived: 'Sites activated',
 }
 
 const EVENT_TONE: Record<NotificationEvent, string> = {
+  order_created: 'bg-primary-soft text-primary-ink',
   copywriter_assigned: 'bg-primary-soft text-primary-ink',
   copywriter_reassigned: 'bg-primary-soft/80 text-primary-ink',
   content_submitted: 'bg-primary-soft text-primary-ink',
@@ -22,6 +28,10 @@ const EVENT_TONE: Record<NotificationEvent, string> = {
   content_approved: 'bg-primary-soft text-primary-ink',
   order_published: 'bg-muted text-muted-foreground',
   invoice_paid: 'bg-muted text-muted-foreground',
+  site_needs_changes: 'bg-accent-soft text-accent',
+  site_approved: 'bg-primary-soft text-primary-ink',
+  site_archived: 'bg-muted text-muted-foreground',
+  site_unarchived: 'bg-primary-soft/80 text-primary-ink',
 }
 
 export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) {

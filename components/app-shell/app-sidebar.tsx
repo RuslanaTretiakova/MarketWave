@@ -37,7 +37,7 @@ function SidebarLogoutFooter({ collapsed }: { collapsed: boolean }) {
         title={isCollapsed ? 'Log out' : undefined}
         onClick={handleLogoutClick}
       >
-        <LogOut className="size-4 shrink-0 opacity-90" aria-hidden />
+        <LogOut className="size-5 shrink-0 opacity-90" aria-hidden />
         {!isCollapsed ? <span className="text-sm font-medium">Log out</span> : null}
       </Button>
     </div>
@@ -105,13 +105,13 @@ export function AppNavLinks({
             onClick={onNavigate}
             className={cn(
               'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar relative flex h-10 w-full items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-              collapsed ? 'px-inset justify-center' : 'px-block',
+              collapsed ? 'justify-center' : 'px-block',
               active
                 ? 'border-sidebar-border bg-sidebar-item-active text-sidebar-accent-foreground shadow-sm'
                 : 'text-sidebar-foreground/85 hover:border-sidebar-border/55 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-transparent'
             )}
           >
-            <Icon className="size-6 shrink-0 opacity-95" aria-hidden />
+            <Icon className="size-5 shrink-0 opacity-95" aria-hidden />
             <span className={cn('text-sm', collapsed ? 'sr-only' : '')}>{label}</span>
             {badge > 0 && (
               <span
