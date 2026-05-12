@@ -36,3 +36,6 @@ Thin stubs at repo root still link into `docs/`: [STACK.md](STACK.md), [DATABASE
 ## Supabase local
 
 Use the Supabase CLI (`npx supabase …`). Local DB settings live in [supabase/config.toml](supabase/config.toml). See **[docs/ai/AGENTS.md](docs/ai/AGENTS.md)** for `db reset`, `db push`, and type generation.
+
+DB schema
+https://dbdiagram.io/d/6a03622054a51d93d30a3817
