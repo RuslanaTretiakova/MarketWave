@@ -128,7 +128,9 @@ export function ChatShell({
         <MessageComposer roomId={room.id} />
       ) : (
         <div className="border-border bg-muted/30 text-muted-foreground p-block border-t text-center text-sm">
-          This chat is archived — messaging is disabled. Unarchive from the list to reply.
+          {room.kind === 'order'
+            ? 'This order is closed — the chat is read-only.'
+            : 'This chat is archived — messaging is disabled. Unarchive from the list to reply.'}
         </div>
       )}
     </div>
