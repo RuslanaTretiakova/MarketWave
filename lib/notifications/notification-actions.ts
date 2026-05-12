@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function markNotificationRead(
   notificationId: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!notificationId) return { ok: false, message: 'Invalid notification ID.' }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -19,6 +21,7 @@ export async function markNotificationRead(
     .update({ read_at: new Date().toISOString() })
     .eq('id', notificationId)
     .eq('recipient_user_id', user.id)
+    .is('read_at', null)
 
   if (error) return { ok: false, message: error.message ?? 'Could not mark notification as read.' }
   revalidatePath('/notifications')
