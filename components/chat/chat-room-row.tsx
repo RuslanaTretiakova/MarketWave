@@ -23,7 +23,17 @@ function formatTimestamp(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 16).replace('T', ' ')
+  const now = new Date()
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000)
+  if (diffDays === 0) return d.toISOString().slice(11, 16)
+  if (diffDays < 7) return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()]
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`
+}
+
+function channelDotClass(channel: string | null): string {
+  if (channel === 'support') return 'bg-blue-500'
+  if (channel === 'sales') return 'bg-emerald-500'
+  return 'bg-muted-foreground'
 }
 
 export function ChatRoomRow({
@@ -72,53 +82,56 @@ export function ChatRoomRow({
     })
   }
 
+  const preview =
+    room.kind === 'order' &&
+    room.order_site_domain &&
+    room.title &&
+    room.title !== room.order_site_domain
+      ? room.order_site_domain
+      : (room.last_message_body ?? 'No messages yet')
+
   return (
     <>
-      <li className="flex items-stretch">
+      <li className="group flex items-stretch">
         <Link
           href={chatHref}
           className={cn(
-            'gap-inset p-block flex min-w-0 flex-1 items-start justify-between transition-colors',
-            isActive ? 'bg-muted' : 'hover:bg-muted/50'
+            'p-block flex min-w-0 flex-1 items-start justify-between gap-2 border-l-2 transition-colors',
+            isActive ? 'bg-muted border-primary' : 'hover:bg-muted/50 border-transparent'
           )}
         >
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <p className="text-foreground truncate text-sm font-medium">{title}</p>
               {room.status === 'archived' && (
-                <span className="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase">
+                <span className="text-muted-foreground shrink-0 rounded border px-1 py-px text-[0.6rem] font-medium">
                   Archived
                 </span>
               )}
               {room.unread_count > 0 && (
-                <span className="bg-primary text-primary-foreground inline-flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold tabular-nums">
+                <span className="bg-primary text-primary-foreground inline-flex min-w-[1.1rem] shrink-0 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold tabular-nums">
                   {room.unread_count}
                 </span>
               )}
             </div>
-            {room.kind === 'order' &&
-              room.order_site_domain &&
-              room.title &&
-              room.title !== room.order_site_domain && (
-                <p className="text-muted-foreground truncate text-xs">{room.order_site_domain}</p>
-              )}
-            <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
-              {clientChatChannelLabel(room.channel)}
-            </p>
-            <p className="text-muted-foreground mt-0.5 truncate text-xs">
-              {room.last_message_body ?? 'No messages yet'}
-            </p>
+            <div className="mt-0.5 flex items-center gap-1.5 overflow-hidden">
+              <span
+                className={cn('size-1.5 shrink-0 rounded-full', channelDotClass(room.channel))}
+                title={clientChatChannelLabel(room.channel)}
+              />
+              <p className="text-muted-foreground truncate text-xs">{preview}</p>
+            </div>
           </div>
-          <span className="text-muted-foreground shrink-0 text-[0.65rem] tabular-nums">
+          <span className="text-muted-foreground mt-0.5 shrink-0 text-[0.65rem] tabular-nums">
             {formatTimestamp(room.last_message_at)}
           </span>
         </Link>
         {showMenu ? (
-          <div className="border-border flex shrink-0 items-start border-l">
+          <div className="flex shrink-0 items-start opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             <DropdownMenu>
               <DropdownMenuTrigger
                 type="button"
-                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-full min-h-12 w-10 items-center justify-center"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-full min-h-12 w-9 items-center justify-center"
                 disabled={pending}
                 aria-label="Chat actions"
               >

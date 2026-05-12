@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation'
 
-import { CreateChannelRoomForm } from '@/components/chat/create-channel-room-form'
-import { CreateStandardChatForm } from '@/components/chat/create-standard-chat-form'
 import { ChatLayout } from '@/components/chat/chat-layout'
+import { NewChatSection } from '@/components/chat/new-chat-section'
 import { PageHeader } from '@/components/ui/page-header'
 import { chatListFiltersFromSearchParams, loadChatRooms } from '@/lib/chat/load-rooms'
 import { createClient } from '@/lib/supabase/server'
@@ -44,9 +43,11 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
   return (
     <div className="space-y-block">
       <PageHeader title="Chats" description="Direct messages and order rooms." />
-      <CreateStandardChatForm currentUserId={user.id} />
-      {isStaff ? <CreateChannelRoomForm currentUserId={user.id} /> : null}
-      <ChatLayout rooms={rooms} currentUserId={user.id}>
+      <ChatLayout
+        rooms={rooms}
+        currentUserId={user.id}
+        createPanel={<NewChatSection currentUserId={user.id} isStaff={isStaff} />}
+      >
         <div className="text-muted-foreground flex h-full items-center justify-center text-center text-sm">
           <div className="gap-block flex max-w-xs flex-col">
             <p className="text-foreground text-base font-medium">Pick a conversation</p>

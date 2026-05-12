@@ -4,7 +4,6 @@ import { MarketingChrome } from '@/components/marketing/marketing-chrome'
 import { SiteFooter } from '@/components/site/site-footer'
 import { SiteNavbar } from '@/components/site/site-navbar'
 
-// Navbar reads auth via Supabase — avoid build-time prerender without env (e.g. CI).
 export const dynamic = 'force-dynamic'
 
 export default async function MarketingLayout({ children }: { children: ReactNode }) {
