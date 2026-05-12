@@ -84,7 +84,7 @@
 
 /* ─── MarketWeave / Lovable — editorial calm (HSL channels, no hsl() wrapper) ─── */
 :root {
-  --background: 40 33% 97%;
+  --background: 0 0% 100%;
   --foreground: 200 30% 10%;
 
   --card: 0 0% 100%;
@@ -261,7 +261,7 @@
   --sidebar-ring: 172 55% 52%;
   --sidebar-item-active: 200 20% 13%;
 
-  --app-shell-canvas: 200 32% 9%;
+  --app-shell-canvas: 0 0% 100%;
 
   --shadow-shell: 0 1px 0 hsl(0 0% 0% / 0.35), 0 16px 48px hsl(0 0% 0% / 0.35);
 
@@ -292,8 +292,8 @@
   body {
     @apply text-foreground;
     background-color: hsl(var(--background));
-    background-image: var(--gradient-paper);
-    background-attachment: fixed;
+    background-image: none;
+    background-attachment: initial;
   }
 
   ::selection {

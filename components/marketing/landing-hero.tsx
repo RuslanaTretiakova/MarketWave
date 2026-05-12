@@ -25,7 +25,7 @@ export async function LandingHero() {
     >
       <div className="grid-paper pointer-events-none absolute inset-0 opacity-[0.42]" aria-hidden />
       <div className="max-w-marketing relative mx-auto grid items-center gap-12 py-2 lg:grid-cols-12 lg:gap-14">
-        <div className="text-left lg:col-span-7">
+        <div className="text-center sm:text-left lg:col-span-7">
           <div className="border-primary/25 bg-primary-soft/70 text-primary-ink inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-sans text-xs font-medium tracking-tight">
             <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
             Operations OS for link-building teams
