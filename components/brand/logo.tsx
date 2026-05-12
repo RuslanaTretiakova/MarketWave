@@ -36,7 +36,7 @@ export function Logo({ className, serifWordmark = false, compact = false }: Logo
       {!compact ? (
         <span
           className={cn(
-            'leading-none font-semibold tracking-tight text-(--marketing-logo-wordmark)',
+            'text-foreground leading-none font-semibold tracking-tight',
             serifWordmark ? 'marketing-heading' : 'logo-wordmark font-sans'
           )}
         >
