@@ -113,14 +113,14 @@ export function EarningsView({
               type="month"
               value={month}
               onChange={handleMonthChange}
-              className="sm:w-[180px]"
+              className="sm:w-45"
               aria-label="Month"
             />
             {canFilterBySourcer ? (
               <FilterSelect
                 value={selectedSourcerId ?? ''}
                 onChange={handleSourcerChange}
-                className="sm:w-[260px]"
+                className="sm:w-65"
               >
                 <option value="">All sourcers</option>
                 {sourcerOptions.map((option) => (
