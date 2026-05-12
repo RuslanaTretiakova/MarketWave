@@ -148,7 +148,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: InvoiceDetail }) {
         day: 'numeric',
       })
     : '—'
-  const invoiceNumber = invoice.id.slice(0, 8).toUpperCase()
+  const invoiceNumber = invoice.invoice_number ?? invoice.id.slice(0, 8).toUpperCase()
 
   return (
     <Document title={`Invoice ${invoiceNumber}`}>

@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { EarningsView } from '@/components/earnings/earnings-view'
 import {
   loadEarningsSummary,
-  normalizeEarningsRange,
+  loadEarningsRows,
+  normalizeEarningsMonth,
   type SourcerFilterOption,
 } from '@/lib/earnings/load-earnings'
 import { adminClient } from '@/lib/supabase/admin'
@@ -54,17 +55,30 @@ export default async function EarningsPage({
     notFound()
 
   const params = (await searchParams) ?? {}
-  const rawFrom = typeof params.from === 'string' ? params.from : undefined
-  const rawTo = typeof params.to === 'string' ? params.to : undefined
+  const rawMonth = typeof params.month === 'string' ? params.month : undefined
   const rawSourcerId = typeof params.sourcerId === 'string' ? params.sourcerId : undefined
-  const range = normalizeEarningsRange({ from: rawFrom, to: rawTo })
+  const rawPage = typeof params.page === 'string' ? params.page : undefined
 
-  const summary = await loadEarningsSummary(supabase, {
-    viewerRole: profile.role,
-    viewerId: user.id,
-    range,
-    sourcerId: rawSourcerId ?? null,
-  })
+  const month = normalizeEarningsMonth(rawMonth)
+  const sourcerId = rawSourcerId ?? null
+  const page = Math.max(1, Math.floor(Number(rawPage)) || 1)
+
+  const [summary, { rows, totalCount }] = await Promise.all([
+    loadEarningsSummary(supabase, {
+      viewerRole: profile.role,
+      viewerId: user.id,
+      month,
+      sourcerId,
+    }),
+    loadEarningsRows(supabase, {
+      viewerRole: profile.role,
+      viewerId: user.id,
+      month,
+      sourcerId,
+      page,
+    }),
+  ])
+
   const sourcerOptions =
     profile.role === 'admin' || profile.role === 'manager' ? await loadSourcerOptions() : []
 
@@ -72,10 +86,13 @@ export default async function EarningsPage({
     <EarningsView
       title={profile.role === 'sourcer' ? 'My earnings' : 'Sourcer earnings'}
       role={profile.role}
-      range={range}
-      selectedSourcerId={profile.role === 'sourcer' ? user.id : (rawSourcerId ?? null)}
+      month={month}
+      selectedSourcerId={profile.role === 'sourcer' ? user.id : sourcerId}
       sourcerOptions={sourcerOptions}
       summary={summary}
+      rows={rows}
+      totalCount={totalCount}
+      page={page}
     />
   )
 }

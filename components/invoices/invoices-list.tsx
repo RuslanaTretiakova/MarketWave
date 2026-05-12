@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Receipt, Search } from 'lucide-react'
+import { Filter, Receipt, RotateCcw, Search } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -24,12 +24,23 @@ const SEARCH_DEBOUNCE_MS = 320
 
 function buildHref(
   pathname: string,
-  params: { page?: number; client?: string; status?: string; billingPeriod?: string }
+  params: {
+    page?: number
+    client?: string
+    status?: string
+    billingPeriod?: string
+    invoiceNumber?: string
+    minAmount?: string
+    maxAmount?: string
+  }
 ): string {
   const sp = new URLSearchParams()
   if (params.client) sp.set('client', params.client)
   if (params.status) sp.set('status', params.status)
   if (params.billingPeriod) sp.set('billingPeriod', params.billingPeriod)
+  if (params.invoiceNumber) sp.set('invoiceNumber', params.invoiceNumber)
+  if (params.minAmount) sp.set('minAmount', params.minAmount)
+  if (params.maxAmount) sp.set('maxAmount', params.maxAmount)
   if (params.page && params.page > 1) sp.set('page', String(params.page))
   const qs = sp.toString()
   return qs ? `${pathname}?${qs}` : pathname
@@ -43,6 +54,9 @@ export function InvoicesList({
   client,
   status,
   billingPeriod,
+  invoiceNumber,
+  minAmount,
+  maxAmount,
 }: {
   role: Database['public']['Enums']['user_role']
   rows: InvoiceListRow[]
@@ -51,18 +65,27 @@ export function InvoicesList({
   client: string
   status?: InvoiceStatus
   billingPeriod?: string
+  invoiceNumber?: string
+  minAmount?: string
+  maxAmount?: string
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const isStaff = role === 'admin' || role === 'manager'
   const [localClient, setLocalClient] = useState(client)
   const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
+  const [localInvoiceNumber, setLocalInvoiceNumber] = useState(invoiceNumber ?? '')
+  const [localMinAmount, setLocalMinAmount] = useState(minAmount ?? '')
+  const [localMaxAmount, setLocalMaxAmount] = useState(maxAmount ?? '')
 
   useEffect(() => {
     function onPopState() {
       const sp = new URLSearchParams(window.location.search)
       setLocalClient(sp.get('client') ?? '')
       setLocalBillingPeriod(sp.get('billingPeriod') ?? '')
+      setLocalInvoiceNumber(sp.get('invoiceNumber') ?? '')
+      setLocalMinAmount(sp.get('minAmount') ?? '')
+      setLocalMaxAmount(sp.get('maxAmount') ?? '')
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
@@ -88,7 +111,10 @@ export function InvoicesList({
 
   function clearSearch() {
     setLocalClient('')
-    router.replace(buildHref(pathname, { status, billingPeriod }), { scroll: false })
+    router.replace(
+      buildHref(pathname, { status, billingPeriod, invoiceNumber, minAmount, maxAmount }),
+      { scroll: false }
+    )
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -98,6 +124,9 @@ export function InvoicesList({
         client: localClient.trim(),
         status,
         billingPeriod: localBillingPeriod.trim() || undefined,
+        invoiceNumber: localInvoiceNumber.trim() || undefined,
+        minAmount: localMinAmount.trim() || undefined,
+        maxAmount: localMaxAmount.trim() || undefined,
       })
     )
   }
@@ -108,9 +137,17 @@ export function InvoicesList({
         client,
         status: (e.target.value as InvoiceStatus) || undefined,
         billingPeriod,
+        invoiceNumber,
+        minAmount,
+        maxAmount,
       })
     )
   }
+
+  const availableStatuses =
+    role === 'client'
+      ? INVOICE_STATUSES_ORDERED.filter((s) => s !== 'draft')
+      : INVOICE_STATUSES_ORDERED
 
   return (
     <div className="space-y-layout mx-auto max-w-6xl">
@@ -173,7 +210,7 @@ export function InvoicesList({
               className="h-10 sm:w-[180px]"
             >
               <option value="">All statuses</option>
-              {INVOICE_STATUSES_ORDERED.map((s) => (
+              {availableStatuses.map((s) => (
                 <option key={s} value={s}>
                   {INVOICE_STATUS_LABEL[s]}
                 </option>
@@ -185,6 +222,32 @@ export function InvoicesList({
               onChange={(e) => setLocalBillingPeriod(e.target.value)}
               className="h-10 sm:w-[180px]"
             />
+            <FilterInput
+              type="search"
+              value={localInvoiceNumber}
+              onChange={(e) => setLocalInvoiceNumber(e.target.value)}
+              placeholder="Invoice # (e.g. INV-2026-0001)"
+              className="h-10 sm:w-[220px]"
+              autoComplete="off"
+            />
+            <FilterInput
+              type="number"
+              value={localMinAmount}
+              onChange={(e) => setLocalMinAmount(e.target.value)}
+              placeholder="Min amount"
+              className="h-10 sm:w-[130px]"
+              min="0"
+              step="0.01"
+            />
+            <FilterInput
+              type="number"
+              value={localMaxAmount}
+              onChange={(e) => setLocalMaxAmount(e.target.value)}
+              placeholder="Max amount"
+              className="h-10 sm:w-[130px]"
+              min="0"
+              step="0.01"
+            />
             <Button
               variant="outline"
               size="sm"
@@ -193,6 +256,19 @@ export function InvoicesList({
             >
               Apply
             </Button>
+            {!!(client || status || billingPeriod || invoiceNumber || minAmount || maxAmount) ? (
+              <Link
+                href="/invoices"
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'h-10 gap-2 rounded-full px-4'
+                )}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
           </form>
         </div>
       </div>
@@ -221,6 +297,9 @@ export function InvoicesList({
                     </th>
                   ) : null}
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Invoice #
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Billing period
                   </th>
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
@@ -248,6 +327,9 @@ export function InvoicesList({
                         )}
                       </td>
                     ) : null}
+                    <td className="px-section py-block font-mono text-sm">
+                      {row.invoice_number ?? '—'}
+                    </td>
                     <td className="px-section py-block">
                       <Link
                         href={`/invoices/${row.id}`}
@@ -286,7 +368,17 @@ export function InvoicesList({
             page={page}
             pageSize={SETTINGS_TABLE_PAGE_SIZE}
             totalCount={totalCount}
-            buildHref={(p) => buildHref(pathname, { client, status, billingPeriod, page: p })}
+            buildHref={(p) =>
+              buildHref(pathname, {
+                client,
+                status,
+                billingPeriod,
+                invoiceNumber,
+                minAmount,
+                maxAmount,
+                page: p,
+              })
+            }
           />
         </Card>
       )}

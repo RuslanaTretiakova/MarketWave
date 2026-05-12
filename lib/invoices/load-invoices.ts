@@ -11,6 +11,7 @@ export type InvoiceListRow = {
   order_id: string
   billing_month: string | null
   invoice_group_id: string | null
+  invoice_number: string | null
   status: InvoiceStatus
   amount: number
   due_date: string | null
@@ -30,6 +31,9 @@ export type InvoicesSearchParams = {
   client: string
   status?: InvoiceStatus
   billingPeriod?: string
+  minAmount?: number
+  maxAmount?: number
+  invoiceNumber?: string
 }
 
 type InvoiceViewerRole = Database['public']['Enums']['user_role']
@@ -40,6 +44,10 @@ function isMissingSentAtColumn(message: string): boolean {
 
 function isMissingBillingMonthColumn(message: string): boolean {
   return message.includes('column invoices.billing_month does not exist')
+}
+
+function isMissingInvoiceNumberColumn(message: string): boolean {
+  return message.includes('column invoices.invoice_number does not exist')
 }
 
 function isMissingInvoiceItemsRelation(message: string): boolean {
@@ -68,12 +76,23 @@ function normalizeBillingMonth<T extends { billing_month?: string | null }>(
   return { ...row, billing_month: row.billing_month ?? null }
 }
 
-function invoicesListSelect(opts: { billingMonth: boolean; sentAt: boolean }): string {
+function normalizeInvoiceNumber<T extends { invoice_number?: string | null }>(
+  row: T
+): T & { invoice_number: string | null } {
+  return { ...row, invoice_number: row.invoice_number ?? null }
+}
+
+function invoicesListSelect(opts: {
+  billingMonth: boolean
+  sentAt: boolean
+  invoiceNumber: boolean
+}): string {
   const cols = [
     'id',
     'order_id',
     ...(opts.billingMonth ? ['billing_month'] : []),
     'invoice_group_id',
+    ...(opts.invoiceNumber ? ['invoice_number'] : []),
     'status',
     'amount',
     'due_date',
@@ -88,12 +107,17 @@ function invoicesListSelect(opts: { billingMonth: boolean; sentAt: boolean }): s
       `
 }
 
-function invoiceDetailSelect(opts: { billingMonth: boolean; sentAt: boolean }): string {
+function invoiceDetailSelect(opts: {
+  billingMonth: boolean
+  sentAt: boolean
+  invoiceNumber: boolean
+}): string {
   const cols = [
     'id',
     'order_id',
     ...(opts.billingMonth ? ['billing_month'] : []),
     'invoice_group_id',
+    ...(opts.invoiceNumber ? ['invoice_number'] : []),
     'status',
     'amount',
     'due_date',
@@ -133,16 +157,23 @@ export async function loadInvoicesPage(
 
     let billingMonth = true
     let sentAt = true
+    let invoiceNumber = true
     let data: unknown = null
     let error: { message: string } | null = null
     let count: number | null = null
 
     for (;;) {
-      let q = client.from('invoices').select(invoicesListSelect({ billingMonth, sentAt }), {
-        count: 'exact',
-      })
+      let q = client
+        .from('invoices')
+        .select(invoicesListSelect({ billingMonth, sentAt, invoiceNumber }), {
+          count: 'exact',
+        })
 
       if (params.status) q = q.eq('status', params.status)
+      if (params.minAmount !== undefined) q = q.gte('amount', params.minAmount)
+      if (params.maxAmount !== undefined) q = q.lte('amount', params.maxAmount)
+      if (params.invoiceNumber && invoiceNumber)
+        q = q.ilike('invoice_number', `%${params.invoiceNumber.trim()}%`)
       if (params.billingPeriod && /^\d{4}-\d{2}$/.test(params.billingPeriod)) {
         const monthStart = `${params.billingPeriod}-01`
         const [yearPart, monthPart] = params.billingPeriod.split('-')
@@ -176,13 +207,25 @@ export async function loadInvoicesPage(
         sentAt = false
         continue
       }
+      if (invoiceNumber && isMissingInvoiceNumberColumn(msg)) {
+        invoiceNumber = false
+        continue
+      }
       break
     }
 
     if (data && Array.isArray(data)) {
       data = (data as unknown[]).map((r) =>
-        normalizeBillingMonth(
-          normalizeSentAt(r as { sent_at?: string | null; billing_month?: string | null })
+        normalizeInvoiceNumber(
+          normalizeBillingMonth(
+            normalizeSentAt(
+              r as {
+                sent_at?: string | null
+                billing_month?: string | null
+                invoice_number?: string | null
+              }
+            )
+          )
         )
       ) as typeof data
     }
@@ -204,6 +247,7 @@ export async function loadInvoicesPage(
       order_id: string
       billing_month: string | null
       invoice_group_id: string | null
+      invoice_number: string | null
       status: InvoiceStatus
       amount: number
       due_date: string | null
@@ -241,6 +285,7 @@ export async function loadInvoicesPage(
         order_id: r.order_id,
         billing_month: r.billing_month,
         invoice_group_id: r.invoice_group_id,
+        invoice_number: r.invoice_number,
         status: r.status,
         amount: r.amount,
         due_date: r.due_date,
@@ -295,15 +340,16 @@ export async function loadInvoiceDetail(
 
   let billingMonth = true
   let sentAt = true
+  let invoiceNumber = true
   let includeItemsJoin = true
   let data: unknown = null
   let error: { message: string } | null = null
 
   for (;;) {
     const select = includeItemsJoin
-      ? `${invoiceDetailSelect({ billingMonth, sentAt })},
+      ? `${invoiceDetailSelect({ billingMonth, sentAt, invoiceNumber })},
         items:invoice_items(id, order_id, site_domain, amount)`
-      : invoiceDetailSelect({ billingMonth, sentAt })
+      : invoiceDetailSelect({ billingMonth, sentAt, invoiceNumber })
 
     const res = await client.from('invoices').select(select).eq('id', invoiceId).maybeSingle()
     data = res.data
@@ -320,6 +366,10 @@ export async function loadInvoiceDetail(
       sentAt = false
       continue
     }
+    if (invoiceNumber && isMissingInvoiceNumberColumn(msg)) {
+      invoiceNumber = false
+      continue
+    }
     if (includeItemsJoin && isMissingInvoiceItemsRelation(msg)) {
       includeItemsJoin = false
       continue
@@ -328,8 +378,16 @@ export async function loadInvoiceDetail(
   }
 
   if (data && typeof data === 'object') {
-    data = normalizeBillingMonth(
-      normalizeSentAt(data as { sent_at?: string | null; billing_month?: string | null })
+    data = normalizeInvoiceNumber(
+      normalizeBillingMonth(
+        normalizeSentAt(
+          data as {
+            sent_at?: string | null
+            billing_month?: string | null
+            invoice_number?: string | null
+          }
+        )
+      )
     ) as typeof data
   }
 
@@ -344,6 +402,7 @@ export async function loadInvoiceDetail(
     order_id: string
     billing_month: string | null
     invoice_group_id: string | null
+    invoice_number: string | null
     status: InvoiceStatus
     amount: number
     due_date: string | null
@@ -428,6 +487,7 @@ export async function loadInvoiceDetail(
     order_id: row.order_id,
     billing_month: row.billing_month,
     invoice_group_id: row.invoice_group_id,
+    invoice_number: row.invoice_number,
     status: row.status,
     amount: row.amount,
     due_date: row.due_date,
