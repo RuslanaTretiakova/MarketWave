@@ -1,12 +1,12 @@
 'use client'
-import { ClipboardList, Filter, Link2, Search } from 'lucide-react'
+import { ClipboardList, Filter, Link2, RotateCcw, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import {
   INVOICE_STATUS_LABEL,
@@ -272,6 +272,19 @@ export function OrdersList({
             onChange={(e) => navigateFilter({ publishDate: e.target.value })}
             className="w-auto"
           />
+          {!!(q || status || invoiceStatus || copywriterId || clientId || publishDate) ? (
+            <Link
+              href="/orders"
+              scroll={false}
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'h-10 gap-2 rounded-full px-4'
+              )}
+            >
+              <RotateCcw className="size-4" aria-hidden />
+              Clear filters
+            </Link>
+          ) : null}
           <span className="text-muted-foreground text-xs tabular-nums sm:ml-auto">
             {totalCount} order{totalCount === 1 ? '' : 's'}
           </span>

@@ -222,7 +222,27 @@ export async function sendInvoiceEmail(
 
   if (error) return { ok: false, message: error.message ?? 'Could not record send timestamp.' }
 
+  // Notify the client that their invoice has been sent.
+  const { data: orderData } = await adminClient
+    .from('orders')
+    .select('user_id, site_domain')
+    .eq('id', invoice.order_id)
+    .maybeSingle()
+  const clientId = orderData?.user_id
+  if (clientId) {
+    void createNotifications({
+      event: 'invoice_sent',
+      title: 'Invoice sent',
+      message: `An invoice for ${orderData?.site_domain ?? 'your order'} has been sent to you.`,
+      recipientUserIds: [clientId],
+      actorUserId: auth.userId,
+      orderId: invoice.order_id,
+      invoiceId,
+    })
+  }
+
   revalidateInvoice(invoiceId, invoice.order_id)
+  revalidatePath('/notifications')
   return { ok: true, sentAt }
 }
 

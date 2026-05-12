@@ -1286,6 +1286,7 @@ export type Database = {
         | 'content_approved'
         | 'order_published'
         | 'invoice_paid'
+        | 'invoice_sent'
         | 'site_needs_changes'
         | 'site_approved'
         | 'site_archived'
@@ -1443,6 +1444,7 @@ export const Constants = {
         'content_approved',
         'order_published',
         'invoice_paid',
+        'invoice_sent',
         'site_needs_changes',
         'site_approved',
         'site_archived',

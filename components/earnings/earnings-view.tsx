@@ -1,19 +1,23 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, RotateCcw } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { ChangeEvent } from 'react'
 
-import { Button } from '@/components/ui/button'
+import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
 import {
-  monthStepRange,
-  type EarningsRange,
+  shiftMonth,
+  type EarningsRow,
   type EarningsSummary,
   type SourcerFilterOption,
 } from '@/lib/earnings/load-earnings'
+import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/supabase/types'
 
 function money(v: number): string {
@@ -22,97 +26,70 @@ function money(v: number): string {
 
 type UserRole = Database['public']['Enums']['user_role']
 
-function toMonthValue(dateKey: string): string {
-  return dateKey.slice(0, 7)
-}
-
-function previousMonthValue(dateKey: string): string {
-  const date = new Date(`${dateKey.slice(0, 10)}T00:00:00Z`)
-  if (Number.isNaN(date.getTime())) return toMonthValue(dateKey)
-  const prev = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - 1, 1))
-  return prev.toISOString().slice(0, 7)
-}
-
-function startOfMonth(monthValue: string): string {
-  return `${monthValue}-01`
-}
-
-function nextMonthStart(monthValue: string): string {
-  const date = new Date(`${monthValue}-01T00:00:00Z`)
-  if (Number.isNaN(date.getTime())) return startOfMonth(monthValue)
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1))
-    .toISOString()
-    .slice(0, 10)
-}
-
 function buildHref(
   pathname: string,
-  params: { from: string; to: string; sourcerId?: string | null }
+  params: { month: string; sourcerId?: string | null; page?: number }
 ): string {
   const sp = new URLSearchParams()
-  sp.set('from', params.from)
-  sp.set('to', params.to)
+  sp.set('month', params.month)
   if (params.sourcerId) sp.set('sourcerId', params.sourcerId)
-  const qs = sp.toString()
-  return qs ? `${pathname}?${qs}` : pathname
+  if (params.page && params.page > 1) sp.set('page', String(params.page))
+  return `${pathname}?${sp.toString()}`
+}
+
+const ORDER_STATUS_CHIP: Record<string, string> = {
+  published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+}
+
+const PAYOUT_CHIP: Record<string, string> = {
+  unpaid: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  paid: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 }
 
 export function EarningsView({
   title,
   role,
-  range,
+  month,
   selectedSourcerId,
   sourcerOptions,
   summary,
+  rows,
+  totalCount,
+  page,
 }: {
   title: string
   role: UserRole
-  range: EarningsRange
+  month: string
   selectedSourcerId: string | null
   sourcerOptions: SourcerFilterOption[]
   summary: EarningsSummary
+  rows: EarningsRow[]
+  totalCount: number
+  page: number
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const canFilterBySourcer = role === 'admin' || role === 'manager'
-  const fromMonth = toMonthValue(range.from)
-  const toMonth = previousMonthValue(range.to)
 
   function handleSourcerChange(e: ChangeEvent<HTMLSelectElement>) {
-    const nextSourcerId = e.target.value || null
-    router.push(buildHref(pathname, { from: range.from, to: range.to, sourcerId: nextSourcerId }))
+    router.push(buildHref(pathname, { month, sourcerId: e.target.value || null }))
   }
 
-  function handleFromMonthChange(e: ChangeEvent<HTMLInputElement>) {
-    const nextFromMonth = e.target.value
-    if (!nextFromMonth) return
+  function handleMonthChange(e: ChangeEvent<HTMLInputElement>) {
+    if (!e.target.value) return
     router.push(
       buildHref(pathname, {
-        from: startOfMonth(nextFromMonth),
-        to: nextMonthStart(toMonth),
+        month: e.target.value,
         sourcerId: canFilterBySourcer ? selectedSourcerId : null,
       })
     )
   }
 
-  function handleToMonthChange(e: ChangeEvent<HTMLInputElement>) {
-    const nextToMonth = e.target.value
-    if (!nextToMonth) return
+  function handleShift(delta: number) {
     router.push(
       buildHref(pathname, {
-        from: startOfMonth(fromMonth),
-        to: nextMonthStart(nextToMonth),
-        sourcerId: canFilterBySourcer ? selectedSourcerId : null,
-      })
-    )
-  }
-
-  function shiftByMonth(delta: number) {
-    const next = monthStepRange(range, delta)
-    router.push(
-      buildHref(pathname, {
-        from: next.from,
-        to: next.to,
+        month: shiftMonth(month, delta),
         sourcerId: canFilterBySourcer ? selectedSourcerId : null,
       })
     )
@@ -122,7 +99,7 @@ export function EarningsView({
     <div className="space-y-layout mx-auto max-w-6xl">
       <PageHeader
         title={title}
-        description="Earnings are aggregated from order prices in the selected month range."
+        description="Earnings are calculated as your commission on published and completed orders in the selected month."
       />
 
       <div className="border-border/60 bg-card overflow-hidden rounded-2xl border">
@@ -134,17 +111,10 @@ export function EarningsView({
           <div className="gap-block flex flex-col sm:flex-row sm:flex-wrap sm:items-end">
             <FilterInput
               type="month"
-              value={fromMonth}
-              onChange={handleFromMonthChange}
+              value={month}
+              onChange={handleMonthChange}
               className="sm:w-[180px]"
-              aria-label="From month"
-            />
-            <FilterInput
-              type="month"
-              value={toMonth}
-              onChange={handleToMonthChange}
-              className="sm:w-[180px]"
-              aria-label="To month"
+              aria-label="Month"
             />
             {canFilterBySourcer ? (
               <FilterSelect
@@ -161,14 +131,27 @@ export function EarningsView({
               </FilterSelect>
             ) : null}
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => shiftByMonth(-1)}>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleShift(-1)}>
                 <ChevronLeft className="mr-1 size-4" aria-hidden />
                 Prev Month
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => shiftByMonth(1)}>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleShift(1)}>
                 Next Month
                 <ChevronRight className="ml-1 size-4" aria-hidden />
               </Button>
+              {canFilterBySourcer && !!selectedSourcerId ? (
+                <Link
+                  href="/earnings"
+                  scroll={false}
+                  className={cn(
+                    buttonVariants({ variant: 'outline', size: 'sm' }),
+                    'h-10 gap-2 rounded-full px-4'
+                  )}
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                  Clear filters
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>
@@ -188,6 +171,102 @@ export function EarningsView({
           </p>
         </Card>
       </div>
+
+      {rows.length === 0 ? (
+        <Card className="py-hero gap-block flex flex-col items-center text-center">
+          <p className="text-foreground font-semibold">No earnings this month</p>
+          <p className="text-muted-foreground text-sm">
+            Earnings appear here when your orders are published or completed.
+          </p>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-border border-b">
+                  {canFilterBySourcer && !selectedSourcerId ? (
+                    <th className="text-muted-foreground px-section py-block text-left font-medium">
+                      Sourcer
+                    </th>
+                  ) : null}
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Site
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Order status
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Publish date
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Order price
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                    Earned
+                  </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Payout
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-border hover:bg-muted/30 border-b last:border-b-0"
+                  >
+                    {canFilterBySourcer && !selectedSourcerId ? (
+                      <td className="text-muted-foreground px-section py-block text-sm">
+                        {row.sourcer_name ?? '—'}
+                      </td>
+                    ) : null}
+                    <td className="px-section py-block font-medium">{row.site_domain}</td>
+                    <td className="px-section py-block">
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                          ORDER_STATUS_CHIP[row.order_status] ?? 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {row.order_status}
+                      </span>
+                    </td>
+                    <td className="text-muted-foreground px-section py-block">
+                      {row.publish_date ?? '—'}
+                    </td>
+                    <td className="text-muted-foreground px-section py-block text-right tabular-nums">
+                      {money(row.order_price)}
+                    </td>
+                    <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
+                      {money(row.earned_amount)}
+                      <p className="text-muted-foreground text-xs font-normal">
+                        {(row.commission_rate * 100).toFixed(0)}%
+                      </p>
+                    </td>
+                    <td className="px-section py-block">
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                          PAYOUT_CHIP[row.payout_status]
+                        )}
+                      >
+                        {row.payout_status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <SettingsTablePagination
+            page={page}
+            pageSize={SETTINGS_TABLE_PAGE_SIZE}
+            totalCount={totalCount}
+            buildHref={(p) => buildHref(pathname, { month, sourcerId: selectedSourcerId, page: p })}
+          />
+        </Card>
+      )}
     </div>
   )
 }

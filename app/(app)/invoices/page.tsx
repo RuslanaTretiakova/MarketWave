@@ -18,6 +18,9 @@ type SearchParams = {
   client?: string | string[]
   status?: string | string[]
   billingPeriod?: string | string[]
+  invoiceNumber?: string | string[]
+  minAmount?: string | string[]
+  maxAmount?: string | string[]
 }
 
 export default async function InvoicesPage(props: { searchParams: Promise<SearchParams> }) {
@@ -43,19 +46,33 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
   const clientRaw = searchParamFirstString(sp.client)
   const statusRaw = searchParamFirstString(sp.status)
   const billingPeriodRaw = searchParamFirstString(sp.billingPeriod)
+  const invoiceNumberRaw = searchParamFirstString(sp.invoiceNumber)
+  const minAmountRaw = searchParamFirstString(sp.minAmount)
+  const maxAmountRaw = searchParamFirstString(sp.maxAmount)
 
   const page = Math.max(1, Math.floor(Number(pageRaw)) || 1)
   const client = clientRaw?.trim() ?? ''
-  const status = INVOICE_STATUSES_ORDERED.includes(statusRaw as InvoiceStatus)
+  // Clients may only filter by sent/paid — draft is hidden at the RLS level.
+  const allowedStatuses =
+    profile.role === 'client'
+      ? INVOICE_STATUSES_ORDERED.filter((s) => s !== 'draft')
+      : INVOICE_STATUSES_ORDERED
+  const status = allowedStatuses.includes(statusRaw as InvoiceStatus)
     ? (statusRaw as InvoiceStatus)
     : undefined
   const billingPeriod = billingPeriodRaw?.trim() || new Date().toISOString().slice(0, 7)
+  const invoiceNumber = invoiceNumberRaw?.trim() || undefined
+  const minAmount = minAmountRaw ? Number(minAmountRaw) : undefined
+  const maxAmount = maxAmountRaw ? Number(maxAmountRaw) : undefined
 
   const { rows, totalCount } = await loadInvoicesPage(supabase, profile.role, {
     page,
     client,
     status,
     billingPeriod,
+    invoiceNumber,
+    minAmount: Number.isFinite(minAmount) ? minAmount : undefined,
+    maxAmount: Number.isFinite(maxAmount) ? maxAmount : undefined,
   })
 
   return (
@@ -69,6 +86,9 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
         client={client}
         status={status}
         billingPeriod={billingPeriod}
+        invoiceNumber={invoiceNumber}
+        minAmount={minAmountRaw?.trim() || undefined}
+        maxAmount={maxAmountRaw?.trim() || undefined}
       />
     </div>
   )
