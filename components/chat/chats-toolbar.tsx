@@ -62,7 +62,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
       )}
     >
       <div className="gap-inset flex flex-wrap items-end">
-        <label className="flex min-w-[140px] flex-1 flex-col gap-1 text-sm">
+        <label className="flex min-w-35 flex-1 flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Participant</span>
           <div className="relative">
             <input
@@ -118,7 +118,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Category</span>
           <FilterSelect
-            className="h-10 min-w-[130px]"
+            className="h-10 min-w-32.5"
             value={channel}
             onChange={(e) =>
               pushParams((p) => {
@@ -138,7 +138,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Status</span>
           <FilterSelect
-            className="h-10 min-w-[120px]"
+            className="h-10 min-w-30"
             value={status}
             onChange={(e) =>
               pushParams((p) => {
@@ -157,7 +157,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Sort</span>
           <FilterSelect
-            className="h-10 min-w-[140px]"
+            className="h-10 min-w-35"
             value={sort}
             onChange={(e) =>
               pushParams((p) => {
