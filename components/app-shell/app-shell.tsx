@@ -15,11 +15,13 @@ export function AppShell({
   user,
   chatUnreadCount = 0,
   notificationsUnreadCount = 0,
+  cartItemCount = 0,
   children,
 }: {
   user: AppShellUser
   chatUnreadCount?: number
   notificationsUnreadCount?: number
+  cartItemCount?: number
   children: ReactNode
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -73,6 +75,7 @@ export function AppShell({
           navItems={navItems}
           navBadges={navBadges}
           notificationsUnreadCount={notificationsUnreadCount}
+          cartItemCount={cartItemCount}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />

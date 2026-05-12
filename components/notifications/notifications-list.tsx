@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useTransition } from 'react'
+import { Check, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
@@ -13,9 +15,16 @@ import {
 } from '@/lib/notifications/notification-actions'
 import type { NotificationRow } from '@/lib/notifications/load-notifications'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
+import { cn } from '@/lib/utils'
 
 function eventLabel(event: NotificationRow['event']): string {
   return event.replaceAll('_', ' ')
+}
+
+function notificationHref(row: NotificationRow): string | null {
+  if (row.site_id) return `/sites/${row.site_id}`
+  if (row.order_id) return `/orders/${row.order_id}`
+  return null
 }
 
 export function NotificationsList({
@@ -37,7 +46,9 @@ export function NotificationsList({
     })
   }
 
-  function runMarkRead(id: string) {
+  function runMarkRead(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
     startTransition(async () => {
       const res = await markNotificationRead(id)
       if (!res.ok) toast.error(res.message)
@@ -67,27 +78,91 @@ export function NotificationsList({
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="divide-border divide-y">
-            {rows.map((row) => (
-              <div key={row.id} className="p-section flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-foreground font-medium">{row.title}</p>
-                  <p className="text-muted-foreground text-sm">{row.message}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {eventLabel(row.event)} · {new Date(row.created_at).toLocaleString()}
-                  </p>
+            {rows.map((row) => {
+              const href = notificationHref(row)
+              const isUnread = !row.read_at
+
+              const inner = (
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <span
+                    className={cn(
+                      'mt-1.5 size-2 shrink-0 rounded-full',
+                      isUnread ? 'bg-sky-500' : 'bg-transparent'
+                    )}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p
+                      className={cn(
+                        'text-sm font-medium',
+                        isUnread ? 'text-foreground' : 'text-muted-foreground'
+                      )}
+                    >
+                      {row.title}
+                    </p>
+                    <p
+                      className={cn(
+                        'text-sm',
+                        isUnread ? 'text-muted-foreground' : 'text-muted-foreground/60'
+                      )}
+                    >
+                      {row.message}
+                    </p>
+                    <p className="text-muted-foreground/60 text-xs">
+                      {eventLabel(row.event)} · {new Date(row.created_at).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-                {!row.read_at ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => runMarkRead(row.id)}
-                  >
-                    Mark read
-                  </Button>
-                ) : null}
-              </div>
-            ))}
+              )
+
+              const actions = (
+                <div className="flex shrink-0 items-center gap-1">
+                  {isUnread ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={(e) => runMarkRead(e, row.id)}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-8 items-center justify-center rounded-lg transition-colors disabled:opacity-50"
+                      title="Mark as read"
+                    >
+                      <Check className="size-4" />
+                      <span className="sr-only">Mark as read</span>
+                    </button>
+                  ) : null}
+                  {href ? (
+                    <ExternalLink className="text-muted-foreground/40 size-3.5" aria-hidden />
+                  ) : null}
+                </div>
+              )
+
+              const rowClassName = cn(
+                'px-section py-3 flex items-start justify-between gap-3 transition-colors',
+                href && 'hover:bg-muted/50 cursor-pointer'
+              )
+
+              return href ? (
+                <Link
+                  key={row.id}
+                  href={href}
+                  className={rowClassName}
+                  onClick={() => {
+                    if (isUnread) {
+                      startTransition(async () => {
+                        await markNotificationRead(row.id)
+                      })
+                    }
+                  }}
+                >
+                  {inner}
+                  {actions}
+                </Link>
+              ) : (
+                <div key={row.id} className={rowClassName}>
+                  {inner}
+                  {actions}
+                </div>
+              )
+            })}
           </div>
           <SettingsTablePagination
             page={page}

@@ -37,18 +37,6 @@ const DISCLAIMER: Record<SiteAdminTransition, string> = {
     'Archived sites are hidden from sourcers and managers. Clients cannot purchase placements.',
 }
 
-/** What each action does — shown under the status dropdown in picker mode. */
-const TRANSITION_ACTION_GUIDE: Record<SiteAdminTransition, string> = {
-  needs_changes:
-    'Choose this when the listing is not ready to go live. The sourcer must address your feedback; the site moves to Needs changes until they revise and resubmit. You must leave a clear comment describing what to fix.',
-  approve:
-    'Choose this when the listing meets your bar. It becomes Active and can appear in the client catalog (subject to your other rules). Optional comment is not saved for this action.',
-  unarchive:
-    'Choose this to restore an archived site to Active so it can rejoin the catalog workflow. Confirm this is the correct site before continuing.',
-  archive:
-    'Choose this to remove the site from the market: it is hidden from sourcers and managers, and clients cannot purchase placements. You can unarchive later if the site should return.',
-}
-
 function statusChangeSuccessToast(transition: SiteAdminTransition, domain: string) {
   const opts = { description: domain }
   switch (transition) {
@@ -157,8 +145,7 @@ export function SiteChangeStatusDialog({
       </span>
       {showPicker ? (
         <span className="text-muted-foreground mt-2 block text-sm leading-relaxed">
-          Pick the next step from the list, read what it does below, add a comment if required, then
-          confirm.
+          Select a new status and confirm.
         </span>
       ) : activeTransition ? (
         <span className="mt-2 block text-sm leading-relaxed">{DISCLAIMER[activeTransition]}</span>
@@ -180,65 +167,44 @@ export function SiteChangeStatusDialog({
 
         {showPicker ? (
           <div className="gap-inset flex flex-col">
-            <Label htmlFor="site-status-transition">Action</Label>
+            <Label htmlFor="site-status-transition">Select Status</Label>
             <FormControlSelect
               id="site-status-transition"
-              value={picked ?? undefined}
+              value={picked ?? ''}
               onValueChange={(v) => {
                 setPicked(v as SiteAdminTransition)
                 setError(null)
               }}
-              placeholder="Choose an action…"
+              placeholder="Choose a status…"
               options={transitions!.map((t) => ({
                 value: t,
                 label: siteAdminTransitionMenuLabel(t),
               }))}
               disabled={pending}
             />
-            <div
-              className="text-muted-foreground border-border bg-muted/30 rounded-xl border px-3 py-2.5 text-xs leading-relaxed"
-              role="note"
-            >
-              {picked ? (
-                TRANSITION_ACTION_GUIDE[picked]
-              ) : (
-                <>
-                  Select an action to see{' '}
-                  <span className="text-foreground font-medium">what it does</span>, whether a
-                  comment is required, and what happens after you confirm.
-                </>
-              )}
-            </div>
           </div>
         ) : null}
 
-        {activeTransition ? (
-          <div className="gap-inset flex flex-col">
-            <Label htmlFor="site-status-comment">
-              Comment{commentRequired ? ' (required)' : ' (optional)'}
-            </Label>
-            <FormControlTextarea
-              id="site-status-comment"
-              rows={4}
-              value={comment}
-              onChange={(e) => {
-                setComment(e.target.value)
-                if (error) setError(null)
-              }}
-              disabled={pending}
-              placeholder={
-                commentRequired
-                  ? 'Describe what the sourcer should fix or update…'
-                  : 'Add context for your team (optional)…'
-              }
-            />
-            {commentRequired ? (
-              <p className="text-muted-foreground text-xs">
-                A comment is required so the sourcer knows what to change.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="gap-inset flex flex-col">
+          <Label htmlFor="site-status-comment">
+            Comment{commentRequired ? <span className="text-destructive"> *</span> : null}
+          </Label>
+          <FormControlTextarea
+            id="site-status-comment"
+            rows={4}
+            value={comment}
+            onChange={(e) => {
+              setComment(e.target.value)
+              if (error) setError(null)
+            }}
+            disabled={pending}
+            placeholder={
+              commentRequired
+                ? 'Describe what the sourcer should fix or update…'
+                : 'Add context for your team (optional)…'
+            }
+          />
+        </div>
 
         {error ? (
           <p className="text-destructive text-sm" role="alert">
@@ -246,7 +212,7 @@ export function SiteChangeStatusDialog({
           </p>
         ) : null}
 
-        <DialogFooter className="gap-2 sm:gap-3">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"

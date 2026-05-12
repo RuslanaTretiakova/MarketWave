@@ -214,11 +214,12 @@ export function OrdersList({
           </div>
         </header>
 
-        <div className="border-border/60 gap-inset px-section py-block flex flex-wrap items-center border-b">
+        <div className="border-border/60 gap-inset py-block flex flex-wrap items-center border-b px-2">
           <Filter className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
           <FilterSelect
             value={status ?? ''}
             onChange={(e) => navigateFilter({ status: e.target.value })}
+            className="w-auto"
           >
             {statusFilters.map(({ key, label }) => (
               <option key={key} value={key === 'all' ? '' : key}>
@@ -229,6 +230,7 @@ export function OrdersList({
           <FilterSelect
             value={invoiceStatus ?? ''}
             onChange={(e) => navigateFilter({ invoiceStatus: e.target.value })}
+            className="w-auto"
           >
             {invoiceStatusFilters.map(({ key, label }) => (
               <option key={key} value={key === 'all' ? '' : key}>
@@ -240,6 +242,7 @@ export function OrdersList({
             <FilterSelect
               value={clientId ?? ''}
               onChange={(e) => navigateFilter({ client: e.target.value })}
+              className="w-auto"
             >
               <option value="">All clients</option>
               {(clientOptions ?? []).map((c) => (
@@ -253,6 +256,7 @@ export function OrdersList({
             <FilterSelect
               value={copywriterId ?? ''}
               onChange={(e) => navigateFilter({ copywriter: e.target.value })}
+              className="w-auto"
             >
               <option value="">All copywriters</option>
               {(copywriterOptions ?? []).map((c) => (
@@ -266,7 +270,7 @@ export function OrdersList({
             type="date"
             value={publishDate ?? ''}
             onChange={(e) => navigateFilter({ publishDate: e.target.value })}
-            className="sm:w-[180px]"
+            className="w-auto"
           />
           <span className="text-muted-foreground text-xs tabular-nums sm:ml-auto">
             {totalCount} order{totalCount === 1 ? '' : 's'}
@@ -297,22 +301,24 @@ export function OrdersList({
                   <Link
                     key={row.id}
                     href={`/orders/${row.id}`}
-                    className="border-border/80 bg-background/60 hover:border-primary/25 group flex flex-col gap-2 rounded-xl border p-4 transition-[border-color,box-shadow] hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    className="border-border/80 bg-background/60 hover:border-primary/25 group flex items-center justify-between rounded-xl border p-3 transition-[border-color,box-shadow] hover:shadow-sm"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-mono-ui text-muted-foreground text-[10px] tracking-wider uppercase">
-                        Order #{row.id.slice(0, 8)}
-                      </p>
-                      <p className="text-foreground group-hover:text-primary mt-1 text-sm leading-snug font-medium">
-                        {row.site_category} {row.site_dr !== null ? `· DA ${row.site_dr}` : ''}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span className="text-primary inline-flex items-center gap-1.5 text-xs">
-                          <Link2 className="size-3.5 shrink-0" aria-hidden />
-                          {row.site_domain}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <p className="font-mono-ui text-muted-foreground text-[10px] tracking-wider uppercase">
+                          Order #{row.id.slice(0, 8)}
+                        </p>
                         <span className="text-foreground text-xs font-semibold tabular-nums">
                           ${row.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-foreground group-hover:text-primary mt-1 text-sm font-medium">
+                        {row.site_category} {row.site_dr !== null ? `· DA ${row.site_dr}` : ''}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <span className="text-primary inline-flex items-center gap-1 text-xs">
+                          <Link2 className="size-3 shrink-0" aria-hidden />
+                          {row.site_domain}
                         </span>
                         {showClientColumn && row.client_name ? (
                           <span className="text-muted-foreground text-xs">{row.client_name}</span>

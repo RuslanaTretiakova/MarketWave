@@ -408,6 +408,36 @@ export async function updateSite(
 
 export type SiteAdminTransition = 'needs_changes' | 'approve' | 'archive' | 'unarchive'
 
+const SITE_TRANSITION_NOTIFICATION: Record<
+  SiteAdminTransition,
+  {
+    event: Database['public']['Enums']['notification_event']
+    title: string
+    message: (domain: string) => string
+  }
+> = {
+  needs_changes: {
+    event: 'site_needs_changes',
+    title: 'Changes requested',
+    message: (d) => `An admin requested changes on ${d}.`,
+  },
+  approve: {
+    event: 'site_approved',
+    title: 'Site approved',
+    message: (d) => `${d} has been approved and is now active.`,
+  },
+  archive: {
+    event: 'site_archived',
+    title: 'Site archived',
+    message: (d) => `${d} has been archived.`,
+  },
+  unarchive: {
+    event: 'site_unarchived',
+    title: 'Site activated',
+    message: (d) => `${d} has been unarchived and is now active.`,
+  },
+}
+
 export async function changeSiteStatus(params: {
   siteId: string
   transition: SiteAdminTransition
@@ -464,7 +494,6 @@ export async function changeSiteStatus(params: {
       }
       break
     case 'unarchive':
-      // DB enforces archived → active
       patch = {
         status: 'active',
       }
@@ -486,8 +515,37 @@ export async function changeSiteStatus(params: {
     return { ok: false, message: error.message ?? 'Could not update status.' }
   }
 
+  // Notify the sourcer (fire-and-forget)
+  const { data: site } = await adminClient
+    .from('sites')
+    .select('sourcer_id, domain')
+    .eq('id', params.siteId)
+    .maybeSingle()
+
+  if (site?.sourcer_id) {
+    const meta = SITE_TRANSITION_NOTIFICATION[params.transition]
+    const { error: notifErr } = await adminClient.from('notifications').insert({
+      recipient_user_id: site.sourcer_id,
+      actor_user_id: userId,
+      event: meta.event,
+      title: meta.title,
+      message: meta.message(site.domain),
+      site_id: params.siteId,
+    })
+    if (notifErr) {
+      await logSiteError({
+        level: 'warn',
+        context: 'site/change-status/notification',
+        message: notifErr.message ?? 'Could not create notification.',
+        userId,
+        payload: { siteId: params.siteId, transition: params.transition },
+      })
+    }
+  }
+
   revalidatePath('/sites')
   revalidatePath(`/sites/${params.siteId}`)
+  revalidatePath('/notifications')
   return { ok: true }
 }
 

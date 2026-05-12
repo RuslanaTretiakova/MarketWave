@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/app-shell/app-shell'
 import { agentDebugLog } from '@/lib/agent-debug-log.server'
+import { loadCartSiteIds } from '@/lib/cart/load-cart'
 import { loadTotalUnreadCount } from '@/lib/chat/load-rooms'
 import { loadUnreadNotificationsCount } from '@/lib/notifications/load-notifications'
 import { getCachedAppUserContext } from '@/lib/supabase/cached-app-user.server'
@@ -53,6 +54,16 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
     console.error('[layout/notifications-unread]', err)
   }
 
+  let cartItemCount = 0
+  if (profile?.role === 'client') {
+    try {
+      const cartSiteIds = await loadCartSiteIds(supabase)
+      cartItemCount = cartSiteIds.length
+    } catch (err) {
+      console.error('[layout/cart-count]', err)
+    }
+  }
+
   return (
     <AppShell
       user={{
@@ -64,6 +75,7 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
       }}
       chatUnreadCount={chatUnreadCount}
       notificationsUnreadCount={notificationsUnreadCount}
+      cartItemCount={cartItemCount}
     >
       {children}
     </AppShell>

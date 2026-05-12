@@ -154,7 +154,7 @@ export function OrderDetailView({
               initialClientNotes={order.client_notes}
               siteDomain={order.site_domain}
               price={order.price}
-              triggerVariant="button"
+              triggerVariant="icon"
             />
           </div>
         }
@@ -297,6 +297,8 @@ export function OrderDetailView({
                   orderId={order.id}
                   status={order.status}
                   initialDraft={order.content.draft}
+                  latestSubmitted={submittedVersions[0] ?? null}
+                  openChangeRequests={order.change_requests}
                 />
                 {submittedVersions.length > 0 && (
                   <div className="border-border pt-block space-y-block border-t">

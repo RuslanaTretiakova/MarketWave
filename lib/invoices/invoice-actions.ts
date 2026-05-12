@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { createNotifications } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -66,7 +67,27 @@ export async function markInvoicePaid(
 
   if (error) return { ok: false, message: error.message ?? 'Could not mark invoice as paid.' }
 
+  // Notify the sourcer linked to the order's site
+  const { data: orderWithSite } = await adminClient
+    .from('orders')
+    .select('site_id, site_domain, site:sites!inner(sourcer_id)')
+    .eq('id', invoice.order_id)
+    .maybeSingle()
+  const sourcerId = (orderWithSite?.site as unknown as { sourcer_id: string | null })?.sourcer_id
+  if (sourcerId) {
+    void createNotifications({
+      event: 'invoice_paid',
+      title: 'Invoice paid',
+      message: `The invoice for ${orderWithSite?.site_domain ?? 'an order'} has been marked as paid.`,
+      recipientUserIds: [sourcerId],
+      actorUserId: auth.userId,
+      orderId: invoice.order_id,
+      invoiceId,
+    })
+  }
+
   revalidateInvoice(invoiceId, invoice.order_id)
+  revalidatePath('/notifications')
   return { ok: true }
 }
 

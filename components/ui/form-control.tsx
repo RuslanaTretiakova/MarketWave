@@ -68,9 +68,10 @@ export function FormControlSelect({
   disabled?: boolean
   name?: string
 }) {
+  const controlledValue = value ?? ''
   const selectedOption = React.useMemo(
-    () => options.find((option) => option.value === value),
-    [options, value]
+    () => options.find((option) => option.value === controlledValue),
+    [options, controlledValue]
   )
 
   const handleValueChange = React.useCallback(
@@ -81,7 +82,12 @@ export function FormControlSelect({
   )
 
   return (
-    <Select value={value} onValueChange={handleValueChange} disabled={disabled} name={name}>
+    <Select
+      value={controlledValue}
+      onValueChange={handleValueChange}
+      disabled={disabled}
+      name={name}
+    >
       <SelectTrigger id={id} className={cn(formControlSelectTriggerClassName, triggerClassName)}>
         <SelectValue placeholder={placeholder ?? 'Select an option'}>
           {selectedOption?.label}

@@ -16,21 +16,22 @@ import Link from '@tiptap/extension-link'
 import StarterKit from '@tiptap/starter-kit'
 import { EditorContent, useEditor } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { saveContentDraft, submitContent } from '@/lib/orders/content-actions'
-import type { OrderContentDraft } from '@/lib/orders/load-order-content'
-import type { OrderStatus } from '@/lib/orders/load-order-detail'
+import type {
+  OrderContentDraft,
+  OrderContentSubmittedVersion,
+} from '@/lib/orders/load-order-content'
+import type { OrderChangeRequest, OrderStatus } from '@/lib/orders/load-order-detail'
 import { cn } from '@/lib/utils'
 
 const TITLE_MAX = 200
 const META_MAX = 320
-const AUTOSAVE_DELAY_MS = 1500
-
 type SaveState =
   | { kind: 'idle' }
   | { kind: 'saving' }
@@ -202,14 +203,30 @@ export function CopywriterContentEditor({
   orderId,
   status,
   initialDraft,
+  latestSubmitted,
+  openChangeRequests,
 }: {
   orderId: string
   status: OrderStatus
   initialDraft: OrderContentDraft | null
+  latestSubmitted?: OrderContentSubmittedVersion | null
+  openChangeRequests?: OrderChangeRequest[]
 }) {
-  const [title, setTitle] = useState(initialDraft?.title ?? '')
-  const [meta, setMeta] = useState(initialDraft?.meta_description ?? '')
-  const [bodyHtml, setBodyHtml] = useState(initialDraft?.body_html ?? '')
+  const seedDraft =
+    initialDraft ??
+    (status === 'needs_changes' && latestSubmitted
+      ? {
+          title: latestSubmitted.title,
+          meta_description: latestSubmitted.meta_description,
+          body_html: latestSubmitted.body_html,
+          word_count: latestSubmitted.word_count,
+          updated_at: latestSubmitted.created_at,
+        }
+      : null)
+
+  const [title, setTitle] = useState(seedDraft?.title ?? '')
+  const [meta, setMeta] = useState(seedDraft?.meta_description ?? '')
+  const [bodyHtml, setBodyHtml] = useState(seedDraft?.body_html ?? '')
   const [saveState, setSaveState] = useState<SaveState>(
     initialDraft
       ? { kind: 'saved', at: new Date(initialDraft.updated_at).getTime() }
@@ -227,7 +244,7 @@ export function CopywriterContentEditor({
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
     ],
-    content: initialDraft?.body_html ?? '',
+    content: seedDraft?.body_html ?? '',
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -277,15 +294,6 @@ export function CopywriterContentEditor({
     },
     [orderId, title, meta, bodyHtml]
   )
-
-  // Debounced auto-save: any field change kicks the timer; we save on settle.
-  useEffect(() => {
-    if (!hasUnsaved) return
-    const handle = window.setTimeout(() => {
-      performSave(false)
-    }, AUTOSAVE_DELAY_MS)
-    return () => window.clearTimeout(handle)
-  }, [hasUnsaved, performSave])
 
   function handleManualSave() {
     if (savingTransition || submittingTransition) return
@@ -343,8 +351,24 @@ export function CopywriterContentEditor({
 
   const submitLabel = status === 'needs_changes' ? 'Re-submit for review' : 'Submit for review'
 
+  const visibleChangeRequests = openChangeRequests?.filter((cr) => cr.status === 'open') ?? []
+
   return (
     <div className="space-y-block">
+      {visibleChangeRequests.length > 0 && (
+        <div className="space-y-inset rounded-lg border border-orange-300/60 bg-orange-50/60 p-3 dark:border-orange-700/40 dark:bg-orange-950/20">
+          <p className="text-foreground text-sm font-medium">Changes requested</p>
+          {visibleChangeRequests.map((cr) => (
+            <div key={cr.id} className="mt-1.5">
+              <p className="text-foreground text-sm leading-relaxed">{cr.comment}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {new Date(cr.created_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-inset">
         <label className="text-foreground block text-sm font-medium" htmlFor="cw-title">
           Title

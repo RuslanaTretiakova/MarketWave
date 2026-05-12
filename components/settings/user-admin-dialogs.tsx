@@ -110,7 +110,7 @@ export function AdminUserDisableDialog({
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         {middle}
-        <DialogFooter className="gap-2 sm:gap-3">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"

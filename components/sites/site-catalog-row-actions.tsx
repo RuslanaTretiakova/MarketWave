@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Eye, Pencil, ShieldCheck, ShoppingCart, Trash2 } from 'lucide-react'
+import { Eye, Pencil, ShieldCheck } from 'lucide-react'
 
 import {
   DropdownMenu,
@@ -18,24 +18,12 @@ import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
 
 export function SiteCatalogRowActions({
   row,
-  canUseCart,
   canAdminStatus,
-  cartSiteIdSet,
-  addingSiteId,
-  removingSiteId,
-  addCart,
-  removeFromCart,
   editAllowed,
   onOpenChangeStatus,
 }: {
   row: SiteCatalogRow
-  canUseCart: boolean
   canAdminStatus: boolean
-  cartSiteIdSet: Set<string>
-  addingSiteId: string | null
-  removingSiteId: string | null
-  addCart: (siteId: string, domain: string, onSuccess?: () => void) => void
-  removeFromCart: (siteId: string, domain: string, onSuccess?: () => void) => void
   editAllowed: boolean
   onOpenChangeStatus: (row: SiteCatalogRow) => void
 }) {
@@ -63,25 +51,6 @@ export function SiteCatalogRowActions({
             >
               <Pencil className="size-4" aria-hidden />
               Edit
-            </DropdownMenuItem>
-          ) : null}
-          {canUseCart && cartSiteIdSet.has(row.id) ? (
-            <DropdownMenuItem
-              className="gap-2"
-              disabled={removingSiteId === row.id}
-              onClick={() => removeFromCart(row.id, row.domain)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-              {removingSiteId === row.id ? 'Removing…' : 'Remove from cart'}
-            </DropdownMenuItem>
-          ) : canUseCart ? (
-            <DropdownMenuItem
-              className="gap-2"
-              disabled={row.status !== 'active' || addingSiteId === row.id}
-              onClick={() => addCart(row.id, row.domain)}
-            >
-              <ShoppingCart className="size-4" aria-hidden />
-              {addingSiteId === row.id ? 'Adding…' : 'Add to cart'}
             </DropdownMenuItem>
           ) : null}
           {showChangeStatus ? (

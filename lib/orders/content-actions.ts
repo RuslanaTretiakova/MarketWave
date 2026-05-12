@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { createNotifications, getStaffUserIds } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { bodyHasContent, countWords, sanitizeContentHtml } from '@/lib/orders/sanitize-content-html'
@@ -245,6 +246,23 @@ export async function submitContent(
     }
   }
 
+  // Notify client + admin/manager that content was submitted
+  const { data: orderForNotif } = await adminClient
+    .from('orders')
+    .select('user_id, site_domain')
+    .eq('id', orderId)
+    .maybeSingle()
+  const staffIds = await getStaffUserIds()
+  void createNotifications({
+    event: 'content_submitted',
+    title: 'Content submitted',
+    message: `New content has been submitted for review${orderForNotif?.site_domain ? ` on ${orderForNotif.site_domain}` : ''}.`,
+    recipientUserIds: [orderForNotif?.user_id, ...staffIds],
+    actorUserId: ctx.userId,
+    orderId,
+  })
+
   revalidateOrder(orderId)
+  revalidatePath('/notifications')
   return { ok: true }
 }

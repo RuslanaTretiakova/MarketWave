@@ -633,6 +633,7 @@ export type Database = {
           order_id: string | null
           read_at: string | null
           recipient_user_id: string
+          site_id: string | null
           title: string
         }
         Insert: {
@@ -646,6 +647,7 @@ export type Database = {
           order_id?: string | null
           read_at?: string | null
           recipient_user_id: string
+          site_id?: string | null
           title: string
         }
         Update: {
@@ -659,6 +661,7 @@ export type Database = {
           order_id?: string | null
           read_at?: string | null
           recipient_user_id?: string
+          site_id?: string | null
           title?: string
         }
         Relationships: [
@@ -695,6 +698,13 @@ export type Database = {
             columns: ['recipient_user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'sites'
             referencedColumns: ['id']
           },
         ]
@@ -1268,6 +1278,7 @@ export type Database = {
       invoice_status: 'draft' | 'sent' | 'paid'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
       notification_event:
+        | 'order_created'
         | 'copywriter_assigned'
         | 'copywriter_reassigned'
         | 'content_submitted'
@@ -1275,6 +1286,10 @@ export type Database = {
         | 'content_approved'
         | 'order_published'
         | 'invoice_paid'
+        | 'site_needs_changes'
+        | 'site_approved'
+        | 'site_archived'
+        | 'site_unarchived'
       order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
@@ -1420,6 +1435,7 @@ export const Constants = {
       invoice_status: ['draft', 'sent', 'paid'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
       notification_event: [
+        'order_created',
         'copywriter_assigned',
         'copywriter_reassigned',
         'content_submitted',
@@ -1427,6 +1443,10 @@ export const Constants = {
         'content_approved',
         'order_published',
         'invoice_paid',
+        'site_needs_changes',
+        'site_approved',
+        'site_archived',
+        'site_unarchived',
       ],
       order_content_status: ['draft', 'submitted'],
       order_status: [

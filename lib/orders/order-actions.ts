@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { createNotifications, getStaffUserIds } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -102,7 +103,24 @@ export async function approveContent(
   if (error)
     return { ok: false, message: mapPostgresError(error.message ?? 'Could not approve content.') }
 
+  // Notify copywriter + admin/manager
+  const { data: orderData } = await adminClient
+    .from('orders')
+    .select('copywriter_id, site_domain')
+    .eq('id', orderId)
+    .maybeSingle()
+  const staffIds = await getStaffUserIds()
+  void createNotifications({
+    event: 'content_approved',
+    title: 'Content approved',
+    message: `Client approved the content${orderData?.site_domain ? ` for ${orderData.site_domain}` : ''}.`,
+    recipientUserIds: [orderData?.copywriter_id, ...staffIds],
+    actorUserId: ctx.userId,
+    orderId,
+  })
+
   revalidateOrder(orderId)
+  revalidatePath('/notifications')
   return { ok: true }
 }
 
@@ -124,7 +142,7 @@ export async function requestChanges(
   // Verify the client owns this order and it is in content_sent
   const { data: order, error: loadErr } = await adminClient
     .from('orders')
-    .select('id, user_id, status')
+    .select('id, user_id, copywriter_id, status, site_domain')
     .eq('id', orderId)
     .maybeSingle()
 
@@ -156,7 +174,19 @@ export async function requestChanges(
       message: mapPostgresError(statusErr.message ?? 'Could not update order status.'),
     }
 
+  // Notify copywriter + admin/manager
+  const staffIds = await getStaffUserIds()
+  void createNotifications({
+    event: 'changes_requested',
+    title: 'Changes requested',
+    message: `Client requested changes${order.site_domain ? ` on ${order.site_domain}` : ''}.`,
+    recipientUserIds: [order.copywriter_id, ...staffIds],
+    actorUserId: ctx.userId,
+    orderId,
+  })
+
   revalidateOrder(orderId)
+  revalidatePath('/notifications')
   return { ok: true }
 }
 
@@ -216,7 +246,24 @@ export async function markPublished(
   }
 
   const res = await updateOrderStatus(orderId, 'published', extra)
-  if (res.ok) revalidateOrder(orderId)
+  if (res.ok) {
+    // Notify client + copywriter
+    const { data: orderData } = await adminClient
+      .from('orders')
+      .select('user_id, copywriter_id, site_domain')
+      .eq('id', orderId)
+      .maybeSingle()
+    void createNotifications({
+      event: 'order_published',
+      title: 'Order published',
+      message: `The order${orderData?.site_domain ? ` for ${orderData.site_domain}` : ''} has been published.`,
+      recipientUserIds: [orderData?.user_id, orderData?.copywriter_id],
+      actorUserId: ctx.userId,
+      orderId,
+    })
+    revalidateOrder(orderId)
+    revalidatePath('/notifications')
+  }
   return res
 }
 
