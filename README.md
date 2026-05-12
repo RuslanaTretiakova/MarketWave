@@ -1,4 +1,4 @@
-# linkbuilding
+# MarketWeave
 
 Internal link-building / ops workflow app (**MarketWeave** branding in UI): Next.js 16, Supabase, Tailwind 4, shadcn.
 
