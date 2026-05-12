@@ -139,7 +139,7 @@ export function UsersManagement({
   copywriterCandidates: OrgUserRowJson[]
   currentUserId: string
 }) {
-  const isAdminView = listMode === 'admin'
+  const canChangeStatus = listMode === 'admin'
   const router = useRouter()
   const [searchDraft, setSearchDraft] = useState(q)
   const [prevQ, setPrevQ] = useState(q)
@@ -390,12 +390,12 @@ export function UsersManagement({
         <header className="border-border/60 gap-block px-section py-block flex flex-col border-b sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-inset min-w-0">
             <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-              {isAdminView ? 'User management' : 'Users'}
+              User management
             </h2>
             <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-              {isAdminView
+              {canChangeStatus
                 ? 'Invite teammates, change roles, and manage access.'
-                : 'Full directory of workspace users. Most admin-only actions are hidden; contact an admin to change roles or invites.'}
+                : 'Invite teammates and manage profiles. Only admins can activate or disable users.'}
             </p>
           </div>
           <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
@@ -422,21 +422,19 @@ export function UsersManagement({
                 aria-label="Search users"
               />
             </form>
-            {isAdminView ? (
-              <Button
-                type="button"
-                variant="cta"
-                size="default"
-                className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
-                onClick={() => {
-                  setFormMessage(null)
-                  setInviteOpen(true)
-                }}
-              >
-                <Plus className="size-4" aria-hidden />
-                Invite user
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              variant="cta"
+              size="default"
+              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
+              onClick={() => {
+                setFormMessage(null)
+                setInviteOpen(true)
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Invite user
+            </Button>
           </div>
         </header>
 
@@ -504,9 +502,7 @@ export function UsersManagement({
                   No users match those filters
                 </h3>
                 <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
-                  {isAdminView
-                    ? 'Try clearing filters or invite someone new to your workspace.'
-                    : 'Try clearing filters or changing role or status chips.'}
+                  Try clearing filters or invite someone new to your workspace.
                 </p>
                 <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   <Link
@@ -520,21 +516,19 @@ export function UsersManagement({
                     <RotateCcw className="size-4" aria-hidden />
                     Clear filters
                   </Link>
-                  {isAdminView ? (
-                    <Button
-                      type="button"
-                      variant="cta"
-                      size="default"
-                      className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
-                      onClick={() => {
-                        setFormMessage(null)
-                        setInviteOpen(true)
-                      }}
-                    >
-                      <Plus className="size-4" aria-hidden />
-                      Invite user
-                    </Button>
-                  ) : null}
+                  <Button
+                    type="button"
+                    variant="cta"
+                    size="default"
+                    className="h-10 min-h-10 w-full justify-center rounded-full sm:w-auto"
+                    onClick={() => {
+                      setFormMessage(null)
+                      setInviteOpen(true)
+                    }}
+                  >
+                    <Plus className="size-4" aria-hidden />
+                    Invite user
+                  </Button>
                 </div>
               </div>
             </div>
@@ -557,7 +551,7 @@ export function UsersManagement({
                         Last active
                       </TableHead>
                       <TableHead className="text-muted-foreground h-11 pr-5 pl-4 text-right font-medium">
-                        {isAdminView ? <span className="sr-only">Actions</span> : 'Details'}
+                        <span className="sr-only">Actions</span>
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -605,35 +599,35 @@ export function UsersManagement({
                             data-row-actions
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {isAdminView ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger
-                                  disabled={disabledRow}
-                                  render={<TableRowActionsTrigger label={`Manage ${name}`} />}
-                                />
-                                <DropdownMenuContent align="end" className="min-w-48">
-                                  <DropdownMenuGroup>
-                                    <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                      Manage
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      disabled={disabledRow}
-                                      onClick={() => openEdit(row)}
-                                      className="gap-2"
-                                    >
-                                      <UserCog className="size-4" aria-hidden />
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      disabled={disabledRow || !canResend}
-                                      onClick={() => setResendTargetEmail(resendEmail)}
-                                      className="gap-2"
-                                    >
-                                      <Mail className="size-4" aria-hidden />
-                                      Resend invite
-                                    </DropdownMenuItem>
-                                    {isUserBanned(row) ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                disabled={disabledRow}
+                                render={<TableRowActionsTrigger label={`Manage ${name}`} />}
+                              />
+                              <DropdownMenuContent align="end" className="min-w-48">
+                                <DropdownMenuGroup>
+                                  <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                                    Manage
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    disabled={disabledRow}
+                                    onClick={() => openEdit(row)}
+                                    className="gap-2"
+                                  >
+                                    <UserCog className="size-4" aria-hidden />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    disabled={disabledRow || !canResend}
+                                    onClick={() => setResendTargetEmail(resendEmail)}
+                                    className="gap-2"
+                                  >
+                                    <Mail className="size-4" aria-hidden />
+                                    Resend invite
+                                  </DropdownMenuItem>
+                                  {canChangeStatus &&
+                                    (isUserBanned(row) ? (
                                       <DropdownMenuItem
                                         disabled={
                                           disabledRow ||
@@ -660,22 +654,10 @@ export function UsersManagement({
                                         <UserMinus className="size-4" aria-hidden />
                                         Disable
                                       </DropdownMenuItem>
-                                    )}
-                                  </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              <Link
-                                href={`/settings/users/${row.id}`}
-                                className={cn(
-                                  buttonVariants({ variant: 'outline', size: 'sm' }),
-                                  'inline-flex rounded-full'
-                                )}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Open
-                              </Link>
-                            )}
+                                    ))}
+                                </DropdownMenuGroup>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       )
@@ -723,35 +705,35 @@ export function UsersManagement({
                               </div>
                             </Button>
                             <div data-row-actions onClick={(e) => e.stopPropagation()}>
-                              {isAdminView ? (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger
-                                    disabled={disabledRow}
-                                    render={<TableRowActionsTrigger label={`Manage ${name}`} />}
-                                  />
-                                  <DropdownMenuContent align="end" className="min-w-48">
-                                    <DropdownMenuGroup>
-                                      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                                        Manage
-                                      </DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        disabled={disabledRow}
-                                        onClick={() => openEdit(row)}
-                                        className="gap-2"
-                                      >
-                                        <UserCog className="size-4" aria-hidden />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        disabled={disabledRow || !canResend}
-                                        onClick={() => setResendTargetEmail(resendEmail)}
-                                        className="gap-2"
-                                      >
-                                        <Mail className="size-4" aria-hidden />
-                                        Resend invite
-                                      </DropdownMenuItem>
-                                      {isUserBanned(row) ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
+                                  disabled={disabledRow}
+                                  render={<TableRowActionsTrigger label={`Manage ${name}`} />}
+                                />
+                                <DropdownMenuContent align="end" className="min-w-48">
+                                  <DropdownMenuGroup>
+                                    <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                                      Manage
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      disabled={disabledRow}
+                                      onClick={() => openEdit(row)}
+                                      className="gap-2"
+                                    >
+                                      <UserCog className="size-4" aria-hidden />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={disabledRow || !canResend}
+                                      onClick={() => setResendTargetEmail(resendEmail)}
+                                      className="gap-2"
+                                    >
+                                      <Mail className="size-4" aria-hidden />
+                                      Resend invite
+                                    </DropdownMenuItem>
+                                    {canChangeStatus &&
+                                      (isUserBanned(row) ? (
                                         <DropdownMenuItem
                                           disabled={
                                             disabledRow ||
@@ -778,21 +760,10 @@ export function UsersManagement({
                                           <UserMinus className="size-4" aria-hidden />
                                           Disable
                                         </DropdownMenuItem>
-                                      )}
-                                    </DropdownMenuGroup>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              ) : (
-                                <Link
-                                  href={`/settings/users/${row.id}`}
-                                  className={cn(
-                                    buttonVariants({ variant: 'outline', size: 'sm' }),
-                                    'rounded-full'
-                                  )}
-                                >
-                                  Open
-                                </Link>
-                              )}
+                                      ))}
+                                  </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         </div>
@@ -813,70 +784,70 @@ export function UsersManagement({
         </div>
       </section>
 
-      {isAdminView ? (
-        <Sheet
-          open={inviteOpen}
-          onOpenChange={(open) => {
-            setInviteOpen(open)
-            if (open) {
-              setFormMessage(null)
-            }
-          }}
-        >
-          <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
-            <SheetHeader>
-              <SheetTitle>Invitation</SheetTitle>
-              <SheetDescription>
-                Sends an invitation email. They will set a password, then sign in.
-              </SheetDescription>
-            </SheetHeader>
-            <form onSubmit={onInviteSubmit} className="gap-block flex flex-col px-4 pb-4">
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="users-invite-email" className="text-foreground text-sm font-medium">
-                  Email
-                </Label>
-                <FormControlInput
-                  id="users-invite-email"
-                  type="email"
-                  autoComplete="off"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="users-invite-name" className="text-foreground text-sm font-medium">
-                  Full name (optional)
-                </Label>
-                <FormControlInput
-                  id="users-invite-name"
-                  type="text"
-                  autoComplete="name"
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                />
-              </div>
-              <div className="gap-inset flex flex-col">
-                <Label htmlFor="users-invite-role" className="text-foreground text-sm font-medium">
-                  Role
-                </Label>
-                <SettingsRoleSelect
-                  id="users-invite-role"
-                  value={inviteRole}
-                  onChange={setInviteRole}
-                />
-              </div>
-              <SheetFooter className="gap-block pt-block px-0 sm:flex-row">
-                <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="default" disabled={inviteBusy}>
-                  {inviteBusy ? 'Sending…' : 'Send Invite'}
-                </Button>
-              </SheetFooter>
-            </form>
-          </SheetContent>
-        </Sheet>
-      ) : null}
+      <Sheet
+        open={inviteOpen}
+        onOpenChange={(open) => {
+          setInviteOpen(open)
+          if (open) {
+            setFormMessage(null)
+            if (listMode === 'manager') setInviteRole('client')
+          }
+        }}
+      >
+        <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
+          <SheetHeader>
+            <SheetTitle>Invitation</SheetTitle>
+            <SheetDescription>
+              Sends an invitation email. They will set a password, then sign in.
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={onInviteSubmit} className="gap-block flex flex-col px-4 pb-4">
+            <div className="gap-inset flex flex-col">
+              <Label htmlFor="users-invite-email" className="text-foreground text-sm font-medium">
+                Email
+              </Label>
+              <FormControlInput
+                id="users-invite-email"
+                type="email"
+                autoComplete="off"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+            <div className="gap-inset flex flex-col">
+              <Label htmlFor="users-invite-name" className="text-foreground text-sm font-medium">
+                Full name (optional)
+              </Label>
+              <FormControlInput
+                id="users-invite-name"
+                type="text"
+                autoComplete="name"
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+              />
+            </div>
+            <div className="gap-inset flex flex-col">
+              <Label htmlFor="users-invite-role" className="text-foreground text-sm font-medium">
+                Role
+              </Label>
+              <SettingsRoleSelect
+                id="users-invite-role"
+                value={inviteRole}
+                onChange={setInviteRole}
+                excludeRoles={listMode === 'manager' ? ['manager'] : []}
+              />
+            </div>
+            <SheetFooter className="gap-block pt-block px-0 sm:flex-row">
+              <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="default" disabled={inviteBusy}>
+                {inviteBusy ? 'Sending…' : 'Send Invite'}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
 
       <SettingsRightSheet
         open={mobileDetailUser !== null}
@@ -888,46 +859,46 @@ export function UsersManagement({
         footerClassName="flex-col items-stretch"
         footer={
           mobileDetailUser ? (
-            isAdminView ? (
-              <>
-                <Link
-                  href={`/settings/users/${mobileDetailUser.id}`}
-                  scroll={false}
-                  className={cn(
-                    buttonVariants({ variant: 'outline', size: 'default' }),
-                    'h-10 min-h-10 w-full shrink-0 justify-center rounded-full'
-                  )}
-                  onClick={() => setMobileDetailUser(null)}
-                >
-                  View full profile
-                </Link>
-                <Button
-                  type="button"
-                  variant="default"
-                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
-                  disabled={rowBusyId === mobileDetailUser.id}
-                  onClick={() => openEditFromMobileDetail(mobileDetailUser)}
-                >
-                  <UserCog className="size-4" aria-hidden />
-                  Edit
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
-                  disabled={
-                    rowBusyId === mobileDetailUser.id || !orgUserCanResendInvite(mobileDetailUser)
-                  }
-                  onClick={() => {
-                    const emailToResend = orgUserResendInviteEmail(mobileDetailUser)
-                    setMobileDetailUser(null)
-                    setResendTargetEmail(emailToResend)
-                  }}
-                >
-                  <Mail className="size-4" aria-hidden />
-                  Resend invite
-                </Button>
-                {isUserBanned(mobileDetailUser) ? (
+            <>
+              <Link
+                href={`/settings/users/${mobileDetailUser.id}`}
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'default' }),
+                  'h-10 min-h-10 w-full shrink-0 justify-center rounded-full'
+                )}
+                onClick={() => setMobileDetailUser(null)}
+              >
+                View full profile
+              </Link>
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={rowBusyId === mobileDetailUser.id}
+                onClick={() => openEditFromMobileDetail(mobileDetailUser)}
+              >
+                <UserCog className="size-4" aria-hidden />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                disabled={
+                  rowBusyId === mobileDetailUser.id || !orgUserCanResendInvite(mobileDetailUser)
+                }
+                onClick={() => {
+                  const emailToResend = orgUserResendInviteEmail(mobileDetailUser)
+                  setMobileDetailUser(null)
+                  setResendTargetEmail(emailToResend)
+                }}
+              >
+                <Mail className="size-4" aria-hidden />
+                Resend invite
+              </Button>
+              {canChangeStatus &&
+                (isUserBanned(mobileDetailUser) ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -965,21 +936,8 @@ export function UsersManagement({
                     <UserMinus className="size-4" aria-hidden />
                     Disable
                   </Button>
-                )}
-              </>
-            ) : (
-              <Link
-                href={`/settings/users/${mobileDetailUser.id}`}
-                scroll={false}
-                className={cn(
-                  buttonVariants({ variant: 'cta', size: 'default' }),
-                  'h-10 min-h-10 w-full shrink-0 justify-center rounded-full'
-                )}
-                onClick={() => setMobileDetailUser(null)}
-              >
-                View full profile
-              </Link>
-            )
+                ))}
+            </>
           ) : null
         }
       >
@@ -1017,6 +975,7 @@ export function UsersManagement({
           if (!o) setEditTarget(null)
         }}
         target={editTarget}
+        viewerRole={listMode}
         onSaved={() => router.refresh()}
       />
 

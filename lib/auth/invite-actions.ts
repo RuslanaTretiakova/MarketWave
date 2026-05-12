@@ -30,7 +30,9 @@ function unexpectedInviteErrorMessage(err: unknown): string {
   return m.length > 0 && m.length < 220 ? m : 'Could not send the invitation. Try again.'
 }
 
-async function assertAdmin(): Promise<{ userId: string } | { error: string }> {
+async function assertAdminOrManager(): Promise<
+  { userId: string; role: 'admin' | 'manager' } | { error: string }
+> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -44,10 +46,10 @@ async function assertAdmin(): Promise<{ userId: string } | { error: string }> {
     .select('role')
     .eq('id', user.id)
     .maybeSingle()
-  if (profErr || profile?.role !== 'admin') {
-    return { error: 'Only an organization admin can invite users.' }
+  if (profErr || (profile?.role !== 'admin' && profile?.role !== 'manager')) {
+    return { error: 'Only an admin or manager can invite users.' }
   }
-  return { userId: user.id }
+  return { userId: user.id, role: profile.role as 'admin' | 'manager' }
 }
 
 async function audit(
@@ -77,7 +79,7 @@ export async function inviteTeamMember(input: {
   fullName?: string
 }): Promise<InviteActionResult> {
   try {
-    const gate = await assertAdmin()
+    const gate = await assertAdminOrManager()
     if ('error' in gate) {
       return { ok: false, message: gate.error }
     }
@@ -94,6 +96,10 @@ export async function inviteTeamMember(input: {
     const role = input.role as OrgInviteRole
     if (!ORG_INVITABLE_ROLES.includes(role)) {
       return { ok: false, message: 'Invalid role for invitation.' }
+    }
+
+    if (gate.role === 'manager' && role === 'manager') {
+      return { ok: false, message: 'Managers cannot invite other managers.' }
     }
 
     const redirectBlock = productionServerEmailRedirectBlockedMessage()
@@ -139,7 +145,7 @@ export async function inviteTeamMember(input: {
 
 export async function resendTeamInvite(input: { email: string }): Promise<InviteActionResult> {
   try {
-    const gate = await assertAdmin()
+    const gate = await assertAdminOrManager()
     if ('error' in gate) {
       return { ok: false, message: gate.error }
     }

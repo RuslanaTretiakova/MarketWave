@@ -14,3 +14,6 @@ export const ORG_INVITABLE_ROLE_VALUES: OrgInviteRole[] = ORG_INVITE_ROLE_OPTION
 )
 
 export const ORG_INVITABLE_ROLES: OrgInviteRole[] = [...ORG_INVITABLE_ROLE_VALUES]
+
+export const ORG_MANAGER_INVITE_ROLE_OPTIONS: { value: OrgInviteRole; label: string }[] =
+  ORG_INVITE_ROLE_OPTIONS.filter((o) => o.value !== 'manager')

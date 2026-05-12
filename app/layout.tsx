@@ -49,6 +49,7 @@ export default function RootLayout({
         <Script
           id="strip-extension-bis-attrs"
           strategy="beforeInteractive"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               (() => {
