@@ -97,8 +97,9 @@ function rowMatchesStatusFilter(row: OrgUserRowJson, status: OrgUsersListStatusF
   return rowStatusFromRow(row) === status
 }
 
-async function assertAdminOrgList(): Promise<
-  { supabase: Awaited<ReturnType<typeof createClient>> } | { forbidden: true }
+async function assertAdminOrManagerOrgList(): Promise<
+  | { supabase: Awaited<ReturnType<typeof createClient>>; currentUserId: string }
+  | { forbidden: true }
 > {
   const supabase = await createClient()
   const {
@@ -114,11 +115,11 @@ async function assertAdminOrgList(): Promise<
     .eq('id', user.id)
     .maybeSingle()
 
-  if (actorProfile?.role !== 'admin') {
+  if (actorProfile?.role !== 'admin' && actorProfile?.role !== 'manager') {
     return { forbidden: true }
   }
 
-  return { supabase }
+  return { supabase, currentUserId: user.id }
 }
 
 /**
@@ -134,6 +135,7 @@ async function loadOrgUsersListWithSupabase(
     q: string
     role: OrgUsersListRoleFilter
     status: OrgUsersListStatusFilter
+    excludeId?: string
   }
 ): Promise<{ rows: OrgUserRowJson[]; totalCount: number; page: number }> {
   const pageSize = input.pageSize
@@ -143,6 +145,7 @@ async function loadOrgUsersListWithSupabase(
   if (input.status !== 'all' || trimmedQ !== '') {
     const merged = await loadOrgUsersDirectoryMergedInner(supabase)
     const filtered = merged.filter((row) => {
+      if (input.excludeId && row.id === input.excludeId) return false
       if (input.role !== 'all' && row.role !== input.role) return false
       if (!rowMatchesOrgSearch(row, trimmedQ)) return false
       if (!rowMatchesStatusFilter(row, input.status)) return false
@@ -160,6 +163,9 @@ async function loadOrgUsersListWithSupabase(
     let q = supabase.from('profiles').select('*', { count: 'exact' })
     if (input.role !== 'all') {
       q = q.eq('role', input.role)
+    }
+    if (input.excludeId) {
+      q = q.neq('id', input.excludeId)
     }
     return q
       .order('email', { ascending: true, nullsFirst: true })
@@ -214,15 +220,16 @@ export async function loadOrgUsersListForAdmin(input: {
   status: OrgUsersListStatusFilter
 }): Promise<{ forbidden: true } | { rows: OrgUserRowJson[]; totalCount: number; page: number }> {
   const pageSize = input.pageSize ?? SETTINGS_TABLE_PAGE_SIZE
-  const gate = await assertAdminOrgList()
+  const gate = await assertAdminOrManagerOrgList()
   if ('forbidden' in gate) {
     return { forbidden: true }
   }
-  const { supabase } = gate
+  const { supabase, currentUserId } = gate
 
   return loadOrgUsersListWithSupabase(supabase, {
     ...input,
     pageSize,
+    excludeId: currentUserId,
   })
 }
 
@@ -230,7 +237,7 @@ export async function loadOrgUsersListForAdmin(input: {
 export async function loadOrgCopywriterCandidatesForAdmin(): Promise<
   OrgUserRowJson[] | { forbidden: true }
 > {
-  const gate = await assertAdminOrgList()
+  const gate = await assertAdminOrManagerOrgList()
   if ('forbidden' in gate) {
     return { forbidden: true }
   }
@@ -290,47 +297,21 @@ async function loadOrgUsersDirectoryMergedInner(
 }
 
 export async function loadOrgUsersForAdminPage(): Promise<OrgUserRowJson[] | { forbidden: true }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  const gate = await assertAdminOrManagerOrgList()
+  if ('forbidden' in gate) {
     return { forbidden: true }
   }
-
-  const { data: actorProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (actorProfile?.role !== 'admin') {
-    return { forbidden: true }
-  }
-
-  return loadOrgUsersDirectoryMergedInner(supabase)
+  return loadOrgUsersDirectoryMergedInner(gate.supabase)
 }
 
 export async function loadOrgUserRowForAdmin(
   userId: string
 ): Promise<OrgUserRowJson | { forbidden: true } | null> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  const gate = await assertAdminOrManagerOrgList()
+  if ('forbidden' in gate) {
     return { forbidden: true }
   }
-
-  const { data: actorProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (actorProfile?.role !== 'admin') {
-    return { forbidden: true }
-  }
+  const { supabase } = gate
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -356,23 +337,11 @@ export async function loadOrgUserAssignmentCountsForAdmin(userId: string): Promi
       sourcerSitesCount: number
     }
 > {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  const gate = await assertAdminOrManagerOrgList()
+  if ('forbidden' in gate) {
     return { forbidden: true }
   }
-
-  const { data: actorProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (actorProfile?.role !== 'admin') {
-    return { forbidden: true }
-  }
+  const { supabase } = gate
 
   const { count: clientActiveOrders } = await supabase
     .from('orders')
@@ -399,7 +368,8 @@ export async function loadOrgUserAssignmentCountsForAdmin(userId: string): Promi
 }
 
 async function assertManagerOrgList(): Promise<
-  { supabase: Awaited<ReturnType<typeof createClient>> } | { forbidden: true }
+  | { supabase: Awaited<ReturnType<typeof createClient>>; currentUserId: string }
+  | { forbidden: true }
 > {
   const supabase = await createClient()
   const {
@@ -419,7 +389,7 @@ async function assertManagerOrgList(): Promise<
     return { forbidden: true }
   }
 
-  return { supabase }
+  return { supabase, currentUserId: user.id }
 }
 
 /**
@@ -437,11 +407,12 @@ export async function loadOrgUsersListForManager(input: {
   if ('forbidden' in gate) {
     return { forbidden: true }
   }
-  const { supabase } = gate
+  const { supabase, currentUserId } = gate
 
   return loadOrgUsersListWithSupabase(supabase, {
     ...input,
     pageSize,
+    excludeId: currentUserId,
   })
 }
 

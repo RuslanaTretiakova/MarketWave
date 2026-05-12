@@ -13,5 +13,8 @@
   "mssql.lintingEnabled": false,
   "mssql.enableSqlAuthenticationProvider": false,
   "sql.lintingEnabled": false,
+  "files.associations": {
+    "*.sql": "pgsql"
+  },
   "extensions.ignoreRecommendations": true
 }

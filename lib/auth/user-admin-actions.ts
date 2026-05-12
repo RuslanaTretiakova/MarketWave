@@ -11,6 +11,28 @@ import type { Database } from '@/lib/supabase/types'
 
 type UserRole = Database['public']['Enums']['user_role']
 
+async function assertAdminOrManager(): Promise<
+  { userId: string; role: 'admin' | 'manager' } | { error: string }
+> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser()
+  if (authErr || !user) {
+    return { error: 'You must be signed in.' }
+  }
+  const { data: profile, error: profErr } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (profErr || (profile?.role !== 'admin' && profile?.role !== 'manager')) {
+    return { error: 'Only an admin or manager can do this.' }
+  }
+  return { userId: user.id, role: profile.role as 'admin' | 'manager' }
+}
+
 async function assertAdmin(): Promise<{ userId: string } | { error: string }> {
   const supabase = await createClient()
   const {
@@ -39,9 +61,13 @@ export async function updateTeamMemberProfile(input: {
   phone: string | null
   bio: string | null
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const gate = await assertAdmin()
+  const gate = await assertAdminOrManager()
   if ('error' in gate) {
     return { ok: false, message: gate.error }
+  }
+
+  if (gate.role === 'manager' && input.role === 'manager') {
+    return { ok: false, message: 'Managers cannot assign the manager role.' }
   }
 
   const supabase = await createClient()
@@ -77,7 +103,7 @@ export async function updateTeamMemberProfile(input: {
     }
   }
 
-  if (target.role === 'admin') {
+  if (target.role === 'admin' || (target.role === 'manager' && gate.role === 'manager')) {
     const { error } = await supabase
       .from('profiles')
       .update(profileFields)
@@ -359,7 +385,7 @@ export async function setClientAccountManager(input: {
   clientUserId: string
   managerId: string | null
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const gate = await assertAdmin()
+  const gate = await assertAdminOrManager()
   if ('error' in gate) {
     return { ok: false, message: gate.error }
   }

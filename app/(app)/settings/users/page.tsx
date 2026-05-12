@@ -6,7 +6,6 @@ import { searchParamFirstString } from '@/lib/pagination/search-param-first-stri
 import {
   loadOrgCopywriterCandidatesForAdmin,
   loadOrgUsersListForAdmin,
-  loadOrgUsersListForManager,
   parseOrgUsersListRoleFilter,
   parseOrgUsersListStatusFilter,
   parseSettingsTablePage,
@@ -57,38 +56,21 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
   let listResult
   let copywriterCandidates: Awaited<ReturnType<typeof loadOrgCopywriterCandidatesForAdmin>>
   try {
-    if (role === 'admin') {
-      const listRes = await loadOrgUsersListForAdmin({
+    const [listRes, cwRes] = await Promise.all([
+      loadOrgUsersListForAdmin({
         page,
         pageSize: SETTINGS_TABLE_PAGE_SIZE,
         q,
         role: roleFilter,
         status,
-      })
-      if ('forbidden' in listRes) {
-        notFound()
-      }
-      listResult = listRes
-
-      const cwRes = await loadOrgCopywriterCandidatesForAdmin()
-      if ('forbidden' in cwRes) {
-        notFound()
-      }
-      copywriterCandidates = cwRes
-    } else {
-      const listRes = await loadOrgUsersListForManager({
-        page,
-        pageSize: SETTINGS_TABLE_PAGE_SIZE,
-        q,
-        role: roleFilter,
-        status,
-      })
-      if ('forbidden' in listRes) {
-        notFound()
-      }
-      listResult = listRes
-      copywriterCandidates = []
+      }),
+      loadOrgCopywriterCandidatesForAdmin(),
+    ])
+    if ('forbidden' in listRes || 'forbidden' in cwRes) {
+      notFound()
     }
+    listResult = listRes
+    copywriterCandidates = cwRes
   } catch (err) {
     console.error('[settings/users] load list', err)
     throw err instanceof Error ? err : new Error('Failed to load organization users.')

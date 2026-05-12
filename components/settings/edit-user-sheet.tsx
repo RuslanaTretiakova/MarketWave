@@ -44,10 +44,12 @@ function editUserFormKey(target: OrgUserRowJson): string {
 
 function EditUserForm({
   target,
+  viewerRole = 'admin',
   onCancel,
   onSaved,
 }: {
   target: OrgUserRowJson
+  viewerRole?: 'admin' | 'manager'
   onCancel: () => void
   onSaved: () => void
 }) {
@@ -153,17 +155,22 @@ function EditUserForm({
         />
       </div>
 
-      {target.role !== 'admin' ? (
+      {target.role === 'admin' || (viewerRole === 'manager' && target.role === 'manager') ? (
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Role cannot be changed for this user.
+        </p>
+      ) : (
         <div className="gap-inset flex flex-col">
           <Label htmlFor="users-edit-role" className="text-foreground text-sm font-medium">
             Role
           </Label>
-          <SettingsRoleSelect id="users-edit-role" value={editRole} onChange={setEditRole} />
+          <SettingsRoleSelect
+            id="users-edit-role"
+            value={editRole}
+            onChange={setEditRole}
+            excludeRoles={viewerRole === 'manager' ? ['manager'] : []}
+          />
         </div>
-      ) : (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Role cannot be changed for the organization admin.
-        </p>
       )}
       {submitError ? (
         <p className="text-destructive text-sm" role="alert">
@@ -186,13 +193,17 @@ export function EditUserSheet({
   open,
   onOpenChange,
   target,
+  viewerRole = 'admin',
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   target: OrgUserRowJson | null
+  viewerRole?: 'admin' | 'manager'
   onSaved: () => void
 }) {
+  const roleChangeable =
+    target?.role !== 'admin' && !(viewerRole === 'manager' && target?.role === 'manager')
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className={cn(SETTINGS_RIGHT_SHEET_CONTENT_CLASS)}>
@@ -201,13 +212,14 @@ export function EditUserSheet({
           <SheetDescription>
             Update profile fields stored on{' '}
             <code className="text-foreground bg-muted rounded px-1 py-0.5 text-xs">profiles</code>.
-            {target?.role === 'admin' ? '' : ' You can change role for non-admin teammates.'}
+            {roleChangeable ? ' You can change role for non-admin teammates.' : ''}
           </SheetDescription>
         </SheetHeader>
         {target ? (
           <EditUserForm
             key={editUserFormKey(target)}
             target={target}
+            viewerRole={viewerRole}
             onCancel={() => onOpenChange(false)}
             onSaved={() => {
               onOpenChange(false)
