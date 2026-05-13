@@ -83,7 +83,7 @@ export function CreateChannelRoomForm({
       }}
     >
       <div className="gap-inset flex flex-wrap items-end">
-        <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-sm">
+        <label className="flex min-w-50 flex-1 flex-col gap-1 text-sm">
           <span className="text-muted-foreground text-xs">Room title (optional)</span>
           <FormControlInput
             value={title}

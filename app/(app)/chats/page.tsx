@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 
 import { ChatLayout } from '@/components/chat/chat-layout'
-import { NewChatSection } from '@/components/chat/new-chat-section'
+import { ChatsToolbar } from '@/components/chat/chats-toolbar'
+import { NewChatDialog } from '@/components/chat/new-chat-dialog'
 import { PageHeader } from '@/components/ui/page-header'
 import { chatListFiltersFromSearchParams, loadChatRooms } from '@/lib/chat/load-rooms'
 import { createClient } from '@/lib/supabase/server'
@@ -41,13 +43,20 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
   const isStaff = profile?.role === 'admin' || profile?.role === 'manager'
 
   return (
-    <div className="space-y-block">
-      <PageHeader title="Chats" description="Direct messages and order rooms." />
-      <ChatLayout
-        rooms={rooms}
-        currentUserId={user.id}
-        createPanel={<NewChatSection currentUserId={user.id} isStaff={isStaff} />}
-      >
+    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+      <PageHeader
+        title="Chats"
+        description="Direct messages and order rooms."
+        action={<NewChatDialog currentUserId={user.id} isStaff={isStaff} />}
+      />
+
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+        <Suspense fallback={null}>
+          <ChatsToolbar />
+        </Suspense>
+      </section>
+
+      <ChatLayout rooms={rooms} currentUserId={user.id}>
         <div className="text-muted-foreground flex h-full items-center justify-center text-center text-sm">
           <div className="gap-block flex max-w-xs flex-col">
             <p className="text-foreground text-base font-medium">Pick a conversation</p>

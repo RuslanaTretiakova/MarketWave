@@ -172,7 +172,7 @@ export function InvoiceDetailView({
           <h3 className="text-foreground text-base font-semibold">Invoice header</h3>
           <dl className="space-y-inset">
             <DetailRow label="Client" value={invoice.client_name ?? '—'} />
-            <DetailRow label="Billing period" value={invoice.billing_period_label} />
+            <DetailRow label="Statement period" value={invoice.billing_period_label} />
             <DetailRow label="Status" value={INVOICE_STATUS_LABEL[invoice.status]} />
             <DetailRow label="Email" value={invoice.client_email ?? '—'} />
             <DetailRow label="Site" value={invoice.site_domain} />
@@ -253,12 +253,12 @@ export function InvoiceDetailView({
           <SheetHeader>
             <SheetTitle>Edit draft invoice</SheetTitle>
             <SheetDescription>
-              Update billing period, due date, and line item amounts.
+              Update statement month, due date, and line item amounts.
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-block px-4">
             <label className="gap-inset flex flex-col text-sm">
-              <span className="text-foreground font-medium">Billing period</span>
+              <span className="text-foreground font-medium">Statement month</span>
               <input
                 type="month"
                 value={billingMonth}

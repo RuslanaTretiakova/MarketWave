@@ -17,7 +17,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
 
   const withParam = sp.get('with') ?? ''
   const channel = sp.get('channel') ?? 'all'
-  const status = sp.get('status') ?? 'all'
+  const status = sp.get('status') ?? 'active'
   const sort = sp.get('sort') ?? 'activity'
   const from = sp.get('from') ?? ''
   const to = sp.get('to') ?? ''
@@ -57,12 +57,12 @@ export function ChatsToolbar({ className }: { className?: string }) {
   }, [participantQ])
 
   const hasFilters =
-    !!withParam || channel !== 'all' || status !== 'all' || sort !== 'activity' || !!from || !!to
+    !!withParam || channel !== 'all' || status !== 'active' || sort !== 'activity' || !!from || !!to
 
   return (
     <div
       className={cn(
-        'border-border bg-muted/10 px-section py-block flex items-center gap-2 border-b',
+        'px-section py-block flex flex-nowrap items-center gap-3 overflow-x-auto',
         className
       )}
     >
@@ -82,7 +82,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
           onBlur={() => setTimeout(() => setOpenHits(false), 150)}
           placeholder="Participant…"
           aria-label="Search participant"
-          className="h-8 w-auto max-w-40 min-w-0 rounded-full px-3 text-xs"
+          className="h-8 w-auto max-w-44 min-w-0 rounded-full px-3 text-xs"
         />
         {openHits && hits.length > 0 && (
           <ul className="border-border bg-background absolute z-20 mt-1 max-h-48 w-48 overflow-auto rounded-md border py-1 text-xs shadow-md">
@@ -131,14 +131,14 @@ export function ChatsToolbar({ className }: { className?: string }) {
         onChange={(e) =>
           pushParams((p) => {
             const v = e.target.value
-            if (v === 'all') p.delete('status')
+            if (v === 'active') p.delete('status')
             else p.set('status', v)
           })
         }
       >
-        <option value="all">All status</option>
         <option value="active">Active</option>
         <option value="archived">Archived</option>
+        <option value="all">All (incl. archived)</option>
       </FilterSelect>
       <FilterSelect
         aria-label="Sort"

@@ -44,7 +44,7 @@ export async function assignCopywriter(
 
   const { data: order } = await adminClient
     .from('orders')
-    .select('copywriter_id, site_domain')
+    .select('copywriter_id, site_domain, user_id')
     .eq('id', orderId)
     .maybeSingle()
 
@@ -62,16 +62,41 @@ export async function assignCopywriter(
     const isReassignment = order?.copywriter_id != null && order.copywriter_id !== copywriterId
     const domain = order?.site_domain ?? 'an order'
 
-    void createNotifications({
-      event: isReassignment ? 'copywriter_reassigned' : 'copywriter_assigned',
-      title: isReassignment ? 'Copywriter reassigned' : 'Copywriter assigned',
-      message: isReassignment
-        ? `You have been assigned to ${domain} (reassigned from another copywriter).`
-        : `You have been assigned to write content for ${domain}.`,
-      recipientUserIds: isReassignment ? [copywriterId, order?.copywriter_id] : [copywriterId],
-      actorUserId: user.id,
-      orderId,
-    })
+    if (isReassignment) {
+      void createNotifications({
+        event: 'copywriter_reassigned',
+        title: 'Copywriter reassigned',
+        message: `You have been assigned to ${domain} (reassigned from another copywriter).`,
+        recipientUserIds: [copywriterId],
+        actorUserId: user.id,
+        orderId,
+      })
+      void createNotifications({
+        event: 'copywriter_reassigned',
+        title: 'Copywriter reassigned',
+        message: `You have been removed from ${domain}; another copywriter has taken over.`,
+        recipientUserIds: [order?.copywriter_id],
+        actorUserId: user.id,
+        orderId,
+      })
+      void createNotifications({
+        event: 'copywriter_reassigned',
+        title: 'Copywriter reassigned',
+        message: `The copywriter assigned to ${domain} has been changed.`,
+        recipientUserIds: [order?.user_id],
+        actorUserId: user.id,
+        orderId,
+      })
+    } else {
+      void createNotifications({
+        event: 'copywriter_assigned',
+        title: 'Copywriter assigned',
+        message: `You have been assigned to write content for ${domain}.`,
+        recipientUserIds: [copywriterId],
+        actorUserId: user.id,
+        orderId,
+      })
+    }
   }
 
   revalidatePath('/orders')

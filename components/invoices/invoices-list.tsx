@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { Filter, Receipt, RotateCcw, Search } from 'lucide-react'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
+import { StatementCard } from '@/components/invoices/statement-card'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -22,6 +23,8 @@ import { cn } from '@/lib/utils'
 
 const SEARCH_DEBOUNCE_MS = 320
 
+type InvoicesView = 'statement' | 'invoice'
+
 function buildHref(
   pathname: string,
   params: {
@@ -32,6 +35,7 @@ function buildHref(
     invoiceNumber?: string
     minAmount?: string
     maxAmount?: string
+    view?: InvoicesView
   }
 ): string {
   const sp = new URLSearchParams()
@@ -42,6 +46,7 @@ function buildHref(
   if (params.minAmount) sp.set('minAmount', params.minAmount)
   if (params.maxAmount) sp.set('maxAmount', params.maxAmount)
   if (params.page && params.page > 1) sp.set('page', String(params.page))
+  if (params.view === 'invoice') sp.set('view', 'invoice')
   const qs = sp.toString()
   return qs ? `${pathname}?${qs}` : pathname
 }
@@ -71,7 +76,9 @@ export function InvoicesList({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const isStaff = role === 'admin' || role === 'manager'
+  const view: InvoicesView = searchParams.get('view') === 'invoice' ? 'invoice' : 'statement'
   const [localClient, setLocalClient] = useState(client)
   const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
   const [localInvoiceNumber, setLocalInvoiceNumber] = useState(invoiceNumber ?? '')
@@ -257,6 +264,33 @@ export function InvoicesList({
     client || status || isBillingPeriodApplied || invoiceNumber || minAmount || maxAmount
   )
 
+  const statements = useMemo(() => {
+    const map = new Map<string, InvoiceListRow[]>()
+    for (const row of rows) {
+      const key = `${row.client_id}::${row.invoice_group_id ?? 'ungrouped'}::${row.billing_month ?? 'unscheduled'}`
+      const bucket = map.get(key) ?? []
+      bucket.push(row)
+      map.set(key, bucket)
+    }
+    return Array.from(map.entries()).map(([key, invoices]) => ({ key, invoices }))
+  }, [rows])
+
+  function switchView(next: InvoicesView) {
+    if (next === view) return
+    router.push(
+      buildHref(pathname, {
+        client,
+        status,
+        billingPeriod,
+        invoiceNumber,
+        minAmount,
+        maxAmount,
+        view: next,
+      }),
+      { scroll: false }
+    )
+  }
+
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <PageHeader
@@ -361,7 +395,7 @@ export function InvoicesList({
           />
           {hasAppliedFilters ? (
             <Link
-              href="/invoices"
+              href={view === 'invoice' ? '/invoices?view=invoice' : '/invoices'}
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
@@ -372,12 +406,33 @@ export function InvoicesList({
               Clear filters
             </Link>
           ) : null}
-          <span
+          <div
             className={cn(
-              'text-muted-foreground shrink-0 text-xs tabular-nums',
+              'bg-muted flex shrink-0 gap-0.5 rounded-full p-0.5',
               hasAppliedFilters ? '' : 'ml-auto'
             )}
+            role="tablist"
+            aria-label="View mode"
           >
+            {(['statement', 'invoice'] as InvoicesView[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                onClick={() => switchView(v)}
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                  view === v
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {v === 'statement' ? 'By statement' : 'By invoice'}
+              </button>
+            ))}
+          </div>
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
             {totalCount} invoice{totalCount === 1 ? '' : 's'}
           </span>
         </div>
@@ -387,7 +442,9 @@ export function InvoicesList({
         <Card className="py-hero gap-block flex flex-col items-center text-center">
           <Receipt className="text-muted-foreground size-10" />
           <div className="space-y-inset">
-            <p className="text-foreground font-semibold">No invoices found</p>
+            <p className="text-foreground font-semibold">
+              {view === 'statement' ? 'No statements match your filters.' : 'No invoices found'}
+            </p>
             <p className="text-muted-foreground text-sm">
               {client || status || billingPeriod
                 ? 'Try adjusting your filters.'
@@ -395,6 +452,34 @@ export function InvoicesList({
             </p>
           </div>
         </Card>
+      ) : view === 'statement' ? (
+        <div className="gap-block flex flex-col">
+          {statements.map((s, idx) => (
+            <StatementCard
+              key={s.key}
+              invoices={s.invoices}
+              role={role}
+              defaultExpanded={idx === 0}
+            />
+          ))}
+          <SettingsTablePagination
+            page={page}
+            pageSize={SETTINGS_TABLE_PAGE_SIZE}
+            totalCount={totalCount}
+            buildHref={(p) =>
+              buildHref(pathname, {
+                client,
+                status,
+                billingPeriod,
+                invoiceNumber,
+                minAmount,
+                maxAmount,
+                view,
+                page: p,
+              })
+            }
+          />
+        </div>
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
@@ -479,6 +564,7 @@ export function InvoicesList({
                 invoiceNumber,
                 minAmount,
                 maxAmount,
+                view,
                 page: p,
               })
             }

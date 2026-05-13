@@ -21,7 +21,23 @@ function eventLabel(event: NotificationRow['event']): string {
   return event.replaceAll('_', ' ')
 }
 
+const CHAT_ROOM_PREFIX_RE = /^\[room:([0-9a-f-]{36})\]\s*/i
+
+function parseChatRoomRef(message: string | null): {
+  roomId: string | null
+  displayMessage: string
+} {
+  if (!message) return { roomId: null, displayMessage: '' }
+  const match = message.match(CHAT_ROOM_PREFIX_RE)
+  if (!match) return { roomId: null, displayMessage: message }
+  return { roomId: match[1], displayMessage: message.slice(match[0].length) }
+}
+
 function notificationHref(row: NotificationRow): string | null {
+  if (row.event === 'chat_message') {
+    const { roomId } = parseChatRoomRef(row.message)
+    if (roomId) return `/chats/${roomId}`
+  }
   if (row.site_id) return `/sites/${row.site_id}`
   if (row.order_id) return `/orders/${row.order_id}`
   return null
@@ -81,6 +97,10 @@ export function NotificationsList({
             {rows.map((row) => {
               const href = notificationHref(row)
               const isUnread = !row.read_at
+              const displayMessage =
+                row.event === 'chat_message'
+                  ? parseChatRoomRef(row.message).displayMessage
+                  : row.message
 
               const inner = (
                 <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -106,7 +126,7 @@ export function NotificationsList({
                         isUnread ? 'text-muted-foreground' : 'text-muted-foreground/60'
                       )}
                     >
-                      {row.message}
+                      {displayMessage}
                     </p>
                     <p className="text-muted-foreground/60 text-xs">
                       {eventLabel(row.event)} · {new Date(row.created_at).toLocaleString()}

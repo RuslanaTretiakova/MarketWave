@@ -8,6 +8,7 @@ import {
   canSendMessages,
   canUnarchiveChat,
 } from '@/lib/chat/chat-rules'
+import { createNotifications } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -53,12 +54,14 @@ type RoomMeta = {
   channel: Database['public']['Enums']['chat_channel_type']
   status: Database['public']['Enums']['chat_room_status']
   system_managed: boolean
+  title: string | null
+  order_id: string | null
 }
 
 async function loadRoomMeta(roomId: string): Promise<RoomMeta | null> {
   const { data } = await adminClient
     .from('chat_rooms')
-    .select('id, kind, channel, status, system_managed')
+    .select('id, kind, channel, status, system_managed, title, order_id')
     .eq('id', roomId)
     .maybeSingle()
   if (!data) return null
@@ -179,9 +182,64 @@ export async function sendMessage(
     .update({ updated_at: new Date().toISOString() })
     .eq('id', input.roomId)
 
+  void fireChatMessageNotifications({
+    roomId: input.roomId,
+    senderId: auth.userId,
+    body,
+    meta,
+  })
+
   revalidatePath('/chats')
   revalidatePath(`/chats/${input.roomId}`)
   return { ok: true, messageId: inserted.id }
+}
+
+const CHAT_NOTIFY_DEBOUNCE_MS = 5 * 60 * 1000
+
+async function fireChatMessageNotifications(params: {
+  roomId: string
+  senderId: string
+  body: string
+  meta: RoomMeta
+}): Promise<void> {
+  const [{ data: participants }, { data: reads }] = await Promise.all([
+    adminClient
+      .from('chat_room_participants')
+      .select('user_id')
+      .eq('room_id', params.roomId)
+      .neq('user_id', params.senderId),
+    adminClient
+      .from('chat_room_reads')
+      .select('user_id, last_read_at')
+      .eq('room_id', params.roomId),
+  ])
+
+  const readByUser = new Map<string, string>()
+  for (const r of reads ?? []) readByUser.set(r.user_id, r.last_read_at)
+
+  const cutoff = Date.now() - CHAT_NOTIFY_DEBOUNCE_MS
+  const recipientUserIds: string[] = []
+  for (const p of participants ?? []) {
+    const last = readByUser.get(p.user_id)
+    if (!last || new Date(last).getTime() < cutoff) {
+      recipientUserIds.push(p.user_id)
+    }
+  }
+
+  if (recipientUserIds.length === 0) return
+
+  const preview = params.body.slice(0, 140) || '(attachment)'
+  const title = params.meta.title?.trim() || 'New chat message'
+  const message = `[room:${params.roomId}] ${preview}`
+
+  void createNotifications({
+    event: 'chat_message',
+    title,
+    message,
+    recipientUserIds,
+    actorUserId: params.senderId,
+    orderId: params.meta.order_id ?? undefined,
+  })
 }
 
 export async function markRoomRead(

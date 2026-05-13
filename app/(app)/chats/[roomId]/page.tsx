@@ -50,8 +50,10 @@ export default async function ChatRoomPage(props: {
   if (!room) notFound()
 
   return (
-    <ChatLayout rooms={rooms} activeRoomId={room.id} currentUserId={user.id}>
-      <ChatShell key={room.id} room={room} currentUserId={user.id} />
-    </ChatLayout>
+    <div className="mx-auto w-full max-w-6xl">
+      <ChatLayout rooms={rooms} activeRoomId={room.id} currentUserId={user.id}>
+        <ChatShell key={room.id} room={room} currentUserId={user.id} />
+      </ChatLayout>
+    </div>
   )
 }

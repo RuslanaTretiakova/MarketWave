@@ -23,7 +23,7 @@ import {
 } from '@/components/dashboard/_shared'
 import type { CopywriterDashboardData } from '@/lib/dashboard/load-copywriter-dashboard'
 import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
-import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
+import { ORDER_STATUS_CHIP, orderStatusLabelForRole } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
 
 function moneyUSD(n: number) {
@@ -163,7 +163,7 @@ export function CopywriterDashboard({
                     ORDER_STATUS_CHIP[row.status]
                   )}
                 >
-                  {ORDER_STATUS_LABEL[row.status]}
+                  {orderStatusLabelForRole(row.status, 'copywriter')}
                 </span>
               </TableCell>
               <TableCell className="text-right">
@@ -212,7 +212,7 @@ export function CopywriterDashboard({
                           ORDER_STATUS_CHIP[row.status]
                         )}
                       >
-                        {ORDER_STATUS_LABEL[row.status]}
+                        {orderStatusLabelForRole(row.status, 'copywriter')}
                       </span>
                     </div>
                     <p className="text-foreground font-semibold tabular-nums">

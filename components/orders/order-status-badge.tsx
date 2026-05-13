@@ -1,15 +1,20 @@
 import {
   ORDER_STATUS_CHIP,
-  ORDER_STATUS_LABEL,
+  orderStatusLabelForRole,
   type OrderStatus,
 } from '@/lib/orders/order-status-labels'
+import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
+
+type UserRole = Database['public']['Enums']['user_role']
 
 export function OrderStatusBadge({
   status,
+  role,
   className,
 }: {
   status: OrderStatus
+  role?: UserRole | null
   className?: string
 }) {
   return (
@@ -20,7 +25,7 @@ export function OrderStatusBadge({
         className
       )}
     >
-      {ORDER_STATUS_LABEL[status]}
+      {orderStatusLabelForRole(status, role ?? null)}
     </span>
   )
 }

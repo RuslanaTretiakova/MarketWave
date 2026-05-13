@@ -41,7 +41,7 @@ export function AppHeader({
   const onNotificationsPage =
     pathname === '/notifications' || pathname.startsWith('/notifications/')
   const onCartPage = pathname === '/cart' || pathname.startsWith('/cart/')
-  const isClient = user.role === 'client'
+  const showCart = user.role === 'client'
 
   return (
     <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between border-b py-2 backdrop-blur-md md:h-14 md:min-h-0 md:py-0">
@@ -101,7 +101,7 @@ export function AppHeader({
           'flex shrink-0 items-center gap-3 rounded-full border-0 bg-transparent px-0 py-0 shadow-none'
         )}
       >
-        {isClient ? (
+        {showCart ? (
           <Link
             href="/cart"
             className={cn(
@@ -110,16 +110,12 @@ export function AppHeader({
               'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
               onCartPage && 'bg-muted/70 text-foreground'
             )}
-            aria-label={
-              cartItemCount > 0
-                ? `Cart, ${cartItemCount} item${cartItemCount > 1 ? 's' : ''}`
-                : 'Cart'
-            }
+            aria-label={cartItemCount > 0 ? `Cart, ${cartItemCount} items` : 'Cart'}
           >
             <ShoppingCart className="size-4.5 stroke-[1.75]" aria-hidden />
             {cartItemCount > 0 ? (
               <span
-                className="bg-primary text-primary-foreground ring-background absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.625rem] leading-none font-bold ring-2"
+                className="bg-destructive text-destructive-foreground ring-background absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.625rem] leading-none font-bold ring-2"
                 aria-hidden
               >
                 {cartItemCount > 9 ? '9+' : cartItemCount}

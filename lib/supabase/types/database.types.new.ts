@@ -1291,6 +1291,7 @@ export type Database = {
         | 'site_approved'
         | 'site_archived'
         | 'site_unarchived'
+        | 'chat_message'
       order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
@@ -1449,6 +1450,7 @@ export const Constants = {
         'site_approved',
         'site_archived',
         'site_unarchived',
+        'chat_message',
       ],
       order_content_status: ['draft', 'submitted'],
       order_status: [
