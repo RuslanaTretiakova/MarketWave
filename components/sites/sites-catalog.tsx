@@ -4,8 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ChevronDown,
-  ChevronUp,
   Eye,
   Filter,
   Globe,
@@ -20,11 +18,13 @@ import { toast } from 'sonner'
 
 import { SiteCatalogRowActions } from '@/components/sites/site-catalog-row-actions'
 import { SiteChangeStatusDialog } from '@/components/sites/site-change-status-dialog'
+import { SiteStatusBadge } from '@/components/sites/site-status-badge'
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { FormControlInput, FormControlSelect } from '@/components/ui/form-control'
-import { Label } from '@/components/ui/label'
+import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
+import { FormControlInput } from '@/components/ui/form-control'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Table,
   TableBody,
@@ -38,11 +38,7 @@ import { removeFromCartBySiteId } from '@/lib/cart/cart-actions'
 import { siteAdminTransitions } from '@/lib/sites/admin-site-transitions'
 import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
 import { addSiteToCart } from '@/lib/sites/site-actions'
-import {
-  SITE_STATUS_CHIP,
-  SITE_STATUS_LABEL,
-  SITE_STATUSES_ORDERED,
-} from '@/lib/sites/site-status-labels'
+import { SITE_STATUS_LABEL, SITE_STATUSES_ORDERED } from '@/lib/sites/site-status-labels'
 import {
   SITES_CATALOG_FILTER_SENTINEL,
   sitesCatalogQueryValueForUrl,
@@ -185,56 +181,41 @@ function SitesCatalogDebouncedFilters({
     return () => window.clearTimeout(id)
   }, [priceMaxDraft, priceMax, router, buildListHref])
 
+  const pillClass = 'h-8 w-24 rounded-full px-3 text-xs'
   return (
     <>
-      <div className="gap-inset flex flex-col">
-        <Label htmlFor="filter-country" className="text-muted-foreground text-xs">
-          Country code
-        </Label>
-        <FormControlInput
-          id="filter-country"
-          placeholder="Any country"
-          value={countryDraft}
-          onChange={(e) => setCountryDraft(e.target.value)}
-          maxLength={8}
-        />
-      </div>
-      <div className="gap-inset flex flex-col">
-        <Label htmlFor="filter-language" className="text-muted-foreground text-xs">
-          Language code
-        </Label>
-        <FormControlInput
-          id="filter-language"
-          placeholder="All languages"
-          value={languageDraft}
-          onChange={(e) => setLanguageDraft(e.target.value)}
-          maxLength={16}
-        />
-      </div>
-      <div className="gap-inset flex flex-col">
-        <Label htmlFor="price-min" className="text-muted-foreground text-xs">
-          Price from
-        </Label>
-        <FormControlInput
-          id="price-min"
-          inputMode="decimal"
-          placeholder="From"
-          value={priceMinDraft}
-          onChange={(e) => setPriceMinDraft(e.target.value)}
-        />
-      </div>
-      <div className="gap-inset flex flex-col">
-        <Label htmlFor="price-max" className="text-muted-foreground text-xs">
-          Price to
-        </Label>
-        <FormControlInput
-          id="price-max"
-          inputMode="decimal"
-          placeholder="To"
-          value={priceMaxDraft}
-          onChange={(e) => setPriceMaxDraft(e.target.value)}
-        />
-      </div>
+      <FormControlInput
+        aria-label="Country code"
+        placeholder="Country"
+        value={countryDraft}
+        onChange={(e) => setCountryDraft(e.target.value)}
+        maxLength={8}
+        className={pillClass}
+      />
+      <FormControlInput
+        aria-label="Language code"
+        placeholder="Language"
+        value={languageDraft}
+        onChange={(e) => setLanguageDraft(e.target.value)}
+        maxLength={16}
+        className={pillClass}
+      />
+      <FormControlInput
+        aria-label="Price from"
+        inputMode="decimal"
+        placeholder="Min $"
+        value={priceMinDraft}
+        onChange={(e) => setPriceMinDraft(e.target.value)}
+        className={pillClass}
+      />
+      <FormControlInput
+        aria-label="Price to"
+        inputMode="decimal"
+        placeholder="Max $"
+        value={priceMaxDraft}
+        onChange={(e) => setPriceMaxDraft(e.target.value)}
+        className={pillClass}
+      />
     </>
   )
 }
@@ -307,9 +288,6 @@ export function SitesCatalog({
     linkType !== undefined ||
     priceMin !== undefined ||
     priceMax !== undefined
-  const [filtersOpenDiscrete, setFiltersOpenDiscrete] = useState(false)
-  const filtersOpen = role !== 'client' && (hasStructuredFilters || filtersOpenDiscrete)
-
   const debouncedFiltersKey = `${country ?? ''}|${language ?? ''}|${priceMin ?? ''}|${priceMax ?? ''}`
 
   const statusFilterOptions = useMemo(() => {
@@ -508,18 +486,15 @@ export function SitesCatalog({
         transitions={statusDialog ? siteAdminTransitions(statusDialog.currentStatus) : []}
       />
 
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <header className="border-border/60 gap-block px-section py-block flex flex-col border-b sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-inset min-w-0">
-            <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-              Site catalog
-            </h2>
-            <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-              Browse placement inventory. Clients only see active listings; staff use filters to
-              narrow the directory.
-            </p>
+      <PageHeader
+        title="Site catalog"
+        description={
+          <>
+            Browse placement inventory. Clients only see active listings; staff use filters to
+            narrow the directory.
             {role === 'admin' ? (
-              <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
+              <>
+                {' '}
                 Categories live under{' '}
                 <Link
                   href="/settings/categories"
@@ -528,36 +503,21 @@ export function SitesCatalog({
                   Settings → Categories
                 </Link>
                 .
-              </p>
+              </>
             ) : null}
-          </div>
-          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
-              {countLabel}
-            </span>
-            {canCreate ? (
-              <Link
-                href="/sites/new"
-                className={cn(
-                  buttonVariants({ variant: 'cta', size: 'default' }),
-                  'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
-                )}
-              >
-                <Plus className="size-4" aria-hidden />
-                Create site
-              </Link>
-            ) : null}
-          </div>
-        </header>
-
-        <div className="border-border/60 px-section py-block border-b">
-          <div className="gap-inset flex items-center">
-            <form onSubmit={onSearchSubmit} className="relative min-w-0 flex-1">
+          </>
+        }
+        action={
+          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+            <form
+              onSubmit={onSearchSubmit}
+              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
+            >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden
               />
-              <FormControlInput
+              <FilterInput
                 type="search"
                 placeholder="Search domain, keywords, description, category…"
                 value={searchDraft}
@@ -566,111 +526,108 @@ export function SitesCatalog({
                 aria-label="Search sites"
               />
             </form>
-            {role !== 'client' ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 min-h-10 rounded-full px-4"
-                  onClick={() => {
-                    if (hasStructuredFilters) return
-                    setFiltersOpenDiscrete((v) => !v)
-                  }}
-                  aria-expanded={filtersOpen}
-                  aria-controls="sites-catalog-filters"
-                >
-                  <Filter className="size-4" aria-hidden />
-                  Filters
-                  {filtersOpen ? (
-                    <ChevronUp className="size-4 opacity-70" aria-hidden />
-                  ) : (
-                    <ChevronDown className="size-4 opacity-70" aria-hidden />
-                  )}
-                </Button>
-                {filtersActive ? (
-                  <Link
-                    href="/sites"
-                    scroll={false}
-                    className={cn(
-                      buttonVariants({ variant: 'outline', size: 'default' }),
-                      'h-10 min-h-10 rounded-full px-4'
-                    )}
-                  >
-                    <RotateCcw className="size-4" aria-hidden />
-                    Clear filters
-                  </Link>
-                ) : null}
-              </>
+            {canCreate ? (
+              <Link
+                href="/sites/new"
+                className={cn(
+                  buttonVariants({ variant: 'cta', size: 'default' }),
+                  'h-10 min-h-10 shrink-0 justify-center gap-2 rounded-full'
+                )}
+              >
+                <Plus className="size-4" aria-hidden />
+                Create site
+              </Link>
             ) : null}
           </div>
-        </div>
+        }
+      />
 
-        {role !== 'client' ? (
-          <>
-            {filtersOpen ? (
-              <div className="px-section py-block border-border/60 bg-muted/20 border-b">
-                <div
-                  id="sites-catalog-filters"
-                  className="gap-block grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
-                >
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="filter-category" className="text-muted-foreground text-xs">
-                      Category
-                    </Label>
-                    <FormControlSelect
-                      id="filter-category"
-                      value={
-                        categoryId !== undefined
-                          ? String(categoryId)
-                          : SITES_CATALOG_FILTER_SENTINEL
-                      }
-                      onValueChange={(value) =>
-                        router.push(buildListHref(1, { category_id: value }), { scroll: false })
-                      }
-                      options={categoryFilterOptions}
-                    />
-                  </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
-                      Status
-                    </Label>
-                    <FormControlSelect
-                      id="filter-status"
-                      value={status ?? SITES_CATALOG_FILTER_SENTINEL}
-                      onValueChange={(value) =>
-                        router.push(buildListHref(1, { status: value }), { scroll: false })
-                      }
-                      options={statusOptions}
-                    />
-                  </div>
-                  <div className="gap-inset flex flex-col">
-                    <Label htmlFor="filter-link" className="text-muted-foreground text-xs">
-                      Link type
-                    </Label>
-                    <FormControlSelect
-                      id="filter-link"
-                      value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
-                      onValueChange={(value) =>
-                        router.push(buildListHref(1, { link_type: value }), { scroll: false })
-                      }
-                      options={linkTypeOptions}
-                    />
-                  </div>
-                  <SitesCatalogDebouncedFilters
-                    key={debouncedFiltersKey}
-                    country={country}
-                    language={language}
-                    priceMin={priceMin}
-                    priceMax={priceMax}
-                    buildListHref={buildListHref}
-                    router={router}
-                  />
-                </div>
-              </div>
+      {role !== 'client' ? (
+        <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+          <div className="px-section py-block flex flex-wrap items-center gap-3">
+            <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
+              <Filter className="size-3.5 shrink-0" aria-hidden />
+              <span>Filters</span>
+            </div>
+            <FilterSelect
+              aria-label="Filter by category"
+              value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
+              onChange={(e) =>
+                router.push(buildListHref(1, { category_id: e.target.value }), {
+                  scroll: false,
+                })
+              }
+              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            >
+              {categoryFilterOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              aria-label="Filter by status"
+              value={status ?? SITES_CATALOG_FILTER_SENTINEL}
+              onChange={(e) =>
+                router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+              }
+              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            >
+              {statusOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              aria-label="Filter by link type"
+              value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
+              onChange={(e) =>
+                router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
+              }
+              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            >
+              {linkTypeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </FilterSelect>
+            <SitesCatalogDebouncedFilters
+              key={debouncedFiltersKey}
+              country={country}
+              language={language}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              buildListHref={buildListHref}
+              router={router}
+            />
+            {filtersActive ? (
+              <Link
+                href="/sites"
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+                )}
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
             ) : null}
-          </>
-        ) : null}
+            <span
+              className={cn(
+                'text-muted-foreground shrink-0 text-xs tabular-nums',
+                filtersActive ? '' : 'ml-auto'
+              )}
+            >
+              {countLabel}
+            </span>
+          </div>
+        </section>
+      ) : null}
 
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <div className="flex flex-col">
           {totalCount === 0 ? (
             <div className="px-section py-block">
@@ -770,18 +727,7 @@ export function SitesCatalog({
                           })}
                         </TableCell>
                         <TableCell className={SITE_ROW_CELL}>
-                          <span
-                            className={cn(
-                              'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                              SITE_STATUS_CHIP[row.status]
-                            )}
-                          >
-                            <span
-                              className="size-1.5 rounded-full bg-current opacity-70"
-                              aria-hidden
-                            />
-                            {SITE_STATUS_LABEL[row.status]}
-                          </span>
+                          <SiteStatusBadge status={row.status} />
                         </TableCell>
                         <TableCell
                           className={SITE_ROW_CELL_ACTIONS}
@@ -854,18 +800,7 @@ export function SitesCatalog({
                               })}
                             </p>
                             <div className="mt-inset">
-                              <span
-                                className={cn(
-                                  'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                                  SITE_STATUS_CHIP[row.status]
-                                )}
-                              >
-                                <span
-                                  className="size-1.5 rounded-full bg-current opacity-70"
-                                  aria-hidden
-                                />
-                                {SITE_STATUS_LABEL[row.status]}
-                              </span>
+                              <SiteStatusBadge status={row.status} />
                             </div>
                           </div>
                         </Button>

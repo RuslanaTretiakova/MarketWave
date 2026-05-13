@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { ChangeEvent } from 'react'
 
+import { PayoutStatusBadge } from '@/components/earnings/payout-status-badge'
+import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -16,6 +18,7 @@ import {
   type EarningsSummary,
   type SourcerFilterOption,
 } from '@/lib/earnings/load-earnings'
+import type { OrderStatus } from '@/lib/orders/order-status-labels'
 import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/supabase/types'
@@ -35,16 +38,6 @@ function buildHref(
   if (params.sourcerId) sp.set('sourcerId', params.sourcerId)
   if (params.page && params.page > 1) sp.set('page', String(params.page))
   return `${pathname}?${sp.toString()}`
-}
-
-const ORDER_STATUS_CHIP: Record<string, string> = {
-  published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-}
-
-const PAYOUT_CHIP: Record<string, string> = {
-  unpaid: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  paid: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 }
 
 export function EarningsView({
@@ -102,60 +95,69 @@ export function EarningsView({
         description="Earnings are calculated as your commission on published and completed orders in the selected month."
       />
 
-      <div className="border-border/60 bg-card overflow-hidden rounded-2xl border">
-        <div className="px-section py-block border-border/60 bg-muted/20 border-b">
-          <div className="text-muted-foreground gap-inset mb-inset flex items-center text-xs font-medium">
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+        <div className="px-section py-block flex items-center gap-2">
+          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <div className="gap-block flex flex-col sm:flex-row sm:flex-wrap sm:items-end">
-            <FilterInput
-              type="month"
-              value={month}
-              onChange={handleMonthChange}
-              className="sm:w-45"
-              aria-label="Month"
-            />
-            {canFilterBySourcer ? (
-              <FilterSelect
-                value={selectedSourcerId ?? ''}
-                onChange={handleSourcerChange}
-                className="sm:w-65"
-              >
-                <option value="">All sourcers</option>
-                {sourcerOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </FilterSelect>
-            ) : null}
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => handleShift(-1)}>
-                <ChevronLeft className="mr-1 size-4" aria-hidden />
-                Prev Month
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => handleShift(1)}>
-                Next Month
-                <ChevronRight className="ml-1 size-4" aria-hidden />
-              </Button>
-              {canFilterBySourcer && !!selectedSourcerId ? (
-                <Link
-                  href="/earnings"
-                  scroll={false}
-                  className={cn(
-                    buttonVariants({ variant: 'outline', size: 'sm' }),
-                    'h-10 gap-2 rounded-full px-4'
-                  )}
-                >
-                  <RotateCcw className="size-4" aria-hidden />
-                  Clear filters
-                </Link>
-              ) : null}
-            </div>
-          </div>
+          <FilterInput
+            type="month"
+            value={month}
+            onChange={handleMonthChange}
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            aria-label="Month"
+          />
+          {canFilterBySourcer ? (
+            <FilterSelect
+              value={selectedSourcerId ?? ''}
+              onChange={handleSourcerChange}
+              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              aria-label="Filter by sourcer"
+            >
+              <option value="">All sourcers</option>
+              {sourcerOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </FilterSelect>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1 rounded-full px-3 text-xs"
+            onClick={() => handleShift(-1)}
+          >
+            <ChevronLeft className="size-3.5" aria-hidden />
+            Prev
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1 rounded-full px-3 text-xs"
+            onClick={() => handleShift(1)}
+          >
+            Next
+            <ChevronRight className="size-3.5" aria-hidden />
+          </Button>
+          {canFilterBySourcer && !!selectedSourcerId ? (
+            <Link
+              href="/earnings"
+              scroll={false}
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+              )}
+            >
+              <RotateCcw className="size-3.5" aria-hidden />
+              Clear filters
+            </Link>
+          ) : null}
         </div>
-      </div>
+      </section>
 
       <div className="gap-block grid sm:grid-cols-2">
         <Card className="p-section">
@@ -223,14 +225,7 @@ export function EarningsView({
                     ) : null}
                     <td className="px-section py-block font-medium">{row.site_domain}</td>
                     <td className="px-section py-block">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          ORDER_STATUS_CHIP[row.order_status] ?? 'bg-muted text-muted-foreground'
-                        )}
-                      >
-                        {row.order_status}
-                      </span>
+                      <OrderStatusBadge status={row.order_status as OrderStatus} />
                     </td>
                     <td className="text-muted-foreground px-section py-block">
                       {row.publish_date ?? '—'}
@@ -245,14 +240,7 @@ export function EarningsView({
                       </p>
                     </td>
                     <td className="px-section py-block">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          PAYOUT_CHIP[row.payout_status]
-                        )}
-                      >
-                        {row.payout_status}
-                      </span>
+                      <PayoutStatusBadge status={row.payout_status} />
                     </td>
                   </tr>
                 ))}

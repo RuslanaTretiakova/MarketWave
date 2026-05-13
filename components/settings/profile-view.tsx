@@ -29,6 +29,7 @@ import { ChangeCredentialsSheet } from '@/components/settings/change-credentials
 import { Button } from '@/components/ui/button'
 import { FormControlInput, FormControlTextarea } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
 import { cn } from '@/lib/utils'
 
 export type ProfileSettingsRow = Pick<
@@ -401,15 +402,10 @@ function ProfileSettingsForm({
 
   return (
     <div className="gap-layout mx-auto flex max-w-2xl flex-col">
-      <div>
-        <h1 className="font-display text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
-          Profile
-        </h1>
-        <p className="text-muted-foreground mt-inset max-w-xl text-sm leading-relaxed">
-          Update your personal information, profile photo, and password — tied to your workspace
-          account.
-        </p>
-      </div>
+      <PageHeader
+        title="Profile"
+        description="Update your personal information, profile photo, and password — tied to your workspace account."
+      />
 
       <div className="gap-section flex flex-col">
         <section aria-labelledby="profile-photo-heading" className={profileSectionClass}>

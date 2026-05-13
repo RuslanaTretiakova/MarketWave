@@ -5,13 +5,13 @@ import { Filter, Receipt, RotateCcw, Search } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
 import {
-  INVOICE_STATUS_CHIP,
   INVOICE_STATUS_LABEL,
   INVOICE_STATUSES_ORDERED,
 } from '@/lib/invoices/invoice-status-labels'
@@ -117,19 +117,121 @@ export function InvoicesList({
     )
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    router.push(
-      buildHref(pathname, {
-        client: localClient.trim(),
-        status,
-        billingPeriod: localBillingPeriod.trim() || undefined,
-        invoiceNumber: localInvoiceNumber.trim() || undefined,
-        minAmount: localMinAmount.trim() || undefined,
-        maxAmount: localMaxAmount.trim() || undefined,
-      })
-    )
-  }
+  useEffect(() => {
+    const next = localBillingPeriod.trim()
+    if (next === (billingPeriod ?? '').trim()) return
+    const id = window.setTimeout(() => {
+      router.replace(
+        buildHref(pathname, {
+          client,
+          status,
+          billingPeriod: next || undefined,
+          invoiceNumber,
+          minAmount,
+          maxAmount,
+        }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [
+    localBillingPeriod,
+    billingPeriod,
+    client,
+    status,
+    invoiceNumber,
+    minAmount,
+    maxAmount,
+    pathname,
+    router,
+  ])
+
+  useEffect(() => {
+    const next = localInvoiceNumber.trim()
+    if (next === (invoiceNumber ?? '').trim()) return
+    const id = window.setTimeout(() => {
+      router.replace(
+        buildHref(pathname, {
+          client,
+          status,
+          billingPeriod,
+          invoiceNumber: next || undefined,
+          minAmount,
+          maxAmount,
+        }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [
+    localInvoiceNumber,
+    invoiceNumber,
+    client,
+    status,
+    billingPeriod,
+    minAmount,
+    maxAmount,
+    pathname,
+    router,
+  ])
+
+  useEffect(() => {
+    const next = localMinAmount.trim()
+    if (next === (minAmount ?? '').trim()) return
+    const id = window.setTimeout(() => {
+      router.replace(
+        buildHref(pathname, {
+          client,
+          status,
+          billingPeriod,
+          invoiceNumber,
+          minAmount: next || undefined,
+          maxAmount,
+        }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [
+    localMinAmount,
+    minAmount,
+    client,
+    status,
+    billingPeriod,
+    invoiceNumber,
+    maxAmount,
+    pathname,
+    router,
+  ])
+
+  useEffect(() => {
+    const next = localMaxAmount.trim()
+    if (next === (maxAmount ?? '').trim()) return
+    const id = window.setTimeout(() => {
+      router.replace(
+        buildHref(pathname, {
+          client,
+          status,
+          billingPeriod,
+          invoiceNumber,
+          minAmount,
+          maxAmount: next || undefined,
+        }),
+        { scroll: false }
+      )
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [
+    localMaxAmount,
+    maxAmount,
+    client,
+    status,
+    billingPeriod,
+    invoiceNumber,
+    minAmount,
+    pathname,
+    router,
+  ])
 
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
     router.push(
@@ -149,8 +251,14 @@ export function InvoicesList({
       ? INVOICE_STATUSES_ORDERED.filter((s) => s !== 'draft')
       : INVOICE_STATUSES_ORDERED
 
+  const defaultBillingPeriod = new Date().toISOString().slice(0, 7)
+  const isBillingPeriodApplied = Boolean(billingPeriod && billingPeriod !== defaultBillingPeriod)
+  const hasAppliedFilters = Boolean(
+    client || status || isBillingPeriodApplied || invoiceNumber || minAmount || maxAmount
+  )
+
   return (
-    <div className="space-y-layout mx-auto max-w-6xl">
+    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <PageHeader
         title="Invoices"
         description={
@@ -158,13 +266,13 @@ export function InvoicesList({
             ? 'View and download invoices for your orders.'
             : 'View, filter, and manage every invoice across the platform.'
         }
-      />
-
-      <div className="border-border/60 bg-card overflow-hidden rounded-2xl border">
-        {isStaff ? (
-          <div className="border-border/60 px-section py-block border-b">
-            <div className="gap-inset flex items-center">
-              <form onSubmit={(e) => e.preventDefault()} className="relative min-w-0 flex-1">
+        action={
+          isStaff ? (
+            <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+              <form
+                onSubmit={(e) => e.preventDefault()}
+                className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
+              >
                 <Search
                   className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                   aria-hidden
@@ -192,86 +300,88 @@ export function InvoicesList({
                 </Button>
               ) : null}
             </div>
-          </div>
-        ) : null}
+          ) : undefined
+        }
+      />
 
-        <div className="px-section py-block border-border/60 bg-muted/20 border-b">
-          <div className="text-muted-foreground gap-inset mb-inset flex items-center text-xs font-medium">
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+        <div className="px-section py-block flex items-center gap-2">
+          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <form
-            onSubmit={handleSubmit}
-            className="gap-block flex flex-col sm:flex-row sm:flex-wrap sm:items-end"
+          <FilterSelect
+            aria-label="Filter by status"
+            value={status ?? ''}
+            onChange={handleStatusChange}
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
           >
-            <FilterSelect
-              value={status ?? ''}
-              onChange={handleStatusChange}
-              className="h-10 sm:w-[180px]"
+            <option value="">All statuses</option>
+            {availableStatuses.map((s) => (
+              <option key={s} value={s}>
+                {INVOICE_STATUS_LABEL[s]}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterInput
+            aria-label="Billing period"
+            type="month"
+            value={localBillingPeriod}
+            onChange={(e) => setLocalBillingPeriod(e.target.value)}
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+          />
+          <FilterInput
+            aria-label="Invoice number"
+            type="search"
+            value={localInvoiceNumber}
+            onChange={(e) => setLocalInvoiceNumber(e.target.value)}
+            placeholder="Invoice #"
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            autoComplete="off"
+          />
+          <FilterInput
+            aria-label="Minimum amount"
+            type="number"
+            value={localMinAmount}
+            onChange={(e) => setLocalMinAmount(e.target.value)}
+            placeholder="Min $"
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            min="0"
+            step="0.01"
+          />
+          <FilterInput
+            aria-label="Maximum amount"
+            type="number"
+            value={localMaxAmount}
+            onChange={(e) => setLocalMaxAmount(e.target.value)}
+            placeholder="Max $"
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            min="0"
+            step="0.01"
+          />
+          {hasAppliedFilters ? (
+            <Link
+              href="/invoices"
+              scroll={false}
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+              )}
             >
-              <option value="">All statuses</option>
-              {availableStatuses.map((s) => (
-                <option key={s} value={s}>
-                  {INVOICE_STATUS_LABEL[s]}
-                </option>
-              ))}
-            </FilterSelect>
-            <FilterInput
-              type="month"
-              value={localBillingPeriod}
-              onChange={(e) => setLocalBillingPeriod(e.target.value)}
-              className="h-10 sm:w-[180px]"
-            />
-            <FilterInput
-              type="search"
-              value={localInvoiceNumber}
-              onChange={(e) => setLocalInvoiceNumber(e.target.value)}
-              placeholder="Invoice # (e.g. INV-2026-0001)"
-              className="h-10 sm:w-[220px]"
-              autoComplete="off"
-            />
-            <FilterInput
-              type="number"
-              value={localMinAmount}
-              onChange={(e) => setLocalMinAmount(e.target.value)}
-              placeholder="Min amount"
-              className="h-10 sm:w-[130px]"
-              min="0"
-              step="0.01"
-            />
-            <FilterInput
-              type="number"
-              value={localMaxAmount}
-              onChange={(e) => setLocalMaxAmount(e.target.value)}
-              placeholder="Max amount"
-              className="h-10 sm:w-[130px]"
-              min="0"
-              step="0.01"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              type="submit"
-              className="px-block h-10 rounded-full"
-            >
-              Apply
-            </Button>
-            {!!(client || status || billingPeriod || invoiceNumber || minAmount || maxAmount) ? (
-              <Link
-                href="/invoices"
-                scroll={false}
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'sm' }),
-                  'h-10 gap-2 rounded-full px-4'
-                )}
-              >
-                <RotateCcw className="size-4" aria-hidden />
-                Clear filters
-              </Link>
-            ) : null}
-          </form>
+              <RotateCcw className="size-3.5" aria-hidden />
+              Clear filters
+            </Link>
+          ) : null}
+          <span
+            className={cn(
+              'text-muted-foreground shrink-0 text-xs tabular-nums',
+              hasAppliedFilters ? '' : 'ml-auto'
+            )}
+          >
+            {totalCount} invoice{totalCount === 1 ? '' : 's'}
+          </span>
         </div>
-      </div>
+      </section>
 
       {rows.length === 0 ? (
         <Card className="py-hero gap-block flex flex-col items-center text-center">
@@ -339,14 +449,7 @@ export function InvoicesList({
                       </Link>
                     </td>
                     <td className="px-section py-block">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          INVOICE_STATUS_CHIP[row.status]
-                        )}
-                      >
-                        {INVOICE_STATUS_LABEL[row.status]}
-                      </span>
+                      <InvoiceStatusBadge status={row.status} />
                     </td>
                     <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
                       ${row.amount.toFixed(2)}

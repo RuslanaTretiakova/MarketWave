@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "ilike",
     "INVITABLE",
     "linkbuilding",
     "Mcpjson",
@@ -9,6 +10,8 @@
     "sourcers",
     "supabase",
     "treti",
+    "trgm",
+    "tsvector",
     "wordmark"
   ],
   "mssql.lintingEnabled": false,

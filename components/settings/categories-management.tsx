@@ -24,8 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { FilterInput } from '@/components/ui/filter-bar'
 import { FormControlInput } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Sheet,
   SheetContent,
@@ -171,32 +173,22 @@ export function CategoriesManagement({
       ? 'Create category'
       : 'Edit category'
 
-  const countLabel = q.trim()
-    ? `${totalCount} match${totalCount === 1 ? '' : 'es'}`
-    : `${totalCount} categories`
-
   return (
     <div className="gap-layout flex flex-col">
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <header className="border-border/60 gap-block px-section py-block flex flex-col border-b sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-inset min-w-0">
-            <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-              Categories
-            </h2>
-            <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-              Manage catalog niches used when creating or filtering sites.
-            </p>
-          </div>
-          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+      <PageHeader
+        title="Categories"
+        description="Manage catalog niches used when creating or filtering sites."
+        action={
+          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
+              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden
               />
-              <FormControlInput
+              <FilterInput
                 type="search"
                 placeholder="Search by name…"
                 value={searchDraft}
@@ -211,22 +203,21 @@ export function CategoriesManagement({
                 aria-label="Search categories"
               />
             </form>
-            <span className="text-muted-foreground block w-full text-xs tabular-nums sm:inline sm:w-auto">
-              {countLabel}
-            </span>
             <Button
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
+              className="h-10 min-h-10 shrink-0 justify-center rounded-full"
               onClick={openCreate}
             >
               <Plus className="size-4" aria-hidden />
               Create category
             </Button>
           </div>
-        </header>
+        }
+      />
 
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <div className="flex flex-col">
           {totalCount === 0 ? (
             <div className="px-section py-block">

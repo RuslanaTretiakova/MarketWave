@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { CartView } from '@/components/cart/cart-view'
+import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { loadCartWithTotal } from '@/lib/cart/load-cart'
 
@@ -29,12 +30,7 @@ export default async function CartPage() {
 
   return (
     <div className="space-y-layout mx-auto max-w-3xl">
-      <div>
-        <h2 className="text-foreground text-2xl font-semibold tracking-tight">Cart</h2>
-        <p className="text-muted-foreground mt-inset text-sm leading-relaxed">
-          Review your selected sites before placing an order.
-        </p>
-      </div>
+      <PageHeader title="Cart" description="Review your selected sites before placing an order." />
       <CartView initialItems={items} />
     </div>
   )

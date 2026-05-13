@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { SiteDetailHeaderActions } from '@/components/sites/site-detail-header-actions'
 import { SiteListingForm } from '@/components/sites/site-listing-form'
 import type { SiteFormSourcerOption } from '@/components/sites/site-listing-form'
+import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -93,25 +94,21 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
-      <div className="gap-block flex flex-wrap items-start justify-between">
-        <div className="space-y-inset min-w-0">
-          <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-            Edit site
-          </h2>
-          <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-            Saving updates listing data. Sourcer edits reset review status to Pending.
-          </p>
-        </div>
-        <SiteDetailHeaderActions
-          role={profile.role}
-          userId={user.id}
-          siteId={siteId}
-          domain={site.domain}
-          status={site.status}
-          sourcerId={site.sourcer_id}
-          siteInCart={false}
-        />
-      </div>
+      <PageHeader
+        title="Edit site"
+        description="Saving updates listing data. Sourcer edits reset review status to Pending."
+        action={
+          <SiteDetailHeaderActions
+            role={profile.role}
+            userId={user.id}
+            siteId={siteId}
+            domain={site.domain}
+            status={site.status}
+            sourcerId={site.sourcer_id}
+            siteInCart={false}
+          />
+        }
+      />
 
       <SiteListingForm
         mode="edit"
