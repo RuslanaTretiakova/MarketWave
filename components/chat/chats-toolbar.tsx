@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { Filter, RotateCcw } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 
-import { FilterSelect } from '@/components/ui/filter-bar'
+import { buttonVariants } from '@/components/ui/button'
+import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { searchProfilesForChatAction } from '@/lib/chat/search-participants'
 import { cn } from '@/lib/utils'
 
@@ -54,163 +56,143 @@ export function ChatsToolbar({ className }: { className?: string }) {
     return () => clearTimeout(t)
   }, [participantQ])
 
+  const hasFilters =
+    !!withParam || channel !== 'all' || status !== 'all' || sort !== 'activity' || !!from || !!to
+
   return (
     <div
       className={cn(
-        'border-border bg-muted/10 gap-inset p-block flex flex-col border-b',
+        'border-border bg-muted/10 px-section py-block flex items-center gap-2 border-b',
         className
       )}
     >
-      <div className="gap-inset flex flex-wrap items-end">
-        <label className="flex min-w-35 flex-1 flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Participant</span>
-          <div className="relative">
-            <input
-              type="search"
-              value={participantQ}
-              onChange={(e) => {
-                setParticipantQ(e.target.value)
-                setOpenHits(true)
-              }}
-              onFocus={() => setOpenHits(true)}
-              onBlur={() => setTimeout(() => setOpenHits(false), 150)}
-              placeholder="Search name or email…"
-              className="border-border bg-background text-foreground h-10 w-full rounded-full border px-3 text-sm"
-            />
-            {openHits && hits.length > 0 && (
-              <ul className="border-border bg-background absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-md border py-1 text-sm shadow-md">
-                {hits.map((h) => (
-                  <li key={h.id}>
-                    <button
-                      type="button"
-                      className="hover:bg-muted w-full px-3 py-2 text-left"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        pushParams((p) => {
-                          p.set('with', h.id)
-                        })
-                        setParticipantQ('')
-                        setHits([])
-                      }}
-                    >
-                      {h.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          {withParam ? (
-            <button
-              type="button"
-              className="text-primary text-xs font-medium underline-offset-2 hover:underline"
-              onClick={() =>
-                pushParams((p) => {
-                  p.delete('with')
-                })
-              }
-            >
-              Clear participant filter
-            </button>
-          ) : null}
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Category</span>
-          <FilterSelect
-            className="h-10 min-w-32.5"
-            value={channel}
-            onChange={(e) =>
-              pushParams((p) => {
-                const v = e.target.value
-                if (v === 'all') p.delete('channel')
-                else p.set('channel', v)
-              })
-            }
-          >
-            <option value="all">All</option>
-            <option value="standard">Standard</option>
-            <option value="support">Support</option>
-            <option value="sales">Sales</option>
-          </FilterSelect>
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Status</span>
-          <FilterSelect
-            className="h-10 min-w-30"
-            value={status}
-            onChange={(e) =>
-              pushParams((p) => {
-                const v = e.target.value
-                if (v === 'all') p.delete('status')
-                else p.set('status', v)
-              })
-            }
-          >
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="archived">Archived</option>
-          </FilterSelect>
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Sort</span>
-          <FilterSelect
-            className="h-10 min-w-35"
-            value={sort}
-            onChange={(e) =>
-              pushParams((p) => {
-                const v = e.target.value
-                if (v === 'activity') p.delete('sort')
-                else p.set('sort', v)
-              })
-            }
-          >
-            <option value="activity">Latest activity</option>
-            <option value="created">Date created</option>
-          </FilterSelect>
-        </label>
+      <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
+        <Filter className="size-3.5 shrink-0" aria-hidden />
+        <span>Filters</span>
       </div>
-
-      <div className="gap-inset flex flex-wrap items-end">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Created from</span>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) =>
-              pushParams((p) => {
-                const v = e.target.value
-                if (!v) p.delete('from')
-                else p.set('from', v)
-              })
-            }
-            className="border-border bg-background text-foreground h-10 rounded-full border px-3 text-sm"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted-foreground text-xs">Created to</span>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) =>
-              pushParams((p) => {
-                const v = e.target.value
-                if (!v) p.delete('to')
-                else p.set('to', v)
-              })
-            }
-            className="border-border bg-background text-foreground h-10 rounded-full border px-3 text-sm"
-          />
-        </label>
+      <div className="relative">
+        <FilterInput
+          type="search"
+          value={participantQ}
+          onChange={(e) => {
+            setParticipantQ(e.target.value)
+            setOpenHits(true)
+          }}
+          onFocus={() => setOpenHits(true)}
+          onBlur={() => setTimeout(() => setOpenHits(false), 150)}
+          placeholder="Participant…"
+          aria-label="Search participant"
+          className="h-8 w-auto max-w-40 min-w-0 rounded-full px-3 text-xs"
+        />
+        {openHits && hits.length > 0 && (
+          <ul className="border-border bg-background absolute z-20 mt-1 max-h-48 w-48 overflow-auto rounded-md border py-1 text-xs shadow-md">
+            {hits.map((h) => (
+              <li key={h.id}>
+                <button
+                  type="button"
+                  className="hover:bg-muted w-full px-3 py-2 text-left"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    pushParams((p) => {
+                      p.set('with', h.id)
+                    })
+                    setParticipantQ('')
+                    setHits([])
+                  }}
+                >
+                  {h.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <FilterSelect
+        aria-label="Category"
+        className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+        value={channel}
+        onChange={(e) =>
+          pushParams((p) => {
+            const v = e.target.value
+            if (v === 'all') p.delete('channel')
+            else p.set('channel', v)
+          })
+        }
+      >
+        <option value="all">All categories</option>
+        <option value="standard">Standard</option>
+        <option value="support">Support</option>
+        <option value="sales">Sales</option>
+      </FilterSelect>
+      <FilterSelect
+        aria-label="Status"
+        className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+        value={status}
+        onChange={(e) =>
+          pushParams((p) => {
+            const v = e.target.value
+            if (v === 'all') p.delete('status')
+            else p.set('status', v)
+          })
+        }
+      >
+        <option value="all">All status</option>
+        <option value="active">Active</option>
+        <option value="archived">Archived</option>
+      </FilterSelect>
+      <FilterSelect
+        aria-label="Sort"
+        className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+        value={sort}
+        onChange={(e) =>
+          pushParams((p) => {
+            const v = e.target.value
+            if (v === 'activity') p.delete('sort')
+            else p.set('sort', v)
+          })
+        }
+      >
+        <option value="activity">Latest activity</option>
+        <option value="created">Date created</option>
+      </FilterSelect>
+      <FilterInput
+        type="date"
+        aria-label="Created from"
+        value={from}
+        onChange={(e) =>
+          pushParams((p) => {
+            const v = e.target.value
+            if (!v) p.delete('from')
+            else p.set('from', v)
+          })
+        }
+        className="h-8 w-auto rounded-full px-3 text-xs"
+      />
+      <FilterInput
+        type="date"
+        aria-label="Created to"
+        value={to}
+        onChange={(e) =>
+          pushParams((p) => {
+            const v = e.target.value
+            if (!v) p.delete('to')
+            else p.set('to', v)
+          })
+        }
+        className="h-8 w-auto rounded-full px-3 text-xs"
+      />
+      {hasFilters ? (
         <Link
           href="/chats"
-          className="text-muted-foreground hover:text-foreground text-sm underline-offset-2 hover:underline"
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+          )}
         >
-          Reset filters
+          <RotateCcw className="size-3.5" aria-hidden />
+          Clear filters
         </Link>
-      </div>
+      ) : null}
     </div>
   )
 }

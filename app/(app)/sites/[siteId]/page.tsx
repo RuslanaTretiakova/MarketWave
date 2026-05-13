@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { loadCartSiteIds } from '@/lib/cart/load-cart'
 
 import { SiteDetailHeaderActions } from '@/components/sites/site-detail-header-actions'
+import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
 import { SITE_STATUS_CHIP, SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import { createClient } from '@/lib/supabase/server'
@@ -126,40 +127,40 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
 
   return (
     <div className="gap-layout mx-auto flex max-w-3xl flex-col">
-      <div className="gap-block flex flex-wrap items-start justify-between">
-        <div className="space-y-inset min-w-0">
-          <div className="mt-inset flex min-w-0 flex-wrap items-center gap-2">
-            <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-              {row.domain}
-            </h2>
-            <span
-              className={cn(
-                'inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                SITE_STATUS_CHIP[row.status]
-              )}
-            >
-              <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
-              {SITE_STATUS_LABEL[row.status]}
-            </span>
-          </div>
-          <p className="text-muted-foreground mt-inset flex max-w-xl flex-wrap items-baseline gap-x-1.5 text-xs leading-relaxed">
+      <PageHeader
+        title={row.domain}
+        meta={
+          <span
+            className={cn(
+              'inline-flex min-h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+              SITE_STATUS_CHIP[row.status]
+            )}
+          >
+            <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+            {SITE_STATUS_LABEL[row.status]}
+          </span>
+        }
+        description={
+          <span className="flex max-w-xl flex-wrap items-baseline gap-x-1.5">
             <span className="font-medium">Category</span>
             <span className="text-muted-foreground/60" aria-hidden>
               ·
             </span>
             <span className="text-foreground">{row.categories?.name ?? 'Uncategorized'}</span>
-          </p>
-        </div>
-        <SiteDetailHeaderActions
-          role={role}
-          userId={user.id}
-          siteId={row.id}
-          domain={row.domain}
-          status={row.status}
-          sourcerId={row.sourcer_id}
-          siteInCart={siteInCart}
-        />
-      </div>
+          </span>
+        }
+        action={
+          <SiteDetailHeaderActions
+            role={role}
+            userId={user.id}
+            siteId={row.id}
+            domain={row.domain}
+            status={row.status}
+            sourcerId={row.sourcer_id}
+            siteInCart={siteInCart}
+          />
+        }
+      />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <dl className="divide-border px-section py-block divide-y">

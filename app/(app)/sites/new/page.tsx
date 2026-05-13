@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { SiteListingForm } from '@/components/sites/site-listing-form'
+import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -58,15 +59,10 @@ export default async function NewSitePage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="space-y-inset min-w-0">
-          <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-            Create site
-          </h2>
-          <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-            New listings start as Pending review. Attach countries and languages as ISO / BCP-47
-            codes (comma-separated).
-          </p>
-        </div>
+        <PageHeader
+          title="Create site"
+          description="New listings start as Pending review. Attach countries and languages as ISO / BCP-47 codes (comma-separated)."
+        />
       </div>
 
       <SiteListingForm mode="create" role={profile.role} categories={categoriesRaw} />

@@ -45,7 +45,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { FormControlInput } from '@/components/ui/form-control'
+import { FilterSelect } from '@/components/ui/filter-bar'
 import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Sheet,
   SheetContent,
@@ -95,15 +97,6 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
   if (isUserBanned(row)) return 'disabled'
   if (row.require_password_change) return 'invited'
   return 'active'
-}
-
-function chipClasses(active: boolean) {
-  return cn(
-    'rounded-full border px-2.5 text-xs font-medium capitalize transition-colors min-h-10 py-2 sm:min-h-0 sm:py-1',
-    active
-      ? 'border-primary bg-primary-soft text-primary-ink hover:bg-primary-soft hover:text-primary-ink'
-      : 'border-border/60 bg-background text-foreground hover:bg-muted hover:text-foreground'
-  )
 }
 
 /** Named group so nested controls (links, menus) never steal `group-hover` from the row. */
@@ -386,22 +379,18 @@ export function UsersManagement({
 
   return (
     <div className="gap-layout flex flex-col">
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <header className="border-border/60 gap-block px-section py-block flex flex-col border-b sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-inset min-w-0">
-            <h2 className="font-display text-foreground text-xl font-semibold tracking-tight">
-              User management
-            </h2>
-            <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
-              {canChangeStatus
-                ? 'Invite teammates, change roles, and manage access.'
-                : 'Invite teammates and manage profiles. Only admins can activate or disable users.'}
-            </p>
-          </div>
-          <div className="gap-block flex w-full flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+      <PageHeader
+        title="User management"
+        description={
+          canChangeStatus
+            ? 'Invite teammates, change roles, and manage access.'
+            : 'Invite teammates and manage profiles. Only admins can activate or disable users.'
+        }
+        action={
+          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:justify-end">
             <form
               onSubmit={onSearchSubmit}
-              className="relative w-full min-w-0 sm:max-w-xs sm:min-w-48 sm:flex-none"
+              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
             >
               <Search
                 className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -414,6 +403,7 @@ export function UsersManagement({
                 onChange={(e) => {
                   const v = e.target.value
                   setSearchDraft(v)
+
                   if (!v.trim() && q.trim()) {
                     router.push(buildListHref({ page: 1, q: '' }), { scroll: false })
                   }
@@ -426,7 +416,7 @@ export function UsersManagement({
               type="button"
               variant="cta"
               size="default"
-              className="h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto"
+              className="h-10 min-h-10 shrink-0 justify-center rounded-full"
               onClick={() => {
                 setFormMessage(null)
                 setInviteOpen(true)
@@ -436,53 +426,74 @@ export function UsersManagement({
               Invite user
             </Button>
           </div>
-        </header>
+        }
+      />
 
-        <div className="border-border/60 gap-inset px-section py-block flex flex-col border-b">
-          <div className="text-muted-foreground gap-inset flex items-center text-xs font-medium">
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+        <div className="px-section py-block flex items-center gap-3">
+          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <div className="gap-inset flex flex-col sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="gap-inset flex flex-wrap items-center">
-              {roleFilters.map(({ key, label }) => (
-                <Button
-                  key={key}
-                  type="button"
-                  variant="outline"
-                  aria-pressed={roleFilter === key}
-                  className={chipClasses(roleFilter === key)}
-                  onClick={() => {
-                    router.push(buildListHref({ page: 1, role: key }), { scroll: false })
-                  }}
-                >
-                  {label}
-                </Button>
-              ))}
-              {roleFilters.length > 0 ? (
-                <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden />
-              ) : null}
-              {statusFilters.map(({ key, label }) => (
-                <Button
-                  key={key}
-                  type="button"
-                  variant="outline"
-                  aria-pressed={statusFilter === key}
-                  className={chipClasses(statusFilter === key)}
-                  onClick={() => {
-                    router.push(buildListHref({ page: 1, status: key }), { scroll: false })
-                  }}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-            <span className="text-muted-foreground w-full text-end text-xs tabular-nums sm:ml-auto sm:w-auto sm:text-start">
-              {loadingCountLabel ?? usersCountLabel}
-            </span>
-          </div>
+          <FilterSelect
+            aria-label="Filter by role"
+            value={roleFilter}
+            onChange={(e) =>
+              router.push(
+                buildListHref({ page: 1, role: e.target.value as OrgUsersListRoleFilter }),
+                { scroll: false }
+              )
+            }
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+          >
+            {roleFilters.map(({ key, label }) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect
+            aria-label="Filter by status"
+            value={statusFilter}
+            onChange={(e) =>
+              router.push(
+                buildListHref({ page: 1, status: e.target.value as OrgUsersListStatusFilter }),
+                { scroll: false }
+              )
+            }
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+          >
+            {statusFilters.map(({ key, label }) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </FilterSelect>
+          {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? (
+            <Link
+              href={buildListHref({ page: 1, q: '', role: 'all', status: 'all' })}
+              scroll={false}
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+              )}
+            >
+              <RotateCcw className="size-3.5" aria-hidden />
+              Clear filters
+            </Link>
+          ) : null}
+          <span
+            className={cn(
+              'text-muted-foreground shrink-0 text-xs tabular-nums',
+              roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? '' : 'ml-auto'
+            )}
+          >
+            {loadingCountLabel ?? usersCountLabel}
+          </span>
         </div>
+      </section>
 
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <div className="flex flex-col">
           {formMessage ? (
             <div className="border-border/60 px-section py-block border-b">
