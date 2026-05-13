@@ -65,8 +65,8 @@ export function NotificationsList({
   function runMarkRead(e: React.MouseEvent, id: string) {
     e.preventDefault()
     e.stopPropagation()
-    startTransition(async () => {
-      const res = await markNotificationRead(id)
+
+    markNotificationRead(id).then((res) => {
       if (!res.ok) toast.error(res.message)
     })
   }
@@ -90,10 +90,12 @@ export function NotificationsList({
       />
 
       {rows.length === 0 ? (
-        <Card className="p-section text-muted-foreground text-sm">No notifications yet.</Card>
+        <Card className="p-section text-muted-foreground bg-background text-sm">
+          No notifications yet.
+        </Card>
       ) : (
-        <Card className="overflow-hidden p-0">
-          <div className="divide-border divide-y">
+        <Card className="bg-background overflow-hidden p-0">
+          <div className="flex flex-col">
             {rows.map((row) => {
               const href = notificationHref(row)
               const isUnread = !row.read_at
@@ -103,7 +105,7 @@ export function NotificationsList({
                   : row.message
 
               const inner = (
-                <div className="flex min-w-0 flex-1 items-start gap-3">
+                <div className="flex w-full min-w-0 flex-1 items-start gap-3">
                   <span
                     className={cn(
                       'mt-1.5 size-2 shrink-0 rounded-full',
@@ -111,6 +113,7 @@ export function NotificationsList({
                     )}
                     aria-hidden
                   />
+
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p
                       className={cn(
@@ -120,6 +123,7 @@ export function NotificationsList({
                     >
                       {row.title}
                     </p>
+
                     <p
                       className={cn(
                         'text-sm',
@@ -128,6 +132,7 @@ export function NotificationsList({
                     >
                       {displayMessage}
                     </p>
+
                     <p className="text-muted-foreground/60 text-xs">
                       {eventLabel(row.event)} · {new Date(row.created_at).toLocaleString()}
                     </p>
@@ -140,15 +145,15 @@ export function NotificationsList({
                   {isUnread ? (
                     <button
                       type="button"
-                      disabled={pending}
                       onClick={(e) => runMarkRead(e, row.id)}
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-8 items-center justify-center rounded-lg transition-colors disabled:opacity-50"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-8 items-center justify-center rounded-lg transition-colors"
                       title="Mark as read"
                     >
                       <Check className="size-4" />
                       <span className="sr-only">Mark as read</span>
                     </button>
                   ) : null}
+
                   {href ? (
                     <ExternalLink className="text-muted-foreground/40 size-3.5" aria-hidden />
                   ) : null}
@@ -156,8 +161,7 @@ export function NotificationsList({
               )
 
               const rowClassName = cn(
-                'px-section py-3 flex items-start justify-between gap-3 transition-colors',
-                href && 'hover:bg-muted/50 cursor-pointer'
+                'w-full px-section py-3 flex items-start justify-between gap-3 transition-colors bg-transparent hover:bg-muted/50'
               )
 
               return href ? (
@@ -167,9 +171,7 @@ export function NotificationsList({
                   className={rowClassName}
                   onClick={() => {
                     if (isUnread) {
-                      startTransition(async () => {
-                        await markNotificationRead(row.id)
-                      })
+                      markNotificationRead(row.id)
                     }
                   }}
                 >
@@ -184,6 +186,7 @@ export function NotificationsList({
               )
             })}
           </div>
+
           <SettingsTablePagination
             page={page}
             pageSize={SETTINGS_TABLE_PAGE_SIZE}
