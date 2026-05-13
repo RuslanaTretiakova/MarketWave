@@ -18,6 +18,7 @@ const EVENT_LABELS: Record<NotificationEvent, string> = {
   site_approved: 'Sites approved',
   site_archived: 'Sites archived',
   site_unarchived: 'Sites activated',
+  chat_message: 'Chat messages',
 }
 
 const EVENT_TONE: Record<NotificationEvent, string> = {
@@ -34,6 +35,7 @@ const EVENT_TONE: Record<NotificationEvent, string> = {
   site_approved: 'bg-primary-soft text-primary-ink',
   site_archived: 'bg-muted text-muted-foreground',
   site_unarchived: 'bg-primary-soft/80 text-primary-ink',
+  chat_message: 'bg-blue-100 text-blue-800',
 }
 
 export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) {

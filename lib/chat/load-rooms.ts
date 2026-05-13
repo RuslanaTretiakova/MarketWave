@@ -189,6 +189,8 @@ export async function loadChatRooms(
 
   if (filters.status && filters.status !== 'all') {
     out = out.filter((s) => s.status === filters.status)
+  } else if (!filters.status) {
+    out = out.filter((s) => s.status !== 'archived')
   }
 
   if (filters.createdFrom) {

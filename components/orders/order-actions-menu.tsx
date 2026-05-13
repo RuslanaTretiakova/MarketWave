@@ -175,7 +175,7 @@ export function OrderActionsMenu({
             )}
             {isOrderActionEnabled(actions, 'assign_copywriter') && (
               <DropdownMenuItem onClick={() => setDialog('assign_copywriter')}>
-                Assign copywriter
+                {context.copywriterId ? 'Reassign copywriter' : 'Assign copywriter'}
               </DropdownMenuItem>
             )}
             {isOrderActionEnabled(actions, 'cancel_order') && (
@@ -408,8 +408,12 @@ export function OrderActionsMenu({
             setCopywriterId(context.copywriterId ?? '')
           }
         }}
-        title="Assign copywriter"
-        description="Choose a copywriter for this order."
+        title={context.copywriterId ? 'Reassign copywriter' : 'Assign copywriter'}
+        description={
+          context.copywriterId
+            ? 'Pick a different copywriter for this order. Both copywriters and the client will be notified.'
+            : 'Choose a copywriter for this order.'
+        }
         middle={
           <>
             <OrderSummaryBanner domain={siteDomain} status={context.status} price={price} />

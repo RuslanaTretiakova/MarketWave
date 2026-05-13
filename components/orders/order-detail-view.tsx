@@ -6,7 +6,7 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
-import { AssignCopywriterSelect } from '@/components/orders/assign-copywriter-select'
+import { AssignCopywriterButton } from '@/components/orders/assign-copywriter-select'
 import { ChangeRequestsList } from '@/components/orders/change-requests-list'
 import { ClientContentReviewActions } from '@/components/orders/client-content-review-actions'
 import { CopywriterContentEditor } from '@/components/orders/copywriter-content-editor'
@@ -18,7 +18,11 @@ import { markInvoicePaid } from '@/lib/invoices/invoice-actions'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import type { CopywriterOption } from '@/lib/orders/load-copywriter-options'
 import type { OrderDetail, UserRole } from '@/lib/orders/load-order-detail'
-import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
+import {
+  ORDER_STATUS_CHIP,
+  ORDER_STATUS_LABEL,
+  orderStatusLabelForRole,
+} from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -117,7 +121,7 @@ export function OrderDetailView({
                 ORDER_STATUS_CHIP[order.status]
               )}
             >
-              {ORDER_STATUS_LABEL[order.status]}
+              {orderStatusLabelForRole(order.status, role)}
             </span>
             <span className="text-muted-foreground text-sm tabular-nums">
               ${order.price.toFixed(2)}
@@ -366,17 +370,12 @@ export function OrderDetailView({
           {isStaff && copywriterOptions && (
             <Card className="p-section space-y-block">
               <h3 className="text-foreground text-base font-semibold">Assignment</h3>
-              <AssignCopywriterSelect
+              <AssignCopywriterButton
                 orderId={order.id}
                 currentCopywriterId={order.copywriter_id}
+                currentCopywriterName={order.copywriter_name}
                 copywriterOptions={copywriterOptions}
               />
-              {order.copywriter_name && (
-                <p className="text-muted-foreground text-sm">
-                  Assigned to{' '}
-                  <span className="text-foreground font-medium">{order.copywriter_name}</span>
-                </p>
-              )}
             </Card>
           )}
         </div>

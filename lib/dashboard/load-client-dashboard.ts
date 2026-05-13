@@ -62,8 +62,8 @@ export async function loadClientDashboard(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<ClientDashboardData> {
-  // RLS scopes orders/invoices/cart to the calling user automatically.
-  void userId
+  // RLS already scopes orders/invoices/cart to the caller. The explicit
+  // `.eq('user_id', userId)` / inner-join filters below are defense-in-depth.
 
   const [
     inFlight,
@@ -80,17 +80,24 @@ export async function loadClientDashboard(
     supabase
       .from('orders')
       .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
       .in('status', ACTIVE_ORDER_STATUSES),
     supabase
       .from('orders')
       .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
       .eq('status', 'content_sent'),
-    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+    supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'completed'),
     Promise.all(
       ORDER_PIPELINE.map((stage) =>
         supabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
           .eq('status', stage.status)
           .then((r) => ({ key: stage.status, label: stage.label, count: r.count ?? 0 }))
       )
@@ -98,29 +105,40 @@ export async function loadClientDashboard(
     supabase
       .from('orders')
       .select('id, site_domain, status, price, created_at')
+      .eq('user_id', userId)
       .eq('status', 'content_sent')
       .order('created_at', { ascending: true })
       .limit(8),
     supabase
       .from('orders')
       .select('id, site_domain, status, price, created_at')
+      .eq('user_id', userId)
       .in('status', ACTIVE_ORDER_STATUSES)
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase.from('invoices').select('amount').eq('status', 'draft'),
-    supabase.from('invoices').select('amount').eq('status', 'sent'),
+    supabase
+      .from('invoices')
+      .select('amount, order:orders!inner(user_id)')
+      .eq('status', 'draft')
+      .eq('order.user_id', userId),
+    supabase
+      .from('invoices')
+      .select('amount, order:orders!inner(user_id)')
+      .eq('status', 'sent')
+      .eq('order.user_id', userId),
     supabase
       .from('invoices')
       .select(
         `
         id, order_id, amount, due_date, status, created_at,
-        order:orders!inner(site_domain)
+        order:orders!inner(site_domain, user_id)
       `
       )
       .in('status', ['draft', 'sent'])
+      .eq('order.user_id', userId)
       .order('due_date', { ascending: true, nullsFirst: false })
       .limit(5),
-    supabase.from('carts').select('id, cart_items(id)').maybeSingle(),
+    supabase.from('carts').select('id, cart_items(id)').eq('user_id', userId).maybeSingle(),
   ])
 
   const pendingRows = openInvoicesDraft.data ?? []

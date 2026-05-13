@@ -25,7 +25,7 @@ import {
 import type { ClientDashboardData } from '@/lib/dashboard/load-client-dashboard'
 import type { UnreadByEvent } from '@/lib/notifications/load-notifications'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
-import { ORDER_STATUS_CHIP, ORDER_STATUS_LABEL } from '@/lib/orders/order-status-labels'
+import { ORDER_STATUS_CHIP, orderStatusLabelForRole } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
 
 function moneyUSD(n: number) {
@@ -158,7 +158,7 @@ export function ClientDashboard({
                     ORDER_STATUS_CHIP[row.status]
                   )}
                 >
-                  {ORDER_STATUS_LABEL[row.status]}
+                  {orderStatusLabelForRole(row.status, 'client')}
                 </span>
               </TableCell>
               <TableCell className="text-right">
@@ -210,7 +210,7 @@ export function ClientDashboard({
                           ORDER_STATUS_CHIP[row.status]
                         )}
                       >
-                        {ORDER_STATUS_LABEL[row.status]}
+                        {orderStatusLabelForRole(row.status, 'client')}
                       </span>
                     </div>
                     <div className="flex items-end justify-between">

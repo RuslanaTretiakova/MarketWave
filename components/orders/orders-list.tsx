@@ -375,7 +375,7 @@ export function OrdersList({
                       ) : null}
                     </td>
                     <td className="px-section py-block">
-                      <OrderStatusBadge status={row.status} />
+                      <OrderStatusBadge status={row.status} role={role} />
                     </td>
                     {showClientColumn ? (
                       <td className="text-muted-foreground px-section py-block">

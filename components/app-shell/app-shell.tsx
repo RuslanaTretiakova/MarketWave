@@ -29,8 +29,9 @@ export function AppShell({
   const navBadges = useMemo<Record<string, number>>(() => {
     const map: Record<string, number> = {}
     if (chatUnreadCount > 0) map['/chats'] = chatUnreadCount
+    if (cartItemCount > 0) map['/cart'] = cartItemCount
     return map
-  }, [chatUnreadCount])
+  }, [chatUnreadCount, cartItemCount])
 
   useEffect(() => {
     let cancelled = false
