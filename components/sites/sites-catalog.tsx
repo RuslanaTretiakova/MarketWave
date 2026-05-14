@@ -3,17 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  Eye,
-  Filter,
-  Globe,
-  Pencil,
-  Plus,
-  RotateCcw,
-  Search,
-  ShoppingCart,
-  Trash2,
-} from 'lucide-react'
+import { Eye, Filter, Globe, Pencil, Plus, RotateCcw, ShoppingCart, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SiteCatalogRowActions } from '@/components/sites/site-catalog-row-actions'
@@ -22,9 +12,10 @@ import { SiteStatusBadge } from '@/components/sites/site-status-badge'
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
+import { FilterSelect } from '@/components/ui/filter-bar'
 import { FormControlInput } from '@/components/ui/form-control'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchField } from '@/components/ui/search-field'
 import {
   Table,
   TableBody,
@@ -256,12 +247,6 @@ export function SitesCatalog({
 }) {
   const router = useRouter()
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
-  const [searchDraft, setSearchDraft] = useState(q)
-  const [prevQ, setPrevQ] = useState(q)
-  if (q !== prevQ) {
-    setPrevQ(q)
-    setSearchDraft(q)
-  }
 
   const [mobileDetailRow, setMobileDetailRow] = useState<SiteCatalogRow | null>(null)
   const [addingSiteId, setAddingSiteId] = useState<string | null>(null)
@@ -320,7 +305,6 @@ export function SitesCatalog({
     (
       nextPage: number,
       overrides?: {
-        q?: string
         category_id?: string
         status?: string
         country?: string
@@ -331,7 +315,6 @@ export function SitesCatalog({
       }
     ) => {
       const params = new URLSearchParams()
-      const qUse = overrides?.q !== undefined ? overrides.q : q
       const catRaw =
         overrides?.category_id !== undefined
           ? overrides.category_id
@@ -349,7 +332,7 @@ export function SitesCatalog({
       const stParam = sitesCatalogQueryValueForUrl(stRaw)
       const ltParam = sitesCatalogQueryValueForUrl(ltRaw)
 
-      if (qUse.trim()) params.set('q', qUse.trim())
+      if (q.trim()) params.set('q', q.trim())
       if (catParam !== null) params.set('category_id', catParam)
       if (stParam !== null) params.set('status', stParam)
       if (coUse.trim()) params.set('country', coUse.trim())
@@ -363,26 +346,6 @@ export function SitesCatalog({
     },
     [q, categoryId, status, country, language, linkType, priceMin, priceMax]
   )
-
-  const onSearchSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault()
-      router.replace(buildListHref(1, { q: searchDraft }), { scroll: false })
-    },
-    [router, buildListHref, searchDraft]
-  )
-
-  useEffect(() => {
-    const draftApplied = searchDraft.trim()
-    const urlApplied = q.trim()
-    if (draftApplied === urlApplied) return
-
-    const delay = draftApplied === '' ? 0 : SITES_FILTER_INPUT_DEBOUNCE_MS
-    const id = window.setTimeout(() => {
-      router.replace(buildListHref(1, { q: searchDraft }), { scroll: false })
-    }, delay)
-    return () => window.clearTimeout(id)
-  }, [searchDraft, q, router, buildListHref])
 
   const addCart = useCallback(
     (siteId: string, domain: string, onSuccess?: () => void) => {
@@ -509,23 +472,11 @@ export function SitesCatalog({
         }
         action={
           <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
-            <form
-              onSubmit={onSearchSubmit}
-              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
-            >
-              <Search
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <FilterInput
-                type="search"
-                placeholder="Search domain, keywords, description, category…"
-                value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
-                className="pr-3 pl-10"
-                aria-label="Search sites"
-              />
-            </form>
+            <SearchField
+              name="q"
+              placeholder="Search domain, keywords, description, category…"
+              ariaLabel="Search sites"
+            />
             {canCreate ? (
               <Link
                 href="/sites/new"
@@ -542,29 +493,29 @@ export function SitesCatalog({
         }
       />
 
-      {role !== 'client' ? (
-        <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-          <div className="px-section py-block flex flex-wrap items-center gap-3">
-            <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
-              <Filter className="size-3.5 shrink-0" aria-hidden />
-              <span>Filters</span>
-            </div>
-            <FilterSelect
-              aria-label="Filter by category"
-              value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
-              onChange={(e) =>
-                router.push(buildListHref(1, { category_id: e.target.value }), {
-                  scroll: false,
-                })
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {categoryFilterOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </FilterSelect>
+      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+        <div className="px-section py-block flex flex-wrap items-center gap-3">
+          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
+            <Filter className="size-3.5 shrink-0" aria-hidden />
+            <span>Filters</span>
+          </div>
+          <FilterSelect
+            aria-label="Filter by category"
+            value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
+            onChange={(e) =>
+              router.push(buildListHref(1, { category_id: e.target.value }), {
+                scroll: false,
+              })
+            }
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+          >
+            {categoryFilterOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </FilterSelect>
+          {role !== 'client' ? (
             <FilterSelect
               aria-label="Filter by status"
               value={status ?? SITES_CATALOG_FILTER_SENTINEL}
@@ -579,53 +530,53 @@ export function SitesCatalog({
                 </option>
               ))}
             </FilterSelect>
-            <FilterSelect
-              aria-label="Filter by link type"
-              value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
-              onChange={(e) =>
-                router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {linkTypeOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </FilterSelect>
-            <SitesCatalogDebouncedFilters
-              key={debouncedFiltersKey}
-              country={country}
-              language={language}
-              priceMin={priceMin}
-              priceMax={priceMax}
-              buildListHref={buildListHref}
-              router={router}
-            />
-            {filtersActive ? (
-              <Link
-                href="/sites"
-                scroll={false}
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'sm' }),
-                  'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
-                )}
-              >
-                <RotateCcw className="size-3.5" aria-hidden />
-                Clear filters
-              </Link>
-            ) : null}
-            <span
+          ) : null}
+          <FilterSelect
+            aria-label="Filter by link type"
+            value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
+            onChange={(e) =>
+              router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
+            }
+            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+          >
+            {linkTypeOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </FilterSelect>
+          <SitesCatalogDebouncedFilters
+            key={debouncedFiltersKey}
+            country={country}
+            language={language}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            buildListHref={buildListHref}
+            router={router}
+          />
+          {filtersActive ? (
+            <Link
+              href="/sites"
+              scroll={false}
               className={cn(
-                'text-muted-foreground shrink-0 text-xs tabular-nums',
-                filtersActive ? '' : 'ml-auto'
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
               )}
             >
-              {countLabel}
-            </span>
-          </div>
-        </section>
-      ) : null}
+              <RotateCcw className="size-3.5" aria-hidden />
+              Clear filters
+            </Link>
+          ) : null}
+          <span
+            className={cn(
+              'text-muted-foreground shrink-0 text-xs tabular-nums',
+              filtersActive ? '' : 'ml-auto'
+            )}
+          >
+            {countLabel}
+          </span>
+        </div>
+      </section>
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <div className="flex flex-col">

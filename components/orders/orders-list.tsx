@@ -1,16 +1,16 @@
 'use client'
-import { ClipboardList, Filter, Link2, RotateCcw, Search } from 'lucide-react'
+import { ClipboardList, Filter, Link2, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchField } from '@/components/ui/search-field'
 import {
   INVOICE_STATUS_LABEL,
   INVOICE_STATUSES_ORDERED,
@@ -21,8 +21,6 @@ import { SETTINGS_TABLE_PAGE_SIZE } from '@/lib/pagination/constants'
 import type { OrderListRow, OrderStatus, UserRole } from '@/lib/orders/load-orders'
 import { ORDER_STATUS_LABEL, ORDER_STATUSES_ORDERED } from '@/lib/orders/order-status-labels'
 import { cn } from '@/lib/utils'
-
-const SEARCH_DEBOUNCE_MS = 320
 
 function buildHref(
   pathname: string,
@@ -79,51 +77,6 @@ export function OrdersList({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [searchDraft, setSearchDraft] = useState(q)
-
-  useEffect(() => {
-    function onPopState() {
-      const sp = new URLSearchParams(window.location.search)
-      setSearchDraft(sp.get('q') ?? '')
-    }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
-
-  useEffect(() => {
-    const trimmed = searchDraft.trim()
-    if (trimmed === q.trim()) return
-    const id = window.setTimeout(() => {
-      const next = searchDraft.trim()
-      if (next === q.trim()) return
-      router.replace(
-        buildHref(pathname, {
-          q: next || undefined,
-          status,
-          copywriter: copywriterId,
-          client: clientId,
-          publishDate,
-          invoiceStatus,
-        }),
-        { scroll: false }
-      )
-    }, SEARCH_DEBOUNCE_MS)
-    return () => window.clearTimeout(id)
-  }, [searchDraft, q, pathname, router, status, copywriterId, clientId, publishDate, invoiceStatus])
-
-  function clearSearch() {
-    setSearchDraft('')
-    router.replace(
-      buildHref(pathname, {
-        status,
-        copywriter: copywriterId,
-        client: clientId,
-        publishDate,
-        invoiceStatus,
-      }),
-      { scroll: false }
-    )
-  }
 
   const isStaff = role === 'admin' || role === 'manager'
   const showClientColumn = isStaff
@@ -173,36 +126,11 @@ export function OrdersList({
         description="Open an order to view details, edit (when new), or review content when it has been sent."
         action={
           <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
-            >
-              <Search
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <FilterInput
-                name="q"
-                type="search"
-                value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
-                placeholder="Search by domain or order ID…"
-                className="pr-3 pl-10"
-                autoComplete="off"
-              />
-            </form>
-            {searchDraft ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 rounded-full px-4"
-                onClick={clearSearch}
-                aria-label="Clear search"
-              >
-                Clear
-              </Button>
-            ) : null}
+            <SearchField
+              name="q"
+              placeholder="Search by domain or order ID…"
+              ariaLabel="Search orders"
+            />
           </div>
         }
       />
