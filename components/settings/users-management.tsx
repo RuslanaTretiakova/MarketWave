@@ -3,17 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  Filter,
-  Mail,
-  Plus,
-  RotateCcw,
-  Search,
-  UserCog,
-  UserMinus,
-  UserPlus,
-  Users,
-} from 'lucide-react'
+import { Filter, Mail, Plus, RotateCcw, UserCog, UserMinus, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { inviteTeamMember, resendTeamInvite } from '@/lib/auth/invite-actions'
@@ -48,6 +38,7 @@ import { FormControlInput } from '@/components/ui/form-control'
 import { FilterSelect } from '@/components/ui/filter-bar'
 import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchField } from '@/components/ui/search-field'
 import {
   Sheet,
   SheetContent,
@@ -134,27 +125,19 @@ export function UsersManagement({
 }) {
   const canChangeStatus = listMode === 'admin'
   const router = useRouter()
-  const [searchDraft, setSearchDraft] = useState(q)
-  const [prevQ, setPrevQ] = useState(q)
-  if (q !== prevQ) {
-    setPrevQ(q)
-    setSearchDraft(q)
-  }
 
   const buildListHref = useCallback(
     (updates: {
       page?: number
-      q?: string
       role?: OrgUsersListRoleFilter
       status?: OrgUsersListStatusFilter
     }) => {
       const params = new URLSearchParams()
-      const qUse = updates.q !== undefined ? updates.q : q
       const roleUse = updates.role !== undefined ? updates.role : roleFilter
       const statusUse = updates.status !== undefined ? updates.status : statusFilter
       const pageUse = updates.page !== undefined ? updates.page : page
 
-      if (qUse.trim()) params.set('q', qUse.trim())
+      if (q.trim()) params.set('q', q.trim())
       if (roleUse !== 'all') params.set('role', roleUse)
       if (statusUse !== 'all') params.set('status', statusUse)
       if (pageUse > 1) params.set('page', String(pageUse))
@@ -163,11 +146,6 @@ export function UsersManagement({
     },
     [q, roleFilter, statusFilter, page]
   )
-
-  function onSearchSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    router.push(buildListHref({ page: 1, q: searchDraft }), { scroll: false })
-  }
 
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -388,30 +366,7 @@ export function UsersManagement({
         }
         action={
           <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:justify-end">
-            <form
-              onSubmit={onSearchSubmit}
-              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
-            >
-              <Search
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <FormControlInput
-                type="search"
-                placeholder="Search name or email…"
-                value={searchDraft}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setSearchDraft(v)
-
-                  if (!v.trim() && q.trim()) {
-                    router.push(buildListHref({ page: 1, q: '' }), { scroll: false })
-                  }
-                }}
-                className="pr-3 pl-10"
-                aria-label="Search users"
-              />
-            </form>
+            <SearchField name="q" placeholder="Search name or email…" ariaLabel="Search users" />
             <Button
               type="button"
               variant="cta"
@@ -471,7 +426,7 @@ export function UsersManagement({
           </FilterSelect>
           {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? (
             <Link
-              href={buildListHref({ page: 1, q: '', role: 'all', status: 'all' })}
+              href={'/settings/users'}
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
@@ -517,7 +472,7 @@ export function UsersManagement({
                 </p>
                 <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   <Link
-                    href={buildListHref({ page: 1, q: '', role: 'all', status: 'all' })}
+                    href={'/settings/users'}
                     scroll={false}
                     className={cn(
                       buttonVariants({ variant: 'outline', size: 'default' }),

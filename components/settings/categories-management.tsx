@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Pencil, Plus, RotateCcw, Search, Tags } from 'lucide-react'
+import { Pencil, Plus, RotateCcw, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/lib/categories/category-admin-actions'
@@ -24,10 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FilterInput } from '@/components/ui/filter-bar'
 import { FormControlInput } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchField } from '@/components/ui/search-field'
 import {
   Sheet,
   SheetContent,
@@ -85,18 +85,10 @@ export function CategoriesManagement({
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [searchDraft, setSearchDraft] = useState(q)
-  const [prevQ, setPrevQ] = useState(q)
-  if (q !== prevQ) {
-    setPrevQ(q)
-    setSearchDraft(q)
-  }
-
   const buildListHref = useCallback(
-    (nextPage: number, nextQ?: string) => {
+    (nextPage: number) => {
       const params = new URLSearchParams()
-      const qUse = nextQ !== undefined ? nextQ : q
-      if (qUse.trim()) params.set('q', qUse.trim())
+      if (q.trim()) params.set('q', q.trim())
       if (nextPage > 1) params.set('page', String(nextPage))
       const s = params.toString()
       return s ? `/settings/categories?${s}` : '/settings/categories'
@@ -162,11 +154,6 @@ export function CategoriesManagement({
     }
   }
 
-  function onSearchSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    router.push(buildListHref(1, searchDraft), { scroll: false })
-  }
-
   const sheetTitle = !sheet.open
     ? '\u200b'
     : sheet.mode === 'create'
@@ -180,29 +167,7 @@ export function CategoriesManagement({
         description="Manage catalog niches used when creating or filtering sites."
         action={
           <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
-            <form
-              onSubmit={onSearchSubmit}
-              className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
-            >
-              <Search
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <FilterInput
-                type="search"
-                placeholder="Search by name…"
-                value={searchDraft}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setSearchDraft(v)
-                  if (!v.trim() && q.trim()) {
-                    router.push(buildListHref(1, ''), { scroll: false })
-                  }
-                }}
-                className="pr-3 pl-10"
-                aria-label="Search categories"
-              />
-            </form>
+            <SearchField name="q" placeholder="Search by name…" ariaLabel="Search categories" />
             <Button
               type="button"
               variant="cta"
@@ -236,7 +201,7 @@ export function CategoriesManagement({
                 <div className="gap-inset mt-block mx-auto flex w-full max-w-sm flex-col items-stretch justify-center sm:flex-row sm:flex-wrap sm:justify-center">
                   {q.trim() ? (
                     <Link
-                      href={buildListHref(1, '')}
+                      href="/settings/categories"
                       scroll={false}
                       className={cn(
                         buttonVariants({ variant: 'outline', size: 'default' }),

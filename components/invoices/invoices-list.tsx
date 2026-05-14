@@ -1,17 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Receipt, RotateCcw, Search } from 'lucide-react'
+import { Filter, Receipt, RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { StatementCard } from '@/components/invoices/statement-card'
 import { SettingsTablePagination } from '@/components/settings/settings-table-pagination'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FilterInput, FilterSelect } from '@/components/ui/filter-bar'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchField } from '@/components/ui/search-field'
 import {
   INVOICE_STATUS_LABEL,
   INVOICE_STATUSES_ORDERED,
@@ -79,50 +80,20 @@ export function InvoicesList({
   const searchParams = useSearchParams()
   const isStaff = role === 'admin' || role === 'manager'
   const view: InvoicesView = searchParams.get('view') === 'invoice' ? 'invoice' : 'statement'
-  const [localClient, setLocalClient] = useState(client)
   const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
-  const [localInvoiceNumber, setLocalInvoiceNumber] = useState(invoiceNumber ?? '')
   const [localMinAmount, setLocalMinAmount] = useState(minAmount ?? '')
   const [localMaxAmount, setLocalMaxAmount] = useState(maxAmount ?? '')
 
   useEffect(() => {
     function onPopState() {
       const sp = new URLSearchParams(window.location.search)
-      setLocalClient(sp.get('client') ?? '')
       setLocalBillingPeriod(sp.get('billingPeriod') ?? '')
-      setLocalInvoiceNumber(sp.get('invoiceNumber') ?? '')
       setLocalMinAmount(sp.get('minAmount') ?? '')
       setLocalMaxAmount(sp.get('maxAmount') ?? '')
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
-
-  useEffect(() => {
-    const trimmed = localClient.trim()
-    if (trimmed === client.trim()) return
-    const id = window.setTimeout(() => {
-      const next = localClient.trim()
-      if (next === client.trim()) return
-      router.replace(
-        buildHref(pathname, {
-          client: next || undefined,
-          status,
-          billingPeriod,
-        }),
-        { scroll: false }
-      )
-    }, SEARCH_DEBOUNCE_MS)
-    return () => window.clearTimeout(id)
-  }, [localClient, client, pathname, router, status, billingPeriod])
-
-  function clearSearch() {
-    setLocalClient('')
-    router.replace(
-      buildHref(pathname, { status, billingPeriod, invoiceNumber, minAmount, maxAmount }),
-      { scroll: false }
-    )
-  }
 
   useEffect(() => {
     const next = localBillingPeriod.trim()
@@ -147,35 +118,6 @@ export function InvoicesList({
     client,
     status,
     invoiceNumber,
-    minAmount,
-    maxAmount,
-    pathname,
-    router,
-  ])
-
-  useEffect(() => {
-    const next = localInvoiceNumber.trim()
-    if (next === (invoiceNumber ?? '').trim()) return
-    const id = window.setTimeout(() => {
-      router.replace(
-        buildHref(pathname, {
-          client,
-          status,
-          billingPeriod,
-          invoiceNumber: next || undefined,
-          minAmount,
-          maxAmount,
-        }),
-        { scroll: false }
-      )
-    }, SEARCH_DEBOUNCE_MS)
-    return () => window.clearTimeout(id)
-  }, [
-    localInvoiceNumber,
-    invoiceNumber,
-    client,
-    status,
-    billingPeriod,
     minAmount,
     maxAmount,
     pathname,
@@ -303,36 +245,11 @@ export function InvoicesList({
         action={
           isStaff ? (
             <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="relative min-w-0 flex-1 sm:max-w-xs sm:min-w-48 sm:flex-none"
-              >
-                <Search
-                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                  aria-hidden
-                />
-                <FilterInput
-                  name="client"
-                  type="search"
-                  value={localClient}
-                  onChange={(e) => setLocalClient(e.target.value)}
-                  placeholder="Filter by client…"
-                  className="pr-3 pl-10"
-                  autoComplete="off"
-                />
-              </form>
-              {localClient ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-10 rounded-full px-4"
-                  onClick={clearSearch}
-                  aria-label="Clear client filter"
-                >
-                  Clear
-                </Button>
-              ) : null}
+              <SearchField
+                name="client"
+                placeholder="Filter by client…"
+                ariaLabel="Filter by client"
+              />
             </div>
           ) : undefined
         }
@@ -364,14 +281,13 @@ export function InvoicesList({
             onChange={(e) => setLocalBillingPeriod(e.target.value)}
             className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
           />
-          <FilterInput
-            aria-label="Invoice number"
-            type="search"
-            value={localInvoiceNumber}
-            onChange={(e) => setLocalInvoiceNumber(e.target.value)}
+          <SearchField
+            name="invoiceNumber"
             placeholder="Invoice #"
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            autoComplete="off"
+            ariaLabel="Invoice number"
+            className="flex-none sm:max-w-32 sm:min-w-0"
+            inputClassName="h-8 rounded-full px-1 text-xs"
+            withIcon={false}
           />
           <FilterInput
             aria-label="Minimum amount"
