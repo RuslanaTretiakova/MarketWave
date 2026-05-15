@@ -16,6 +16,7 @@ const nextPublicSupabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || process.env.SUPABASE_KEY?.trim() || ''
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   env: {
     NEXT_PUBLIC_SUPABASE_URL: nextPublicSupabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: nextPublicSupabaseAnonKey,
