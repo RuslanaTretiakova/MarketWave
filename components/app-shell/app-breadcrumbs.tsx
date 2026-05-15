@@ -64,6 +64,7 @@ function inferLabel(
   allSegments: string[]
 ): string {
   if (pathname.startsWith('/sites/')) {
+    if (index === 1 && segment === 'new') return 'Create site'
     if (index === 1) return 'Site'
     if (index === 2 && segment === 'edit') return 'Edit'
   }

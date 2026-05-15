@@ -360,11 +360,11 @@ export async function disableTeamMemberAfterConfirmation(input: {
   if (role === 'sourcer') {
     const { error: siteErr } = await adminClient
       .from('sites')
-      .update({ sourcer_id: null })
+      .update({ status: 'archived', sourcer_id: null })
       .eq('sourcer_id', input.targetUserId)
 
     if (siteErr) {
-      return { ok: false, message: 'Could not clear site sourcing assignments. Try again.' }
+      return { ok: false, message: 'Could not archive site listings. Try again.' }
     }
   }
 

@@ -49,24 +49,26 @@ export async function removeCartItem(
 export async function removeFromCartBySiteId(
   siteId: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const ctx = await getClientSession()
-  if ('error' in ctx) return { ok: false, message: ctx.error }
-  const { supabase } = ctx
+  const supabase = await createClient()
 
-  const { data: cart, error: cartErr } = await supabase.from('carts').select('id').maybeSingle()
-  if (cartErr || !cart) return { ok: false, message: cartErr?.message ?? 'Cart not found.' }
+  const [{ data: authData, error: authErr }, { data: cart }, { data: profile }] = await Promise.all(
+    [
+      supabase.auth.getUser(),
+      supabase.from('carts').select('id').maybeSingle(),
+      supabase.from('profiles').select('role').maybeSingle(),
+    ]
+  )
 
-  const { data: row, error: findErr } = await supabase
+  if (authErr || !authData.user) return { ok: false, message: 'You must be signed in.' }
+  if (profile?.role !== 'client') return { ok: false, message: 'Only clients use the cart.' }
+  if (!cart) return { ok: false, message: 'Cart not found.' }
+
+  const { error } = await supabase
     .from('cart_items')
-    .select('id')
+    .delete()
     .eq('cart_id', cart.id)
     .eq('site_id', siteId)
-    .maybeSingle()
 
-  if (findErr) return { ok: false, message: findErr.message ?? 'Could not look up cart item.' }
-  if (!row) return { ok: false, message: 'This site is not in your cart.' }
-
-  const { error } = await supabase.from('cart_items').delete().eq('id', row.id)
   if (error) return { ok: false, message: error.message ?? 'Could not remove item.' }
 
   revalidatePath('/cart')

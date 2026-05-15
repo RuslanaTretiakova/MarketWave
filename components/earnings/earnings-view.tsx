@@ -95,39 +95,45 @@ export function EarningsView({
         description="Earnings are calculated as your commission on published and completed orders in the selected month."
       />
 
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex flex-wrap items-center">
-          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
+      <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
+        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <FilterInput
-            type="month"
-            value={month}
-            onChange={handleMonthChange}
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            aria-label="Month"
-          />
-          {canFilterBySourcer ? (
-            <FilterSelect
-              value={selectedSourcerId ?? ''}
-              onChange={handleSourcerChange}
+          <div className="flex shrink-0 flex-col gap-0.5">
+            <span className="text-muted-foreground px-1 text-[10px] font-medium">Month</span>
+            <FilterInput
+              type="month"
+              value={month}
+              onChange={handleMonthChange}
               className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-              aria-label="Filter by sourcer"
-            >
-              <option value="">All sourcers</option>
-              {sourcerOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </FilterSelect>
+              aria-label="Month"
+            />
+          </div>
+          {canFilterBySourcer ? (
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Sourcer</span>
+              <FilterSelect
+                value={selectedSourcerId ?? ''}
+                onChange={handleSourcerChange}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                aria-label="Filter by sourcer"
+              >
+                <option value="">All sourcers</option>
+                {sourcerOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
           ) : null}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1 rounded-full px-3 text-xs"
+            className="h-8 gap-1 self-end rounded-full px-3 text-xs"
             onClick={() => handleShift(-1)}
           >
             <ChevronLeft className="size-3.5" aria-hidden />
@@ -137,7 +143,7 @@ export function EarningsView({
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1 rounded-full px-3 text-xs"
+            className="h-8 gap-1 self-end rounded-full px-3 text-xs"
             onClick={() => handleShift(1)}
           >
             Next
@@ -149,7 +155,7 @@ export function EarningsView({
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
-                'gap-inset px-block ml-auto h-10 rounded-full text-xs'
+                'gap-inset px-block h-8 shrink-0 self-end rounded-full text-xs'
               )}
             >
               <RotateCcw className="size-3.5" aria-hidden />

@@ -117,22 +117,17 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
     if (Number.isFinite(n)) drMax = n
   }
 
-  const { data: categoriesRaw, error: catErr } = await supabase
-    .from('categories')
-    .select('id, name')
-    .order('name', { ascending: true })
+  const [categoriesResult, cartSiteIds] = await Promise.all([
+    supabase.from('categories').select('id, name').order('name', { ascending: true }),
+    profile.role === 'client' ? loadCartSiteIds(supabase) : Promise.resolve([]),
+  ])
 
-  if (catErr) {
-    console.error('[sites] categories', catErr.message)
-    throw new Error(`Failed to load categories: ${catErr.message}`)
+  if (categoriesResult.error) {
+    console.error('[sites] categories', categoriesResult.error.message)
+    throw new Error(`Failed to load categories: ${categoriesResult.error.message}`)
   }
 
-  const categories = categoriesRaw ?? []
-
-  let cartSiteIds: string[] = []
-  if (profile.role === 'client') {
-    cartSiteIds = await loadCartSiteIds(supabase)
-  }
+  const categories = categoriesResult.data ?? []
 
   let page = pageParsed
   let rows = [] as Awaited<ReturnType<typeof loadSitesCatalogPage>>['rows']

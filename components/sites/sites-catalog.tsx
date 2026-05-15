@@ -202,57 +202,73 @@ function SitesCatalogDebouncedFilters({
     return () => window.clearTimeout(id)
   }, [drMaxDraft, drMax, drMinDraft, router, buildListHref])
 
-  const pillClass = 'h-8 w-24 rounded-full px-3 text-xs'
+  const pillClass = 'h-8 w-20 rounded-full px-3 text-xs'
   return (
     <>
-      <FormControlInput
-        aria-label="Country code"
-        placeholder="Country"
-        value={countryDraft}
-        onChange={(e) => setCountryDraft(e.target.value)}
-        maxLength={8}
-        className={pillClass}
-      />
-      <FormControlInput
-        aria-label="Language code"
-        placeholder="Language"
-        value={languageDraft}
-        onChange={(e) => setLanguageDraft(e.target.value)}
-        maxLength={16}
-        className={pillClass}
-      />
-      <FormControlInput
-        aria-label="DR from"
-        inputMode="numeric"
-        placeholder="Min DR"
-        value={drMinDraft}
-        onChange={(e) => setDrMinDraft(e.target.value)}
-        className={pillClass}
-      />
-      <FormControlInput
-        aria-label="DR to"
-        inputMode="numeric"
-        placeholder="Max DR"
-        value={drMaxDraft}
-        onChange={(e) => setDrMaxDraft(e.target.value)}
-        className={pillClass}
-      />
-      <FormControlInput
-        aria-label="Price from"
-        inputMode="decimal"
-        placeholder="Min $"
-        value={priceMinDraft}
-        onChange={(e) => setPriceMinDraft(e.target.value)}
-        className={pillClass}
-      />
-      <FormControlInput
-        aria-label="Price to"
-        inputMode="decimal"
-        placeholder="Max $"
-        value={priceMaxDraft}
-        onChange={(e) => setPriceMaxDraft(e.target.value)}
-        className={pillClass}
-      />
+      <div className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-muted-foreground px-1 text-[10px] font-medium">Country</span>
+        <FormControlInput
+          aria-label="Country code"
+          placeholder="e.g. US"
+          value={countryDraft}
+          onChange={(e) => setCountryDraft(e.target.value)}
+          maxLength={8}
+          className={pillClass}
+        />
+      </div>
+      <div className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-muted-foreground px-1 text-[10px] font-medium">Language</span>
+        <FormControlInput
+          aria-label="Language code"
+          placeholder="e.g. en"
+          value={languageDraft}
+          onChange={(e) => setLanguageDraft(e.target.value)}
+          maxLength={16}
+          className={pillClass}
+        />
+      </div>
+      <div className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-muted-foreground px-1 text-[10px] font-medium">DR</span>
+        <div className="gap-inset flex">
+          <FormControlInput
+            aria-label="DR from"
+            inputMode="numeric"
+            placeholder="Min"
+            value={drMinDraft}
+            onChange={(e) => setDrMinDraft(e.target.value)}
+            className={pillClass}
+          />
+          <FormControlInput
+            aria-label="DR to"
+            inputMode="numeric"
+            placeholder="Max"
+            value={drMaxDraft}
+            onChange={(e) => setDrMaxDraft(e.target.value)}
+            className={pillClass}
+          />
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-muted-foreground px-1 text-[10px] font-medium">Price ($)</span>
+        <div className="gap-inset flex">
+          <FormControlInput
+            aria-label="Price from"
+            inputMode="decimal"
+            placeholder="Min"
+            value={priceMinDraft}
+            onChange={(e) => setPriceMinDraft(e.target.value)}
+            className={pillClass}
+          />
+          <FormControlInput
+            aria-label="Price to"
+            inputMode="decimal"
+            placeholder="Max"
+            value={priceMaxDraft}
+            onChange={(e) => setPriceMaxDraft(e.target.value)}
+            className={pillClass}
+          />
+        </div>
+      </div>
     </>
   )
 }
@@ -553,58 +569,67 @@ export function SitesCatalog({
         }
       />
 
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex flex-wrap items-center">
-          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
+      <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
+        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
           </div>
-          <FilterSelect
-            aria-label="Filter by category"
-            value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
-            onChange={(e) =>
-              router.push(buildListHref(1, { category_id: e.target.value }), {
-                scroll: false,
-              })
-            }
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-          >
-            {categoryFilterOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </FilterSelect>
-          {role !== 'client' ? (
+          <div className="flex shrink-0 flex-col gap-0.5">
+            <span className="text-muted-foreground px-1 text-[10px] font-medium">Category</span>
             <FilterSelect
-              aria-label="Filter by status"
-              value={status ?? SITES_CATALOG_FILTER_SENTINEL}
+              aria-label="Filter by category"
+              value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
               onChange={(e) =>
-                router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+                router.push(buildListHref(1, { category_id: e.target.value }), {
+                  scroll: false,
+                })
               }
               className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
             >
-              {statusOptions.map((o) => (
+              {categoryFilterOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </FilterSelect>
+          </div>
+          {role !== 'client' ? (
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
+              <FilterSelect
+                aria-label="Filter by status"
+                value={status ?? SITES_CATALOG_FILTER_SENTINEL}
+                onChange={(e) =>
+                  router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+                }
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {statusOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
           ) : null}
-          <FilterSelect
-            aria-label="Filter by link type"
-            value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
-            onChange={(e) =>
-              router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
-            }
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-          >
-            {linkTypeOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </FilterSelect>
+          <div className="flex shrink-0 flex-col gap-0.5">
+            <span className="text-muted-foreground px-1 text-[10px] font-medium">Link type</span>
+            <FilterSelect
+              aria-label="Filter by link type"
+              value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
+              onChange={(e) =>
+                router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
+              }
+              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+            >
+              {linkTypeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </FilterSelect>
+          </div>
           <SitesCatalogDebouncedFilters
             key={debouncedFiltersKey}
             country={country}
@@ -622,19 +647,14 @@ export function SitesCatalog({
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
-                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+                'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
               )}
             >
               <RotateCcw className="size-3.5" aria-hidden />
               Clear filters
             </Link>
           ) : null}
-          <span
-            className={cn(
-              'text-muted-foreground shrink-0 text-xs tabular-nums',
-              filtersActive ? '' : 'ml-auto'
-            )}
-          >
+          <span className="text-muted-foreground shrink-0 self-end pb-0.5 text-xs tabular-nums">
             {countLabel}
           </span>
         </div>

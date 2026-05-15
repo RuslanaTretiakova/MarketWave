@@ -254,102 +254,119 @@ export function InvoicesList({
         }
       />
 
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex flex-wrap items-center">
-          <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
-            <Filter className="size-3.5 shrink-0" aria-hidden />
-            <span>Filters</span>
-          </div>
-          <FilterSelect
-            aria-label="Filter by status"
-            value={status ?? ''}
-            onChange={handleStatusChange}
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-          >
-            <option value="">All statuses</option>
-            {availableStatuses.map((s) => (
-              <option key={s} value={s}>
-                {INVOICE_STATUS_LABEL[s]}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterInput
-            aria-label="Billing period"
-            type="month"
-            value={localBillingPeriod}
-            onChange={(e) => setLocalBillingPeriod(e.target.value)}
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-          />
-          <SearchField
-            name="invoiceNumber"
-            placeholder="Invoice #"
-            ariaLabel="Invoice number"
-            className="flex-none sm:max-w-32 sm:min-w-0"
-            inputClassName="h-8 rounded-full px-1 text-xs"
-            withIcon={false}
-          />
-          <FilterInput
-            aria-label="Minimum amount"
-            type="number"
-            value={localMinAmount}
-            onChange={(e) => setLocalMinAmount(e.target.value)}
-            placeholder="Min $"
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            min="0"
-            step="0.01"
-          />
-          <FilterInput
-            aria-label="Maximum amount"
-            type="number"
-            value={localMaxAmount}
-            onChange={(e) => setLocalMaxAmount(e.target.value)}
-            placeholder="Max $"
-            className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            min="0"
-            step="0.01"
-          />
-          {hasAppliedFilters ? (
-            <Link
-              href={view === 'invoice' ? '/invoices?view=invoice' : '/invoices'}
-              scroll={false}
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
-              )}
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Clear filters
-            </Link>
-          ) : null}
-          <div
-            className={cn(
-              'bg-muted flex shrink-0 gap-0.5 rounded-full p-0.5',
-              hasAppliedFilters ? '' : 'ml-auto'
-            )}
-            role="tablist"
-            aria-label="View mode"
-          >
-            {(['statement', 'invoice'] as InvoicesView[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                onClick={() => switchView(v)}
+      <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
+        <div className="px-section py-block gap-block flex flex-col">
+          <div className="gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+            <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
+              <Filter className="size-3.5 shrink-0" aria-hidden />
+              <span>Filters</span>
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
+              <FilterSelect
+                aria-label="Filter by status"
+                value={status ?? ''}
+                onChange={handleStatusChange}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                <option value="">All statuses</option>
+                {availableStatuses.map((s) => (
+                  <option key={s} value={s}>
+                    {INVOICE_STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">
+                Billing period
+              </span>
+              <FilterInput
+                aria-label="Billing period"
+                type="month"
+                value={localBillingPeriod}
+                onChange={(e) => setLocalBillingPeriod(e.target.value)}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              />
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Invoice #</span>
+              <SearchField
+                name="invoiceNumber"
+                placeholder="Search…"
+                ariaLabel="Invoice number"
+                className="w-28 flex-none"
+                inputClassName="h-8 rounded-full px-3 text-xs"
+                withIcon={false}
+              />
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Amount ($)</span>
+              <div className="gap-inset flex">
+                <FilterInput
+                  aria-label="Minimum amount"
+                  type="number"
+                  value={localMinAmount}
+                  onChange={(e) => setLocalMinAmount(e.target.value)}
+                  placeholder="Min"
+                  className="h-8 w-20 rounded-full px-3 text-xs"
+                  min="0"
+                  step="0.01"
+                />
+                <FilterInput
+                  aria-label="Maximum amount"
+                  type="number"
+                  value={localMaxAmount}
+                  onChange={(e) => setLocalMaxAmount(e.target.value)}
+                  placeholder="Max"
+                  className="h-8 w-20 rounded-full px-3 text-xs"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            {hasAppliedFilters ? (
+              <Link
+                href={view === 'invoice' ? '/invoices?view=invoice' : '/invoices'}
+                scroll={false}
                 className={cn(
-                  'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                  view === v
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'ml-auto h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
                 )}
               >
-                {v === 'statement' ? 'By statement' : 'By invoice'}
-              </button>
-            ))}
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
           </div>
-          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-            {totalCount} invoice{totalCount === 1 ? '' : 's'}
-          </span>
+          <div className="flex items-center justify-between">
+            <div
+              className="bg-muted flex shrink-0 gap-0.5 rounded-full p-0.5"
+              role="tablist"
+              aria-label="View mode"
+            >
+              {(['statement', 'invoice'] as InvoicesView[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === v}
+                  onClick={() => switchView(v)}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                    view === v
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {v === 'statement' ? 'By statement' : 'By invoice'}
+                </button>
+              ))}
+            </div>
+            <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+              {totalCount} invoice{totalCount === 1 ? '' : 's'}
+            </span>
+          </div>
         </div>
       </section>
 
