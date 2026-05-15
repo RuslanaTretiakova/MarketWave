@@ -1,4 +1,18 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node C:/Users/treti/linkbuilding/scripts/run-tests-hook.mjs",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(npx supabase *)",
