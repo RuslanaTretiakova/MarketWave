@@ -158,19 +158,23 @@ function SitesCatalogDebouncedFilters({
     const appliedStr = priceMin !== undefined ? String(priceMin) : ''
     if (priceMinDraft.trim() === appliedStr.trim()) return
     const id = window.setTimeout(() => {
-      router.push(buildListHref(1, { price_min: priceMinDraft }), { scroll: false })
+      router.push(buildListHref(1, { price_min: priceMinDraft, price_max: priceMaxDraft }), {
+        scroll: false,
+      })
     }, SITES_FILTER_INPUT_DEBOUNCE_MS)
     return () => window.clearTimeout(id)
-  }, [priceMinDraft, priceMin, router, buildListHref])
+  }, [priceMinDraft, priceMin, priceMaxDraft, router, buildListHref])
 
   useEffect(() => {
     const appliedStr = priceMax !== undefined ? String(priceMax) : ''
     if (priceMaxDraft.trim() === appliedStr.trim()) return
     const id = window.setTimeout(() => {
-      router.push(buildListHref(1, { price_max: priceMaxDraft }), { scroll: false })
+      router.push(buildListHref(1, { price_min: priceMinDraft, price_max: priceMaxDraft }), {
+        scroll: false,
+      })
     }, SITES_FILTER_INPUT_DEBOUNCE_MS)
     return () => window.clearTimeout(id)
-  }, [priceMaxDraft, priceMax, router, buildListHref])
+  }, [priceMaxDraft, priceMax, priceMinDraft, router, buildListHref])
 
   const pillClass = 'h-8 w-24 rounded-full px-3 text-xs'
   return (

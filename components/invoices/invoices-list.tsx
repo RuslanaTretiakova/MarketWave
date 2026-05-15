@@ -135,7 +135,7 @@ export function InvoicesList({
           billingPeriod,
           invoiceNumber,
           minAmount: next || undefined,
-          maxAmount,
+          maxAmount: localMaxAmount.trim() || undefined,
         }),
         { scroll: false }
       )
@@ -144,11 +144,11 @@ export function InvoicesList({
   }, [
     localMinAmount,
     minAmount,
+    localMaxAmount,
     client,
     status,
     billingPeriod,
     invoiceNumber,
-    maxAmount,
     pathname,
     router,
   ])
@@ -163,7 +163,7 @@ export function InvoicesList({
           status,
           billingPeriod,
           invoiceNumber,
-          minAmount,
+          minAmount: localMinAmount.trim() || undefined,
           maxAmount: next || undefined,
         }),
         { scroll: false }
@@ -173,11 +173,11 @@ export function InvoicesList({
   }, [
     localMaxAmount,
     maxAmount,
+    localMinAmount,
     client,
     status,
     billingPeriod,
     invoiceNumber,
-    minAmount,
     pathname,
     router,
   ])
