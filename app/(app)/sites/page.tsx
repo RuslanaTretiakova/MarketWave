@@ -29,6 +29,8 @@ type SearchParams = {
   link_type?: string | string[]
   price_min?: string | string[]
   price_max?: string | string[]
+  dr_min?: string | string[]
+  dr_max?: string | string[]
 }
 
 function parseSiteStatus(raw: string | undefined): SiteStatus | undefined {
@@ -56,6 +58,8 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
   const linkTypeRaw = searchParamFirstString(sp.link_type)
   const priceMinRaw = searchParamFirstString(sp.price_min)
   const priceMaxRaw = searchParamFirstString(sp.price_max)
+  const drMinRaw = searchParamFirstString(sp.dr_min)
+  const drMaxRaw = searchParamFirstString(sp.dr_max)
 
   const supabase = await createClient()
   const {
@@ -101,6 +105,18 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
     if (Number.isFinite(n)) priceMax = n
   }
 
+  let drMin: number | undefined
+  if (drMinRaw !== undefined && drMinRaw.trim() !== '') {
+    const n = Number(drMinRaw)
+    if (Number.isFinite(n)) drMin = n
+  }
+
+  let drMax: number | undefined
+  if (drMaxRaw !== undefined && drMaxRaw.trim() !== '') {
+    const n = Number(drMaxRaw)
+    if (Number.isFinite(n)) drMax = n
+  }
+
   const { data: categoriesRaw, error: catErr } = await supabase
     .from('categories')
     .select('id, name')
@@ -133,6 +149,8 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
       linkType,
       priceMin,
       priceMax,
+      drMin,
+      drMax,
     })
     totalCount = result.totalCount
     const totalPages = Math.max(1, Math.ceil(totalCount / SETTINGS_TABLE_PAGE_SIZE))
@@ -159,6 +177,8 @@ export default async function SitesPage(props: { searchParams: Promise<SearchPar
       linkType={linkType}
       priceMin={priceMin}
       priceMax={priceMax}
+      drMin={drMin}
+      drMax={drMax}
       categories={categories}
       cartSiteIds={cartSiteIds}
     />
