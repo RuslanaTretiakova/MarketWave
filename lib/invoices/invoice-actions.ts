@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { createNotifications } from '@/lib/notifications/create-notification'
+import { notifyOrderEvent } from '@/lib/notifications/notify-order-event'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -67,24 +67,27 @@ export async function markInvoicePaid(
 
   if (error) return { ok: false, message: error.message ?? 'Could not mark invoice as paid.' }
 
-  // Notify the sourcer linked to the order's site
-  const { data: orderWithSite } = await adminClient
+  const { data: orderData } = await adminClient
     .from('orders')
-    .select('site_id, site_domain, site:sites!inner(sourcer_id)')
+    .select('user_id, copywriter_id, site_domain')
     .eq('id', invoice.order_id)
     .maybeSingle()
-  const sourcerId = (orderWithSite?.site as unknown as { sourcer_id: string | null })?.sourcer_id
-  if (sourcerId) {
-    void createNotifications({
-      event: 'invoice_paid',
-      title: 'Invoice paid',
-      message: `The invoice for ${orderWithSite?.site_domain ?? 'an order'} has been marked as paid.`,
-      recipientUserIds: [sourcerId],
-      actorUserId: auth.userId,
-      orderId: invoice.order_id,
-      invoiceId,
-    })
-  }
+  const { data: actorProfile } = await adminClient
+    .from('profiles')
+    .select('full_name')
+    .eq('id', auth.userId)
+    .maybeSingle()
+  void notifyOrderEvent('invoice_paid', {
+    orderId: invoice.order_id,
+    actorUserId: auth.userId,
+    actorName: actorProfile?.full_name ?? null,
+    order: {
+      user_id: orderData?.user_id ?? '',
+      copywriter_id: orderData?.copywriter_id ?? null,
+      site_domain: orderData?.site_domain ?? null,
+    },
+    invoiceId,
+  })
 
   revalidateInvoice(invoiceId, invoice.order_id)
   revalidatePath('/notifications')
@@ -222,24 +225,27 @@ export async function sendInvoiceEmail(
 
   if (error) return { ok: false, message: error.message ?? 'Could not record send timestamp.' }
 
-  // Notify the client that their invoice has been sent.
   const { data: orderData } = await adminClient
     .from('orders')
-    .select('user_id, site_domain')
+    .select('user_id, copywriter_id, site_domain')
     .eq('id', invoice.order_id)
     .maybeSingle()
-  const clientId = orderData?.user_id
-  if (clientId) {
-    void createNotifications({
-      event: 'invoice_sent',
-      title: 'Invoice sent',
-      message: `An invoice for ${orderData?.site_domain ?? 'your order'} has been sent to you.`,
-      recipientUserIds: [clientId],
-      actorUserId: auth.userId,
-      orderId: invoice.order_id,
-      invoiceId,
-    })
-  }
+  const { data: actorProfile } = await adminClient
+    .from('profiles')
+    .select('full_name')
+    .eq('id', auth.userId)
+    .maybeSingle()
+  void notifyOrderEvent('invoice_sent', {
+    orderId: invoice.order_id,
+    actorUserId: auth.userId,
+    actorName: actorProfile?.full_name ?? null,
+    order: {
+      user_id: orderData?.user_id ?? '',
+      copywriter_id: orderData?.copywriter_id ?? null,
+      site_domain: orderData?.site_domain ?? null,
+    },
+    invoiceId,
+  })
 
   revalidateInvoice(invoiceId, invoice.order_id)
   revalidatePath('/notifications')

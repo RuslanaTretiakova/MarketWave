@@ -7,6 +7,7 @@ import { AppBreadcrumbs } from '@/components/app-shell/app-breadcrumbs'
 import { AppHeader } from '@/components/app-shell/app-header'
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
+import { NotificationsRealtime } from '@/components/notifications/notifications-realtime'
 import { getAppNavItems } from '@/lib/app-nav'
 
 const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
@@ -85,6 +86,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <NotificationsRealtime userId={user.id} />
     </div>
   )
 }

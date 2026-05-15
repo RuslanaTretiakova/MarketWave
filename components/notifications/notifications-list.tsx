@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Check, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -53,21 +53,44 @@ export function NotificationsList({
   totalCount: number
 }) {
   const [pending, startTransition] = useTransition()
+  const [localReadIds, setLocalReadIds] = useState<Set<string>>(new Set())
 
   function runMarkAllRead() {
     startTransition(async () => {
+      const allUnread = new Set(rows.filter((r) => !r.read_at).map((r) => r.id))
+      setLocalReadIds(allUnread)
       const res = await markAllNotificationsRead()
-      if (!res.ok) toast.error(res.message)
-      else toast.success('All notifications marked as read.')
+      if (!res.ok) {
+        setLocalReadIds(new Set())
+        toast.error(res.message)
+      } else {
+        toast.success('All notifications marked as read.')
+      }
     })
   }
 
   function runMarkRead(e: React.MouseEvent, id: string) {
     e.preventDefault()
     e.stopPropagation()
+    markReadOptimistic(id)
+  }
 
+  function markReadOptimistic(id: string) {
+    setLocalReadIds((prev) => {
+      if (prev.has(id)) return prev
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
     markNotificationRead(id).then((res) => {
-      if (!res.ok) toast.error(res.message)
+      if (!res.ok) {
+        setLocalReadIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+        toast.error(res.message)
+      }
     })
   }
 
@@ -98,7 +121,7 @@ export function NotificationsList({
           <div className="flex flex-col">
             {rows.map((row) => {
               const href = notificationHref(row)
-              const isUnread = !row.read_at
+              const isUnread = !row.read_at && !localReadIds.has(row.id)
               const displayMessage =
                 row.event === 'chat_message'
                   ? parseChatRoomRef(row.message).displayMessage
@@ -170,9 +193,7 @@ export function NotificationsList({
                   href={href}
                   className={rowClassName}
                   onClick={() => {
-                    if (isUnread) {
-                      markNotificationRead(row.id)
-                    }
+                    if (isUnread) markReadOptimistic(row.id)
                   }}
                 >
                   {inner}

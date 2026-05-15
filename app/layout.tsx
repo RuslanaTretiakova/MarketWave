@@ -5,9 +5,48 @@ import { metadataKeywords, SITE_NAME, SITE_TAGLINE } from '@/lib/brand'
 
 import { AuthSessionHashHandler } from '@/components/auth/auth-session-hash-handler'
 import { Toaster } from '@/components/ui/sonner'
-import Script from 'next/script'
 
 import './globals.css'
+
+const STRIP_EXTENSION_ATTRS_SCRIPT = `
+(() => {
+  const ATTRS = [
+    'bis_skin_checked',
+    'bis_register',
+    'cz-shortcut-listen',
+    'data-new-gr-c-s-check-loaded',
+    'data-gr-ext-installed',
+    'data-gr-ext-disabled',
+    'data-lt-installed',
+  ];
+  const PREFIXES = ['__processed_', 'bis_'];
+  const stripNode = (node) => {
+    if (!node.attributes) return;
+    for (const attr of ATTRS) {
+      if (node.hasAttribute(attr)) node.removeAttribute(attr);
+    }
+    for (let i = node.attributes.length - 1; i >= 0; i--) {
+      const name = node.attributes[i].name;
+      if (PREFIXES.some((p) => name.startsWith(p))) {
+        node.removeAttribute(name);
+      }
+    }
+  };
+  const stripAll = () => {
+    stripNode(document.documentElement);
+    if (document.body) stripNode(document.body);
+    document.querySelectorAll('*').forEach(stripNode);
+  };
+  stripAll();
+  new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && m.target instanceof Element) {
+        stripNode(m.target);
+      }
+    }
+  }).observe(document.documentElement, { attributes: true, subtree: true });
+})();
+`
 
 const inter = Inter({
   variable: '--font-inter',
@@ -46,26 +85,9 @@ export default function RootLayout({
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <Script
-          id="strip-extension-bis-attrs"
-          strategy="beforeInteractive"
+        <script
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `
-              (() => {
-                const strip = () => {
-                  document.querySelectorAll('[bis_skin_checked]').forEach((node) => {
-                    node.removeAttribute('bis_skin_checked');
-                  });
-                };
-                strip();
-                new MutationObserver(strip).observe(document.documentElement, {
-                  attributes: true,
-                  subtree: true,
-                });
-              })();
-            `,
-          }}
+          dangerouslySetInnerHTML={{ __html: STRIP_EXTENSION_ATTRS_SCRIPT }}
         />
       </head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>

@@ -25,6 +25,7 @@ export async function markNotificationRead(
 
   if (error) return { ok: false, message: error.message ?? 'Could not mark notification as read.' }
   revalidatePath('/notifications')
+  revalidatePath('/', 'layout')
   return { ok: true }
 }
 
@@ -46,5 +47,6 @@ export async function markAllNotificationsRead(): Promise<
 
   if (error) return { ok: false, message: error.message ?? 'Could not mark notifications as read.' }
   revalidatePath('/notifications')
+  revalidatePath('/', 'layout')
   return { ok: true }
 }
