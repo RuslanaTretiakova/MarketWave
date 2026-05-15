@@ -109,6 +109,8 @@ type SitesCatalogBuildListHref = (
     link_type?: string
     price_min?: string
     price_max?: string
+    dr_min?: string
+    dr_max?: string
   }
 ) => string
 
@@ -117,6 +119,8 @@ function SitesCatalogDebouncedFilters({
   language,
   priceMin,
   priceMax,
+  drMin,
+  drMax,
   buildListHref,
   router,
 }: {
@@ -124,6 +128,8 @@ function SitesCatalogDebouncedFilters({
   language?: string
   priceMin?: number
   priceMax?: number
+  drMin?: number
+  drMax?: number
   buildListHref: SitesCatalogBuildListHref
   router: ReturnType<typeof useRouter>
 }) {
@@ -135,6 +141,8 @@ function SitesCatalogDebouncedFilters({
   const [priceMaxDraft, setPriceMaxDraft] = useState(() =>
     priceMax !== undefined ? String(priceMax) : ''
   )
+  const [drMinDraft, setDrMinDraft] = useState(() => (drMin !== undefined ? String(drMin) : ''))
+  const [drMaxDraft, setDrMaxDraft] = useState(() => (drMax !== undefined ? String(drMax) : ''))
 
   useEffect(() => {
     const applied = (country ?? '').trim()
@@ -176,6 +184,24 @@ function SitesCatalogDebouncedFilters({
     return () => window.clearTimeout(id)
   }, [priceMaxDraft, priceMax, priceMinDraft, router, buildListHref])
 
+  useEffect(() => {
+    const appliedStr = drMin !== undefined ? String(drMin) : ''
+    if (drMinDraft.trim() === appliedStr.trim()) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { dr_min: drMinDraft, dr_max: drMaxDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [drMinDraft, drMin, drMaxDraft, router, buildListHref])
+
+  useEffect(() => {
+    const appliedStr = drMax !== undefined ? String(drMax) : ''
+    if (drMaxDraft.trim() === appliedStr.trim()) return
+    const id = window.setTimeout(() => {
+      router.push(buildListHref(1, { dr_min: drMinDraft, dr_max: drMaxDraft }), { scroll: false })
+    }, SITES_FILTER_INPUT_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+  }, [drMaxDraft, drMax, drMinDraft, router, buildListHref])
+
   const pillClass = 'h-8 w-24 rounded-full px-3 text-xs'
   return (
     <>
@@ -193,6 +219,22 @@ function SitesCatalogDebouncedFilters({
         value={languageDraft}
         onChange={(e) => setLanguageDraft(e.target.value)}
         maxLength={16}
+        className={pillClass}
+      />
+      <FormControlInput
+        aria-label="DR from"
+        inputMode="numeric"
+        placeholder="Min DR"
+        value={drMinDraft}
+        onChange={(e) => setDrMinDraft(e.target.value)}
+        className={pillClass}
+      />
+      <FormControlInput
+        aria-label="DR to"
+        inputMode="numeric"
+        placeholder="Max DR"
+        value={drMaxDraft}
+        onChange={(e) => setDrMaxDraft(e.target.value)}
         className={pillClass}
       />
       <FormControlInput
@@ -229,6 +271,8 @@ export function SitesCatalog({
   linkType,
   priceMin,
   priceMax,
+  drMin,
+  drMax,
   categories,
   cartSiteIds = [],
 }: {
@@ -245,6 +289,8 @@ export function SitesCatalog({
   linkType?: Database['public']['Enums']['link_type']
   priceMin?: number
   priceMax?: number
+  drMin?: number
+  drMax?: number
   categories: SitesCatalogCategoryOption[]
   /** For clients: site IDs already in cart (disables Add to cart until checkout). */
   cartSiteIds?: string[]
@@ -276,8 +322,10 @@ export function SitesCatalog({
     Boolean(language?.trim()) ||
     linkType !== undefined ||
     priceMin !== undefined ||
-    priceMax !== undefined
-  const debouncedFiltersKey = `${country ?? ''}|${language ?? ''}|${priceMin ?? ''}|${priceMax ?? ''}`
+    priceMax !== undefined ||
+    drMin !== undefined ||
+    drMax !== undefined
+  const debouncedFiltersKey = `${country ?? ''}|${language ?? ''}|${priceMin ?? ''}|${priceMax ?? ''}|${drMin ?? ''}|${drMax ?? ''}`
 
   const statusFilterOptions = useMemo(() => {
     if (role === 'client') return [] as Database['public']['Enums']['site_status'][]
@@ -316,6 +364,8 @@ export function SitesCatalog({
         link_type?: string
         price_min?: string
         price_max?: string
+        dr_min?: string
+        dr_max?: string
       }
     ) => {
       const params = new URLSearchParams()
@@ -331,6 +381,10 @@ export function SitesCatalog({
         overrides?.price_min !== undefined ? overrides.price_min : (priceMin?.toString() ?? '')
       const pmaxUse =
         overrides?.price_max !== undefined ? overrides.price_max : (priceMax?.toString() ?? '')
+      const drminUse =
+        overrides?.dr_min !== undefined ? overrides.dr_min : (drMin?.toString() ?? '')
+      const drmaxUse =
+        overrides?.dr_max !== undefined ? overrides.dr_max : (drMax?.toString() ?? '')
 
       const catParam = sitesCatalogQueryValueForUrl(catRaw)
       const stParam = sitesCatalogQueryValueForUrl(stRaw)
@@ -344,11 +398,13 @@ export function SitesCatalog({
       if (ltParam !== null) params.set('link_type', ltParam)
       if (pminUse.trim()) params.set('price_min', pminUse.trim())
       if (pmaxUse.trim()) params.set('price_max', pmaxUse.trim())
+      if (drminUse.trim()) params.set('dr_min', drminUse.trim())
+      if (drmaxUse.trim()) params.set('dr_max', drmaxUse.trim())
       if (nextPage > 1) params.set('page', String(nextPage))
       const qs = params.toString()
       return qs.length > 0 ? `/sites?${qs}` : '/sites'
     },
-    [q, categoryId, status, country, language, linkType, priceMin, priceMax]
+    [q, categoryId, status, country, language, linkType, priceMin, priceMax, drMin, drMax]
   )
 
   const addCart = useCallback(
@@ -555,6 +611,8 @@ export function SitesCatalog({
             language={language}
             priceMin={priceMin}
             priceMax={priceMax}
+            drMin={drMin}
+            drMax={drMax}
             buildListHref={buildListHref}
             router={router}
           />

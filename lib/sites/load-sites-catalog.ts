@@ -31,6 +31,8 @@ export type SitesCatalogSearchParams = {
   linkType?: Database['public']['Enums']['link_type']
   priceMin?: number
   priceMax?: number
+  drMin?: number
+  drMax?: number
 }
 
 type SitesJoinRow = {
@@ -159,6 +161,14 @@ export async function loadSitesCatalogPage(
 
     if (params.priceMax !== undefined && Number.isFinite(params.priceMax)) {
       q = q.lte('price', params.priceMax)
+    }
+
+    if (params.drMin !== undefined && Number.isFinite(params.drMin)) {
+      q = q.gte('dr', params.drMin)
+    }
+
+    if (params.drMax !== undefined && Number.isFinite(params.drMax)) {
+      q = q.lte('dr', params.drMax)
     }
 
     const { data, error, count } = await q.order('domain', { ascending: true }).range(from, to)
