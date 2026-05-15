@@ -126,7 +126,7 @@ export function CartItemRow({
         </div>
       </div>
 
-      <div className="border-border px-section flex h-10 items-center justify-end gap-2 border-t">
+      <div className="border-border px-section gap-inset flex h-10 items-center justify-end border-t">
         <Button
           type="button"
           variant="ghost"

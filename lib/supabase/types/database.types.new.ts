@@ -184,6 +184,67 @@ export type Database = {
           },
         ]
       }
+      change_requests: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          order_id: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database['public']['Enums']['change_request_status']
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          order_id: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database['public']['Enums']['change_request_status']
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database['public']['Enums']['change_request_status']
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'change_requests_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'change_requests_resolved_by_fkey'
+            columns: ['resolved_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'change_requests_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       chat_message_attachments: {
         Row: {
           created_at: string
@@ -218,6 +279,39 @@ export type Database = {
             columns: ['message_id']
             isOneToOne: false
             referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      chat_message_reads: {
+        Row: {
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_reads_message_id_fkey'
+            columns: ['message_id']
+            isOneToOne: false
+            referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'chat_message_reads_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
@@ -330,39 +424,6 @@ export type Database = {
           },
         ]
       }
-      chat_message_reads: {
-        Row: {
-          message_id: string
-          read_at: string
-          user_id: string
-        }
-        Insert: {
-          message_id: string
-          read_at?: string
-          user_id: string
-        }
-        Update: {
-          message_id?: string
-          read_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'chat_message_reads_message_id_fkey'
-            columns: ['message_id']
-            isOneToOne: false
-            referencedRelation: 'chat_messages'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'chat_message_reads_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       chat_rooms: {
         Row: {
           channel: Database['public']['Enums']['chat_channel_type']
@@ -427,67 +488,6 @@ export type Database = {
           },
         ]
       }
-      change_requests: {
-        Row: {
-          comment: string
-          created_at: string
-          id: string
-          order_id: string
-          resolution_reason: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          status: Database['public']['Enums']['change_request_status']
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          comment: string
-          created_at?: string
-          id?: string
-          order_id: string
-          resolution_reason?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: Database['public']['Enums']['change_request_status']
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          comment?: string
-          created_at?: string
-          id?: string
-          order_id?: string
-          resolution_reason?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: Database['public']['Enums']['change_request_status']
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'change_requests_order_id_fkey'
-            columns: ['order_id']
-            isOneToOne: false
-            referencedRelation: 'orders'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'change_requests_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'change_requests_resolved_by_fkey'
-            columns: ['resolved_by']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       error_logs: {
         Row: {
           context: string | null
@@ -526,82 +526,35 @@ export type Database = {
           },
         ]
       }
-      invoices: {
-        Row: {
-          amount: number
-          billing_month: string | null
-          created_at: string
-          invoice_group_id: string | null
-          due_date: string | null
-          id: string
-          order_id: string
-          paid_at: string | null
-          sent_at: string | null
-          status: Database['public']['Enums']['invoice_status']
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          billing_month?: string | null
-          created_at?: string
-          invoice_group_id?: string | null
-          due_date?: string | null
-          id?: string
-          order_id: string
-          paid_at?: string | null
-          sent_at?: string | null
-          status?: Database['public']['Enums']['invoice_status']
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          billing_month?: string | null
-          created_at?: string
-          invoice_group_id?: string | null
-          due_date?: string | null
-          id?: string
-          order_id?: string
-          paid_at?: string | null
-          sent_at?: string | null
-          status?: Database['public']['Enums']['invoice_status']
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'invoices_order_id_fkey'
-            columns: ['order_id']
-            isOneToOne: false
-            referencedRelation: 'orders'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       invoice_items: {
         Row: {
           amount: number
           created_at: string
+          description: string | null
           id: string
           invoice_id: string
           order_id: string
-          site_domain: string
+          site_domain: string | null
           updated_at: string
         }
         Insert: {
           amount: number
           created_at?: string
+          description?: string | null
           id?: string
           invoice_id: string
           order_id: string
-          site_domain: string
+          site_domain?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
           created_at?: string
+          description?: string | null
           id?: string
           invoice_id?: string
           order_id?: string
-          site_domain?: string
+          site_domain?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -617,6 +570,104 @@ export type Database = {
             columns: ['order_id']
             isOneToOne: false
             referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          adjustments: number
+          amount: number
+          billing_month: string
+          client_id: string
+          created_at: string
+          due_date: string | null
+          generated_at: string | null
+          id: string
+          invoice_group_id: string | null
+          invoice_number: string | null
+          notes: string | null
+          order_id: string | null
+          paid_at: string | null
+          paid_by: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: Database['public']['Enums']['invoice_status']
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          adjustments?: number
+          amount?: number
+          billing_month: string
+          client_id: string
+          created_at?: string
+          due_date?: string | null
+          generated_at?: string | null
+          id?: string
+          invoice_group_id?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: Database['public']['Enums']['invoice_status']
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          adjustments?: number
+          amount?: number
+          billing_month?: string
+          client_id?: string
+          created_at?: string
+          due_date?: string | null
+          generated_at?: string | null
+          id?: string
+          invoice_group_id?: string | null
+          invoice_number?: string | null
+          notes?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: Database['public']['Enums']['invoice_status']
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoices_client_id_fkey'
+            columns: ['client_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoices_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoices_paid_by_fkey'
+            columns: ['paid_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoices_sent_by_fkey'
+            columns: ['sent_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
@@ -813,8 +864,8 @@ export type Database = {
       }
       orders: {
         Row: {
-          approved_at: string | null
           anchor_text: string | null
+          approved_at: string | null
           assigned_at: string | null
           canceled_at: string | null
           client_notes: string | null
@@ -847,8 +898,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          approved_at?: string | null
           anchor_text?: string | null
+          approved_at?: string | null
           assigned_at?: string | null
           canceled_at?: string | null
           client_notes?: string | null
@@ -881,8 +932,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          approved_at?: string | null
           anchor_text?: string | null
+          approved_at?: string | null
           assigned_at?: string | null
           canceled_at?: string | null
           client_notes?: string | null
@@ -988,83 +1039,6 @@ export type Database = {
           {
             foreignKeyName: 'profiles_account_manager_id_fkey'
             columns: ['account_manager_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      sourcer_earnings: {
-        Row: {
-          commission_rate: number
-          created_at: string
-          earned_amount: number
-          earning_month: string
-          id: string
-          invoice_id: string | null
-          order_id: string
-          paid_at: string | null
-          payout_reference: string | null
-          payout_status: string
-          site_id: string | null
-          sourcer_id: string
-          updated_at: string
-        }
-        Insert: {
-          commission_rate?: number
-          created_at?: string
-          earned_amount: number
-          earning_month: string
-          id?: string
-          invoice_id?: string | null
-          order_id: string
-          paid_at?: string | null
-          payout_reference?: string | null
-          payout_status?: string
-          site_id?: string | null
-          sourcer_id: string
-          updated_at?: string
-        }
-        Update: {
-          commission_rate?: number
-          created_at?: string
-          earned_amount?: number
-          earning_month?: string
-          id?: string
-          invoice_id?: string | null
-          order_id?: string
-          paid_at?: string | null
-          payout_reference?: string | null
-          payout_status?: string
-          site_id?: string | null
-          sourcer_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'sourcer_earnings_invoice_id_fkey'
-            columns: ['invoice_id']
-            isOneToOne: false
-            referencedRelation: 'invoices'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'sourcer_earnings_order_id_fkey'
-            columns: ['order_id']
-            isOneToOne: true
-            referencedRelation: 'orders'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'sourcer_earnings_site_id_fkey'
-            columns: ['site_id']
-            isOneToOne: false
-            referencedRelation: 'sites'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'sourcer_earnings_sourcer_id_fkey'
-            columns: ['sourcer_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -1245,6 +1219,83 @@ export type Database = {
           },
         ]
       }
+      sourcer_earnings: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          earned_amount: number
+          earning_month: string
+          id: string
+          invoice_id: string | null
+          order_id: string
+          paid_at: string | null
+          payout_reference: string | null
+          payout_status: string
+          site_id: string | null
+          sourcer_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount: number
+          earning_month: string
+          id?: string
+          invoice_id?: string | null
+          order_id: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          earned_amount?: number
+          earning_month?: string
+          id?: string
+          invoice_id?: string | null
+          order_id?: string
+          paid_at?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          site_id?: string | null
+          sourcer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'sourcer_earnings_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: true
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'sites'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sourcer_earnings_sourcer_id_fkey'
+            columns: ['sourcer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1252,6 +1303,22 @@ export type Database = {
     Functions: {
       auth_user_email_exists: { Args: { p_email: string }; Returns: boolean }
       bootstrap_signup_allowed: { Args: never; Returns: boolean }
+      create_order_event_notification: {
+        Args: {
+          p_actor_user_id: string
+          p_change_request_id?: string
+          p_event: Database['public']['Enums']['notification_event']
+          p_invoice_id?: string
+          p_message: string
+          p_order_id: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      generate_monthly_invoices: {
+        Args: { p_billing_month: string }
+        Returns: number
+      }
       get_my_role: {
         Args: never
         Returns: Database['public']['Enums']['user_role']
@@ -1259,6 +1326,10 @@ export type Database = {
       is_chat_participant: {
         Args: { p_room_id: string; p_user_id: string }
         Returns: boolean
+      }
+      refresh_sourcer_earning_for_order: {
+        Args: { p_order_id: string }
+        Returns: undefined
       }
       replace_site_countries_and_languages: {
         Args: {
@@ -1268,6 +1339,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { '': string }; Returns: string[] }
     }
     Enums: {
       change_request_status: 'open' | 'resolved' | 'dismissed'
@@ -1278,7 +1351,6 @@ export type Database = {
       invoice_status: 'draft' | 'sent' | 'paid'
       link_type: 'dofollow' | 'nofollow' | 'sponsored' | 'ugc'
       notification_event:
-        | 'order_created'
         | 'copywriter_assigned'
         | 'copywriter_reassigned'
         | 'content_submitted'
@@ -1286,12 +1358,12 @@ export type Database = {
         | 'content_approved'
         | 'order_published'
         | 'invoice_paid'
-        | 'invoice_sent'
         | 'site_needs_changes'
         | 'site_approved'
         | 'site_archived'
         | 'site_unarchived'
-        | 'chat_message'
+        | 'order_created'
+        | 'invoice_sent'
       order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
@@ -1437,7 +1509,6 @@ export const Constants = {
       invoice_status: ['draft', 'sent', 'paid'],
       link_type: ['dofollow', 'nofollow', 'sponsored', 'ugc'],
       notification_event: [
-        'order_created',
         'copywriter_assigned',
         'copywriter_reassigned',
         'content_submitted',
@@ -1445,12 +1516,12 @@ export const Constants = {
         'content_approved',
         'order_published',
         'invoice_paid',
-        'invoice_sent',
         'site_needs_changes',
         'site_approved',
         'site_archived',
         'site_unarchived',
-        'chat_message',
+        'order_created',
+        'invoice_sent',
       ],
       order_content_status: ['draft', 'submitted'],
       order_status: [

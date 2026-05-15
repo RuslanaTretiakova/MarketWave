@@ -8,7 +8,6 @@ import {
   canSendMessages,
   canUnarchiveChat,
 } from '@/lib/chat/chat-rules'
-import { createNotifications } from '@/lib/notifications/create-notification'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -225,21 +224,6 @@ async function fireChatMessageNotifications(params: {
       recipientUserIds.push(p.user_id)
     }
   }
-
-  if (recipientUserIds.length === 0) return
-
-  const preview = params.body.slice(0, 140) || '(attachment)'
-  const title = params.meta.title?.trim() || 'New chat message'
-  const message = `[room:${params.roomId}] ${preview}`
-
-  void createNotifications({
-    event: 'chat_message',
-    title,
-    message,
-    recipientUserIds,
-    actorUserId: params.senderId,
-    orderId: params.meta.order_id ?? undefined,
-  })
 }
 
 export async function markRoomRead(

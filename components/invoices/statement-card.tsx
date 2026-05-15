@@ -120,7 +120,7 @@ export function StatementCard({
             <ChevronDown className="text-muted-foreground size-4 shrink-0" aria-hidden />
           )}
           <div className="gap-inset flex min-w-0 flex-col">
-            <div className="flex items-center gap-2">
+            <div className="gap-inset flex items-center">
               <h3 className="text-foreground text-base font-semibold">{title}</h3>
               <span
                 className={cn(

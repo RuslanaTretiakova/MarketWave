@@ -72,8 +72,8 @@ export function KpiCard({
           : 'hover:shadow-sm'
       )}
     >
-      <CardHeader className="gap-2 px-5 py-4 md:px-6 md:py-5">
-        <div className="flex items-start justify-between gap-3">
+      <CardHeader className="gap-inset px-block py-block md:px-section md:py-section">
+        <div className="gap-inset flex items-start justify-between">
           <CardDescription className="text-muted-foreground font-sans text-[0.7rem] leading-snug font-semibold tracking-wider uppercase">
             {label}
           </CardDescription>
@@ -91,10 +91,10 @@ export function KpiCard({
           {value}
         </CardTitle>
         {showDelta && delta !== undefined ? (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <div className="gap-inset flex flex-wrap items-center">
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-xs font-semibold tabular-nums',
+                'gap-inset px-inset inline-flex items-center rounded-full py-0.5 font-sans text-xs font-semibold tabular-nums',
                 pillClass
               )}
             >

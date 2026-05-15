@@ -12,20 +12,14 @@ type NotificationRow = Database['public']['Tables']['notifications']['Row']
 const CHAT_ROOM_PREFIX_RE = /^\[room:([0-9a-f-]{36})\]\s*/i
 
 function hrefFor(row: NotificationRow): string | null {
-  if (row.event === 'chat_message') {
-    const match = row.message?.match(CHAT_ROOM_PREFIX_RE)
-    if (match) return `/chats/${match[1]}`
-  }
   if (row.site_id) return `/sites/${row.site_id}`
   if (row.order_id) return `/orders/${row.order_id}`
   return null
 }
 
 function displayMessage(row: NotificationRow): string {
-  if (row.event === 'chat_message' && row.message) {
-    return row.message.replace(CHAT_ROOM_PREFIX_RE, '')
-  }
-  return row.message ?? ''
+  if (!row.message) return ''
+  return row.message.replace(CHAT_ROOM_PREFIX_RE, '')
 }
 
 export function NotificationsRealtime({ userId }: { userId: string }) {

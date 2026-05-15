@@ -18,7 +18,6 @@ const EVENT_LABELS: Record<NotificationEvent, string> = {
   site_approved: 'Sites approved',
   site_archived: 'Sites archived',
   site_unarchived: 'Sites activated',
-  chat_message: 'Chat messages',
 }
 
 const EVENT_TONE: Record<NotificationEvent, string> = {
@@ -35,7 +34,6 @@ const EVENT_TONE: Record<NotificationEvent, string> = {
   site_approved: 'bg-primary-soft text-primary-ink',
   site_archived: 'bg-muted text-muted-foreground',
   site_unarchived: 'bg-primary-soft/80 text-primary-ink',
-  chat_message: 'bg-blue-100 text-blue-800',
 }
 
 export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) {
@@ -46,9 +44,9 @@ export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) 
 
   return (
     <Card className="border-border rounded-2xl shadow-none">
-      <CardHeader className="gap-inset border-border border-b pb-4">
+      <CardHeader className="gap-inset border-border pb-block border-b">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="gap-inset flex items-center">
             <span className="bg-destructive/10 text-destructive inline-flex size-8 items-center justify-center rounded-lg">
               <Bell className="size-4" aria-hidden />
             </span>
@@ -65,12 +63,12 @@ export function NotificationsSummaryCard({ counts }: { counts: UnreadByEvent }) 
           </Link>
         </div>
       </CardHeader>
-      <CardContent className="pt-4 pb-4">
-        <div className="flex flex-wrap gap-2">
+      <CardContent className="py-block">
+        <div className="gap-inset flex flex-wrap">
           {entries.map(([event, count]) => (
             <span
               key={event}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-xs font-semibold tabular-nums ${EVENT_TONE[event]}`}
+              className={`px-block py-inset gap-inset inline-flex items-center rounded-full font-sans text-xs font-semibold tabular-nums ${EVENT_TONE[event]}`}
             >
               {count} {EVENT_LABELS[event]}
             </span>

@@ -96,7 +96,7 @@ export function ChatRoomRow({
         <Link
           href={chatHref}
           className={cn(
-            'p-block flex min-w-0 flex-1 items-start justify-between gap-2 border-l-2 transition-colors',
+            'gap-inset p-block flex min-w-0 flex-1 items-start justify-between border-l-2 transition-colors',
             isActive ? 'bg-muted border-primary' : 'hover:bg-muted/50 border-transparent'
           )}
         >

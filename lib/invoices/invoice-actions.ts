@@ -196,7 +196,7 @@ export async function editInvoiceOrders(
   }
 
   // Update invoice-level fields
-  const patch: Record<string, unknown> = {}
+  const patch: Database['public']['Tables']['invoices']['Update'] = {}
   if (input.adjustments !== undefined) {
     if (!Number.isFinite(input.adjustments)) {
       return { ok: false, message: 'Adjustments must be a valid number.' }
@@ -210,7 +210,7 @@ export async function editInvoiceOrders(
     if (input.billing_month && !/^\d{4}-\d{2}$/.test(input.billing_month)) {
       return { ok: false, message: 'Billing month must use YYYY-MM format.' }
     }
-    patch.billing_month = input.billing_month ? `${input.billing_month}-01` : null
+    if (input.billing_month) patch.billing_month = `${input.billing_month}-01`
   }
   if (input.notes !== undefined) {
     patch.notes = input.notes || null
@@ -263,10 +263,10 @@ export async function updateInvoice(
     }
   }
 
-  const patch: Record<string, string | null> = {}
+  const patch: Database['public']['Tables']['invoices']['Update'] = {}
   if (input.due_date !== undefined) patch.due_date = input.due_date || null
   if (input.billing_month !== undefined) {
-    patch.billing_month = input.billing_month ? `${input.billing_month}-01` : null
+    if (input.billing_month) patch.billing_month = `${input.billing_month}-01`
   }
 
   if (Object.keys(patch).length > 0) {

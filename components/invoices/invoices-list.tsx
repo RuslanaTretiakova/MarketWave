@@ -243,7 +243,7 @@ export function InvoicesList({
         }
         action={
           isStaff ? (
-            <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+            <div className="gap-inset flex w-full min-w-0 flex-row items-center sm:w-auto sm:flex-wrap sm:justify-end">
               <SearchField
                 name="client"
                 placeholder="Filter by client…"
@@ -255,7 +255,7 @@ export function InvoicesList({
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block flex items-center gap-2">
+        <div className="px-section py-block gap-inset flex flex-wrap items-center">
           <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>

@@ -27,7 +27,7 @@ function formatMoney(n: number): string {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="gap-inset py-inset grid grid-cols-1 sm:grid-cols-[minmax(0,11rem)_1fr] sm:gap-4">
+    <div className="gap-inset py-inset sm:gap-block grid grid-cols-1 sm:grid-cols-[minmax(0,11rem)_1fr]">
       <dt className="text-muted-foreground text-sm font-medium">{label}</dt>
       <dd className="text-foreground text-sm leading-relaxed">{children}</dd>
     </div>

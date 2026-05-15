@@ -186,7 +186,7 @@ export function SourcerDashboard({
             return (
               <TableRow key={row.id} className="border-border">
                 <TableCell className="max-w-52 font-medium">
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="gap-inset flex min-w-0 items-center">
                     <Link
                       href={`/sites/${row.id}`}
                       className="text-primary truncate hover:underline"

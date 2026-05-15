@@ -101,7 +101,7 @@ export function InvoiceDetailView({
                 href={`/api/invoices/${invoice.id}/pdf`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
+                className="border-border bg-background hover:bg-muted text-foreground gap-inset px-block inline-flex h-10 items-center rounded-md border text-sm font-medium"
               >
                 <Download className="size-4" /> Download PDF
               </a>

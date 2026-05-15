@@ -92,13 +92,13 @@ function rowStatus(row: OrgUserRowJson): 'active' | 'invited' | 'disabled' {
 
 /** Named group so nested controls (links, menus) never steal `group-hover` from the row. */
 const USER_ROW_CELL =
-  'px-4 py-3 align-middle whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
+  'px-block py-inset align-middle whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
 
 const USER_ROW_CELL_MUTED =
-  'text-muted-foreground px-4 py-3 align-middle tabular-nums whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
+  'text-muted-foreground px-block py-inset align-middle tabular-nums whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
 
 const USER_ROW_CELL_ACTIONS =
-  'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
+  'px-block py-inset align-middle text-right whitespace-normal transition-colors group-hover/user-row:bg-muted/50 group-has-[[aria-expanded=true]]/user-row:bg-muted/50'
 
 export function UsersManagement({
   listMode = 'admin',
@@ -365,7 +365,7 @@ export function UsersManagement({
             : 'Invite teammates and manage profiles. Only admins can activate or disable users.'
         }
         action={
-          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:justify-end">
+          <div className="gap-inset flex w-full min-w-0 flex-row items-center sm:w-auto sm:justify-end">
             <SearchField name="q" placeholder="Search name or email…" ariaLabel="Search users" />
             <Button
               type="button"
@@ -385,7 +385,7 @@ export function UsersManagement({
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block flex items-center gap-3">
+        <div className="px-section py-block gap-inset flex flex-wrap items-center">
           <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
@@ -430,7 +430,7 @@ export function UsersManagement({
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
-                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+                'gap-inset px-block ml-auto h-10 rounded-full text-xs'
               )}
             >
               <RotateCcw className="size-3.5" aria-hidden />
@@ -476,7 +476,7 @@ export function UsersManagement({
                     scroll={false}
                     className={cn(
                       buttonVariants({ variant: 'outline', size: 'default' }),
-                      'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
+                      'gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto'
                     )}
                   >
                     <RotateCcw className="size-4" aria-hidden />
@@ -579,7 +579,7 @@ export function UsersManagement({
                                   <DropdownMenuItem
                                     disabled={disabledRow}
                                     onClick={() => openEdit(row)}
-                                    className="gap-2"
+                                    className="gap-inset"
                                   >
                                     <UserCog className="size-4" aria-hidden />
                                     Edit
@@ -587,7 +587,7 @@ export function UsersManagement({
                                   <DropdownMenuItem
                                     disabled={disabledRow || !canResend}
                                     onClick={() => setResendTargetEmail(resendEmail)}
-                                    className="gap-2"
+                                    className="gap-inset"
                                   >
                                     <Mail className="size-4" aria-hidden />
                                     Resend invite
@@ -601,7 +601,7 @@ export function UsersManagement({
                                           row.role === 'admin'
                                         }
                                         onClick={() => setActivateTarget(row)}
-                                        className="gap-2"
+                                        className="gap-inset"
                                       >
                                         <UserPlus className="size-4" aria-hidden />
                                         Activate
@@ -615,7 +615,7 @@ export function UsersManagement({
                                           row.role === 'admin'
                                         }
                                         onClick={() => void beginDisable(row)}
-                                        className="gap-2"
+                                        className="gap-inset"
                                       >
                                         <UserMinus className="size-4" aria-hidden />
                                         Disable
@@ -685,7 +685,7 @@ export function UsersManagement({
                                     <DropdownMenuItem
                                       disabled={disabledRow}
                                       onClick={() => openEdit(row)}
-                                      className="gap-2"
+                                      className="gap-inset"
                                     >
                                       <UserCog className="size-4" aria-hidden />
                                       Edit
@@ -693,7 +693,7 @@ export function UsersManagement({
                                     <DropdownMenuItem
                                       disabled={disabledRow || !canResend}
                                       onClick={() => setResendTargetEmail(resendEmail)}
-                                      className="gap-2"
+                                      className="gap-inset"
                                     >
                                       <Mail className="size-4" aria-hidden />
                                       Resend invite
@@ -707,7 +707,7 @@ export function UsersManagement({
                                             row.role === 'admin'
                                           }
                                           onClick={() => setActivateTarget(row)}
-                                          className="gap-2"
+                                          className="gap-inset"
                                         >
                                           <UserPlus className="size-4" aria-hidden />
                                           Activate
@@ -721,7 +721,7 @@ export function UsersManagement({
                                             row.role === 'admin'
                                           }
                                           onClick={() => void beginDisable(row)}
-                                          className="gap-2"
+                                          className="gap-inset"
                                         >
                                           <UserMinus className="size-4" aria-hidden />
                                           Disable
@@ -840,7 +840,7 @@ export function UsersManagement({
               <Button
                 type="button"
                 variant="default"
-                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                className="gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full"
                 disabled={rowBusyId === mobileDetailUser.id}
                 onClick={() => openEditFromMobileDetail(mobileDetailUser)}
               >
@@ -850,7 +850,7 @@ export function UsersManagement({
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                className="gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full"
                 disabled={
                   rowBusyId === mobileDetailUser.id || !orgUserCanResendInvite(mobileDetailUser)
                 }
@@ -868,7 +868,7 @@ export function UsersManagement({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                    className="gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full"
                     disabled={
                       rowBusyId === mobileDetailUser.id ||
                       mobileDetailUser.id === currentUserId ||
@@ -887,7 +887,7 @@ export function UsersManagement({
                   <Button
                     type="button"
                     variant="destructive"
-                    className="h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full"
+                    className="gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full"
                     disabled={
                       rowBusyId === mobileDetailUser.id ||
                       mobileDetailUser.id === currentUserId ||
