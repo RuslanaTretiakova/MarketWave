@@ -7,6 +7,7 @@ import { AppBreadcrumbs } from '@/components/app-shell/app-breadcrumbs'
 import { AppHeader } from '@/components/app-shell/app-header'
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
+import { NotificationsRealtime } from '@/components/notifications/notifications-realtime'
 import { getAppNavItems } from '@/lib/app-nav'
 
 const SIDEBAR_COLLAPSED_KEY = 'mw-app-sidebar-collapsed'
@@ -80,11 +81,12 @@ export function AppShell({
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />
-        <main className="text-foreground px-block py-layout md:px-layout flex-1">
+        <main className="text-foreground px-block py-section md:px-layout md:py-layout flex-1">
           <AppBreadcrumbs navItems={navItems} />
           {children}
         </main>
       </div>
+      <NotificationsRealtime userId={user.id} />
     </div>
   )
 }

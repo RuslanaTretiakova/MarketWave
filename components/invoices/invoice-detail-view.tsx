@@ -2,39 +2,36 @@
 
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { ArrowLeft, Download, Mail, Save } from 'lucide-react'
+import { ArrowLeft, Download, Mail, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { EditInvoiceOrders } from '@/components/invoices/edit-invoice-orders'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 import { PageHeader } from '@/components/ui/page-header'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { markInvoicePaid, sendInvoiceEmail, updateInvoice } from '@/lib/invoices/invoice-actions'
+import { markInvoicePaid, sendInvoice } from '@/lib/invoices/invoice-actions'
 import { INVOICE_STATUS_CHIP, INVOICE_STATUS_LABEL } from '@/lib/invoices/invoice-status-labels'
 import type { InvoiceDetail } from '@/lib/invoices/load-invoices'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
-function formatDateTimeUtc(iso: string | null): string {
+function formatDateUtc(iso: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return '—'
-  return d.toISOString().slice(0, 16).replace('T', ' ')
+  return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
+}
+
+function fmtMoney(n: number): string {
+  return `$${n.toFixed(2)}`
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null
   return (
     <div className="gap-inset sm:gap-section flex flex-col sm:flex-row">
-      <dt className="text-muted-foreground w-40 shrink-0 text-sm">{label}</dt>
+      <dt className="text-muted-foreground w-44 shrink-0 text-sm">{label}</dt>
       <dd className="text-foreground text-sm">{value}</dd>
     </div>
   )
@@ -49,20 +46,17 @@ export function InvoiceDetailView({
 }) {
   const [pending, startTransition] = useTransition()
   const canManage = role === 'admin' || role === 'manager'
-  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [sendOpen, setSendOpen] = useState(false)
   const [markPaidOpen, setMarkPaidOpen] = useState(false)
-  const [dueDate, setDueDate] = useState(invoice.due_date ?? '')
-  const [billingMonth, setBillingMonth] = useState(
-    invoice.billing_month ? invoice.billing_month.slice(0, 7) : ''
-  )
-  const [itemAmounts, setItemAmounts] = useState<Record<string, string>>(
-    Object.fromEntries(invoice.items.map((item) => [item.id, item.amount.toFixed(2)]))
-  )
 
-  const canEdit = canManage && invoice.status === 'draft'
-  const canSend = canManage && invoice.status === 'draft'
-  const canMarkPaid = canManage && invoice.status === 'sent'
+  const isDraft = invoice.status === 'draft'
+  const isSent = invoice.status === 'sent'
+  const canEdit = canManage && isDraft
+  const canSend = canManage && isDraft
+  const canMarkPaid = canManage && isSent
+
+  const invoiceLabel = invoice.invoice_number ?? invoice.id.slice(0, 8).toUpperCase()
 
   function runAction(
     action: () => Promise<{ ok: boolean; message?: string }>,
@@ -75,27 +69,6 @@ export function InvoiceDetailView({
     })
   }
 
-  function handleSaveInvoice() {
-    const items = invoice.items.map((item) => {
-      const parsed = parseFloat(itemAmounts[item.id] ?? '')
-      return { id: item.id, parsed }
-    })
-    if (items.some((it) => Number.isNaN(it.parsed) || it.parsed < 0)) {
-      toast.error('Each item amount must be a valid non-negative number.')
-      return
-    }
-    runAction(
-      () =>
-        updateInvoice(invoice.id, {
-          billing_month: billingMonth || null,
-          due_date: dueDate || null,
-          items: items.map((it) => ({ id: it.id, amount: it.parsed })),
-        }),
-      'Invoice updated.'
-    )
-    setIsEditOpen(false)
-  }
-
   return (
     <div className="space-y-layout mx-auto max-w-4xl">
       <div className="gap-block flex flex-col">
@@ -106,7 +79,7 @@ export function InvoiceDetailView({
           <ArrowLeft className="size-4" /> Back to invoices
         </Link>
         <PageHeader
-          title={`Invoice ${invoice.id.slice(0, 8).toUpperCase()}`}
+          title={`Invoice ${invoiceLabel}`}
           meta={
             <div className="gap-block flex items-center">
               <span
@@ -118,7 +91,7 @@ export function InvoiceDetailView({
                 {INVOICE_STATUS_LABEL[invoice.status]}
               </span>
               <span className="text-muted-foreground text-sm tabular-nums">
-                ${invoice.amount.toFixed(2)}
+                {fmtMoney(invoice.total)}
               </span>
             </div>
           }
@@ -128,7 +101,7 @@ export function InvoiceDetailView({
                 href={`/api/invoices/${invoice.id}/pdf`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-border bg-background hover:bg-muted text-foreground gap-inset inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium"
+                className="border-border bg-background hover:bg-muted text-foreground gap-inset px-block inline-flex h-10 items-center rounded-md border text-sm font-medium"
               >
                 <Download className="size-4" /> Download PDF
               </a>
@@ -136,10 +109,10 @@ export function InvoiceDetailView({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsEditOpen(true)}
+                  onClick={() => setEditOpen(true)}
                   disabled={pending}
                 >
-                  <Save className="size-4" /> Edit
+                  <Pencil className="size-4" /> Edit orders
                 </Button>
               )}
               {canSend && (
@@ -168,48 +141,58 @@ export function InvoiceDetailView({
       </div>
 
       <div className="gap-layout grid">
+        {/* Invoice header */}
         <Card className="p-section space-y-block">
-          <h3 className="text-foreground text-base font-semibold">Invoice header</h3>
+          <h3 className="text-foreground text-base font-semibold">Invoice details</h3>
           <dl className="space-y-inset">
+            <DetailRow label="Invoice number" value={invoiceLabel} />
             <DetailRow label="Client" value={invoice.client_name ?? '—'} />
-            <DetailRow label="Statement period" value={invoice.billing_period_label} />
+            {invoice.client_email && <DetailRow label="Email" value={invoice.client_email} />}
+            <DetailRow label="Billing month" value={invoice.billing_period_label} />
             <DetailRow label="Status" value={INVOICE_STATUS_LABEL[invoice.status]} />
-            <DetailRow label="Email" value={invoice.client_email ?? '—'} />
-            <DetailRow label="Site" value={invoice.site_domain} />
-            <DetailRow label="Created" value={formatDateTimeUtc(invoice.created_at)} />
+            {invoice.due_date && <DetailRow label="Due date" value={invoice.due_date} />}
+            {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
+          </dl>
+        </Card>
+
+        {/* Timeline */}
+        <Card className="p-section space-y-block">
+          <h3 className="text-foreground text-base font-semibold">Timeline</h3>
+          <dl className="space-y-inset">
+            <DetailRow label="Created" value={formatDateUtc(invoice.created_at)} />
+            {invoice.generated_at && (
+              <DetailRow label="Generated" value={formatDateUtc(invoice.generated_at)} />
+            )}
             {invoice.sent_at && (
-              <DetailRow label="Last sent" value={formatDateTimeUtc(invoice.sent_at)} />
+              <DetailRow
+                label="Sent"
+                value={
+                  invoice.sent_by_name
+                    ? `${formatDateUtc(invoice.sent_at)} by ${invoice.sent_by_name}`
+                    : formatDateUtc(invoice.sent_at)
+                }
+              />
             )}
             {invoice.paid_at && (
-              <DetailRow label="Paid at" value={formatDateTimeUtc(invoice.paid_at)} />
-            )}
-            <DetailRow
-              label="Order"
-              value={
-                <Link href={`/orders/${invoice.order_id}`} className="text-primary hover:underline">
-                  Open order
-                </Link>
-              }
-            />
-            {invoice.order_published_url && (
               <DetailRow
-                label="Published URL"
+                label="Paid"
                 value={
-                  <a
-                    href={invoice.order_published_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary break-all hover:underline"
-                  >
-                    {invoice.order_published_url}
-                  </a>
+                  invoice.paid_by_name
+                    ? `${formatDateUtc(invoice.paid_at)} by ${invoice.paid_by_name}`
+                    : formatDateUtc(invoice.paid_at)
                 }
               />
             )}
           </dl>
         </Card>
 
+        {/* Invoice items */}
         <Card className="overflow-hidden p-0">
+          <div className="px-section py-block border-border border-b">
+            <h3 className="text-foreground text-base font-semibold">
+              Orders ({invoice.items.length})
+            </h3>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -220,6 +203,9 @@ export function InvoiceDetailView({
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Order
                   </th>
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
+                    Publish date
+                  </th>
                   <th className="text-muted-foreground px-section py-block text-right font-medium">
                     Amount
                   </th>
@@ -228,103 +214,73 @@ export function InvoiceDetailView({
               <tbody>
                 {invoice.items.map((item) => (
                   <tr key={item.id} className="border-border border-b last:border-b-0">
-                    <td className="px-section py-block">{item.site_domain}</td>
+                    <td className="px-section py-block">{item.site_domain ?? '—'}</td>
                     <td className="px-section py-block">
                       <Link
                         href={`/orders/${item.order_id}`}
-                        className="text-primary hover:underline"
+                        className="text-primary font-mono text-xs hover:underline"
                       >
                         {item.order_id.slice(0, 8)}
                       </Link>
                     </td>
+                    <td className="text-muted-foreground px-section py-block">
+                      {item.order_publish_date ?? '—'}
+                    </td>
                     <td className="px-section py-block text-right font-semibold tabular-nums">
-                      ${item.amount.toFixed(2)}
+                      {fmtMoney(item.amount)}
                     </td>
                   </tr>
                 ))}
+                {invoice.items.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="text-muted-foreground px-section py-block text-center text-sm"
+                    >
+                      No orders attached yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+          </div>
+
+          {/* Totals */}
+          <div className="px-section py-block border-border border-t">
+            <div className="ml-auto w-64 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="tabular-nums">{fmtMoney(invoice.subtotal)}</span>
+              </div>
+              {invoice.adjustments !== 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Adjustments</span>
+                  <span className="tabular-nums">{fmtMoney(invoice.adjustments)}</span>
+                </div>
+              )}
+              <div className="border-border flex justify-between border-t pt-1 font-semibold">
+                <span>Total</span>
+                <span className="tabular-nums">{fmtMoney(invoice.total)}</span>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
 
-      <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SheetContent side="right">
-          <SheetHeader>
-            <SheetTitle>Edit draft invoice</SheetTitle>
-            <SheetDescription>
-              Update statement month, due date, and line item amounts.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-block px-4">
-            <label className="gap-inset flex flex-col text-sm">
-              <span className="text-foreground font-medium">Statement month</span>
-              <input
-                type="month"
-                value={billingMonth}
-                onChange={(e) => setBillingMonth(e.target.value)}
-                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-              />
-            </label>
-            <label className="gap-inset flex flex-col text-sm">
-              <span className="text-foreground font-medium">Due date</span>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="border-border bg-background text-foreground h-9 rounded-md border px-3 text-sm"
-              />
-            </label>
-            <div className="space-y-inset">
-              <p className="text-foreground text-sm font-medium">Invoice items</p>
-              {invoice.items.map((item) => (
-                <label
-                  key={item.id}
-                  className="gap-inset flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{item.site_domain}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={itemAmounts[item.id] ?? ''}
-                    onChange={(e) =>
-                      setItemAmounts((prev) => ({
-                        ...prev,
-                        [item.id]: e.target.value,
-                      }))
-                    }
-                    className="border-border bg-background text-foreground h-9 w-32 rounded-md border px-3 text-sm"
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-          <SheetFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditOpen(false)}
-              disabled={pending}
-            >
-              Cancel
-            </Button>
-            <Button type="button" variant="cta" onClick={handleSaveInvoice} disabled={pending}>
-              Save changes
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      {/* Edit orders sheet */}
+      {canEdit && (
+        <EditInvoiceOrders invoice={invoice} open={editOpen} onOpenChange={setEditOpen} />
+      )}
 
       <MenuActionDialog
         open={sendOpen}
         onOpenChange={setSendOpen}
         title="Send invoice"
-        description="This will mark the draft invoice as sent."
+        description={`This will mark invoice ${invoiceLabel} as sent and notify the client.`}
         confirmLabel={pending ? 'Sending…' : 'Send invoice'}
         busy={pending}
         onConfirm={() => {
-          runAction(() => sendInvoiceEmail(invoice.id), 'Invoice sent.')
+          runAction(() => sendInvoice(invoice.id), 'Invoice sent.')
           setSendOpen(false)
         }}
       />
@@ -333,7 +289,7 @@ export function InvoiceDetailView({
         open={markPaidOpen}
         onOpenChange={setMarkPaidOpen}
         title="Mark invoice as paid"
-        description="This will mark the invoice as paid and complete linked orders via trigger."
+        description={`This will mark invoice ${invoiceLabel} as paid and complete all attached published orders.`}
         confirmLabel={pending ? 'Marking…' : 'Mark as paid'}
         busy={pending}
         onConfirm={() => {

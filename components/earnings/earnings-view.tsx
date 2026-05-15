@@ -96,7 +96,7 @@ export function EarningsView({
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block flex items-center gap-2">
+        <div className="px-section py-block gap-inset flex flex-wrap items-center">
           <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
@@ -149,7 +149,7 @@ export function EarningsView({
               scroll={false}
               className={cn(
                 buttonVariants({ variant: 'outline', size: 'sm' }),
-                'ml-auto h-8 gap-2 rounded-full px-3 text-xs'
+                'gap-inset px-block ml-auto h-10 rounded-full text-xs'
               )}
             >
               <RotateCcw className="size-3.5" aria-hidden />

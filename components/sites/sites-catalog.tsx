@@ -471,7 +471,7 @@ export function SitesCatalog({
           </>
         }
         action={
-          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+          <div className="gap-inset flex w-full min-w-0 flex-row items-center sm:w-auto sm:flex-wrap sm:justify-end">
             <SearchField
               name="q"
               placeholder="Search domain, keywords, description, category…"
@@ -482,7 +482,7 @@ export function SitesCatalog({
                 href="/sites/new"
                 className={cn(
                   buttonVariants({ variant: 'cta', size: 'default' }),
-                  'h-10 min-h-10 shrink-0 justify-center gap-2 rounded-full'
+                  'gap-inset h-10 min-h-10 shrink-0 justify-center rounded-full'
                 )}
               >
                 <Plus className="size-4" aria-hidden />
@@ -494,7 +494,7 @@ export function SitesCatalog({
       />
 
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
-        <div className="px-section py-block flex flex-wrap items-center gap-3">
+        <div className="px-section py-block gap-inset flex flex-wrap items-center">
           <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>

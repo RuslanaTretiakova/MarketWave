@@ -60,12 +60,7 @@ export function ChatsToolbar({ className }: { className?: string }) {
     !!withParam || channel !== 'all' || status !== 'active' || sort !== 'activity' || !!from || !!to
 
   return (
-    <div
-      className={cn(
-        'px-section py-block flex flex-nowrap items-center gap-3 overflow-x-auto',
-        className
-      )}
-    >
+    <div className={cn('px-section py-block gap-inset flex flex-wrap items-center', className)}>
       <div className="text-muted-foreground gap-inset flex shrink-0 items-center text-xs font-medium">
         <Filter className="size-3.5 shrink-0" aria-hidden />
         <span>Filters</span>

@@ -58,13 +58,13 @@ type SheetState =
   | { open: true; mode: 'edit'; row: CategoryRow }
 
 const CATEGORY_ROW_CELL =
-  'px-4 py-3 align-middle whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
+  'px-block py-inset align-middle whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
 
 const CATEGORY_ROW_CELL_MUTED =
-  'text-muted-foreground px-4 py-3 align-middle tabular-nums whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
+  'text-muted-foreground px-block py-inset align-middle tabular-nums whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
 
 const CATEGORY_ROW_CELL_ACTIONS =
-  'px-4 py-3 align-middle text-right whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
+  'px-block py-inset align-middle text-right whitespace-normal transition-colors group-hover/category-row:bg-muted/50 group-has-[[aria-expanded=true]]/category-row:bg-muted/50'
 
 export function CategoriesManagement({
   initialRows,
@@ -166,7 +166,7 @@ export function CategoriesManagement({
         title="Categories"
         description="Manage catalog niches used when creating or filtering sites."
         action={
-          <div className="flex w-full min-w-0 flex-row items-center gap-2 sm:w-auto sm:flex-wrap sm:justify-end">
+          <div className="gap-inset flex w-full min-w-0 flex-row items-center sm:w-auto sm:flex-wrap sm:justify-end">
             <SearchField name="q" placeholder="Search by name…" ariaLabel="Search categories" />
             <Button
               type="button"
@@ -205,7 +205,7 @@ export function CategoriesManagement({
                       scroll={false}
                       className={cn(
                         buttonVariants({ variant: 'outline', size: 'default' }),
-                        'h-10 min-h-10 w-full shrink-0 justify-center gap-2 rounded-full sm:w-auto'
+                        'gap-inset h-10 min-h-10 w-full shrink-0 justify-center rounded-full sm:w-auto'
                       )}
                     >
                       <RotateCcw className="size-4" aria-hidden />
@@ -366,7 +366,7 @@ export function CategoriesManagement({
               <Button
                 type="button"
                 variant="default"
-                className="w-full gap-2 sm:w-auto"
+                className="gap-inset w-full sm:w-auto"
                 onClick={() => openEditFromMobileDetail(mobileDetailRow)}
               >
                 <Pencil className="size-4" aria-hidden />

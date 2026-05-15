@@ -6,7 +6,7 @@ import { inactiveSitesCheckoutErrorMessage } from '@/lib/cart/cart-site-availabi
 import { CHECKOUT_CART_SITES_SELECT, fetchCartItemsForCheckout } from '@/lib/cart/load-cart'
 import { validateCartPublishMonths } from '@/lib/cart/validate-publish-month'
 import { logAuthError } from '@/lib/errors/log-auth-error'
-import { createNotifications, getStaffUserIds } from '@/lib/notifications/create-notification'
+import { notifyOrderEvent } from '@/lib/notifications/notify-order-event'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
@@ -217,14 +217,20 @@ export async function createOrderFromCartItem(
       })
     }
 
-    const staffIds = await getStaffUserIds()
-    void createNotifications({
-      event: 'order_created',
-      title: 'New order placed',
-      message: `A client placed an order for ${orderInsert.site_domain}.`,
-      recipientUserIds: staffIds,
-      actorUserId: user.id,
+    const { data: actorProfile } = await adminClient
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+    void notifyOrderEvent('order_created', {
       orderId: inserted.id,
+      actorUserId: user.id,
+      actorName: actorProfile?.full_name ?? null,
+      order: {
+        user_id: user.id,
+        copywriter_id: null,
+        site_domain: orderInsert.site_domain ?? null,
+      },
     })
 
     revalidatePath('/cart')
@@ -423,16 +429,21 @@ export async function createOrdersFromCart(): Promise<
       }
     }
 
-    // Notify admin/manager of new orders (fire-and-forget)
-    const staffIds = await getStaffUserIds()
+    const { data: actorProfile } = await adminClient
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
     for (let i = 0; i < orderInserts.length; i++) {
-      void createNotifications({
-        event: 'order_created',
-        title: 'New order placed',
-        message: `A client placed an order for ${orderInserts[i].site_domain}.`,
-        recipientUserIds: staffIds,
-        actorUserId: user.id,
+      void notifyOrderEvent('order_created', {
         orderId: orderIds[i],
+        actorUserId: user.id,
+        actorName: actorProfile?.full_name ?? null,
+        order: {
+          user_id: user.id,
+          copywriter_id: null,
+          site_domain: orderInserts[i].site_domain ?? null,
+        },
       })
     }
 

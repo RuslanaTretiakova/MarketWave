@@ -197,7 +197,7 @@ export function ClientDashboard({
                     key={row.id}
                     className="border-border bg-muted/10 p-inset gap-inset flex flex-col rounded-xl border"
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="gap-inset flex items-start justify-between">
                       <Link
                         href={`/orders/${row.id}`}
                         className="text-foreground max-w-44 truncate text-sm font-medium hover:underline"
@@ -219,7 +219,7 @@ export function ClientDashboard({
                       </p>
                       <Link
                         href={`/orders/${row.id}`}
-                        className="text-primary inline-flex items-center gap-1 text-xs font-medium hover:underline"
+                        className="gap-inset text-primary inline-flex items-center text-xs font-medium hover:underline"
                       >
                         Open
                         <ArrowUpRight className="size-3.5" aria-hidden />
@@ -248,7 +248,7 @@ export function ClientDashboard({
                     key={row.id}
                     className="border-border bg-muted/10 p-inset gap-inset flex flex-col rounded-xl border"
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="gap-inset flex items-start justify-between">
                       <Link
                         href={`/invoices/${row.id}`}
                         className="text-foreground max-w-44 truncate text-sm font-medium hover:underline"

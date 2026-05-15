@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Check, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -34,10 +34,6 @@ function parseChatRoomRef(message: string | null): {
 }
 
 function notificationHref(row: NotificationRow): string | null {
-  if (row.event === 'chat_message') {
-    const { roomId } = parseChatRoomRef(row.message)
-    if (roomId) return `/chats/${roomId}`
-  }
   if (row.site_id) return `/sites/${row.site_id}`
   if (row.order_id) return `/orders/${row.order_id}`
   return null
@@ -53,21 +49,44 @@ export function NotificationsList({
   totalCount: number
 }) {
   const [pending, startTransition] = useTransition()
+  const [localReadIds, setLocalReadIds] = useState<Set<string>>(new Set())
 
   function runMarkAllRead() {
     startTransition(async () => {
+      const allUnread = new Set(rows.filter((r) => !r.read_at).map((r) => r.id))
+      setLocalReadIds(allUnread)
       const res = await markAllNotificationsRead()
-      if (!res.ok) toast.error(res.message)
-      else toast.success('All notifications marked as read.')
+      if (!res.ok) {
+        setLocalReadIds(new Set())
+        toast.error(res.message)
+      } else {
+        toast.success('All notifications marked as read.')
+      }
     })
   }
 
   function runMarkRead(e: React.MouseEvent, id: string) {
     e.preventDefault()
     e.stopPropagation()
+    markReadOptimistic(id)
+  }
 
+  function markReadOptimistic(id: string) {
+    setLocalReadIds((prev) => {
+      if (prev.has(id)) return prev
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
     markNotificationRead(id).then((res) => {
-      if (!res.ok) toast.error(res.message)
+      if (!res.ok) {
+        setLocalReadIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+        toast.error(res.message)
+      }
     })
   }
 
@@ -98,14 +117,11 @@ export function NotificationsList({
           <div className="flex flex-col">
             {rows.map((row) => {
               const href = notificationHref(row)
-              const isUnread = !row.read_at
-              const displayMessage =
-                row.event === 'chat_message'
-                  ? parseChatRoomRef(row.message).displayMessage
-                  : row.message
+              const isUnread = !row.read_at && !localReadIds.has(row.id)
+              const displayMessage = parseChatRoomRef(row.message).displayMessage || row.message
 
               const inner = (
-                <div className="flex w-full min-w-0 flex-1 items-start gap-3">
+                <div className="gap-inset flex w-full min-w-0 flex-1 items-start">
                   <span
                     className={cn(
                       'mt-1.5 size-2 shrink-0 rounded-full',
@@ -161,7 +177,7 @@ export function NotificationsList({
               )
 
               const rowClassName = cn(
-                'w-full px-section py-3 flex items-start justify-between gap-3 transition-colors bg-transparent hover:bg-muted/50'
+                'gap-inset px-section py-inset w-full flex items-start justify-between transition-colors bg-transparent hover:bg-muted/50'
               )
 
               return href ? (
@@ -170,9 +186,7 @@ export function NotificationsList({
                   href={href}
                   className={rowClassName}
                   onClick={() => {
-                    if (isUnread) {
-                      markNotificationRead(row.id)
-                    }
+                    if (isUnread) markReadOptimistic(row.id)
                   }}
                 >
                   {inner}

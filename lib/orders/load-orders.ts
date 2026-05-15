@@ -94,7 +94,11 @@ export async function loadOrdersPage(
         console.error('[orders/load/invoice-filter]', invoiceErr.message)
         throw new Error(invoiceErr.message || 'Failed to filter by invoice status')
       }
-      const orderIds = [...new Set((invoiceRows ?? []).map((row) => row.order_id))]
+      const orderIds = [
+        ...new Set(
+          (invoiceRows ?? []).map((row) => row.order_id).filter((id): id is string => id !== null)
+        ),
+      ]
       if (orderIds.length === 0) {
         return { rows: [], totalCount: 0 }
       }
@@ -155,7 +159,7 @@ export async function loadOrdersPage(
         .in('order_id', orderIds)
         .order('created_at', { ascending: false })
       for (const invoice of invoiceRows ?? []) {
-        if (!invoiceStatusByOrderId.has(invoice.order_id)) {
+        if (invoice.order_id && !invoiceStatusByOrderId.has(invoice.order_id)) {
           invoiceStatusByOrderId.set(invoice.order_id, invoice.status)
         }
       }
