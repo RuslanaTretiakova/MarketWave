@@ -8,12 +8,17 @@ export type InvoiceStatus = Database['public']['Enums']['invoice_status']
 
 export type InvoiceListRow = {
   id: string
-  order_id: string
-  billing_month: string | null
-  invoice_group_id: string | null
+  // Kept for back-compat with components; may be null on new invoices.
+  order_id: string | null
+  billing_month: string
   invoice_number: string | null
+  invoice_group_id: string | null
   status: InvoiceStatus
+  /** Legacy single-amount field; equals total on new invoices. */
   amount: number
+  subtotal: number
+  adjustments: number
+  total: number
   due_date: string | null
   paid_at: string | null
   sent_at: string | null
@@ -22,8 +27,10 @@ export type InvoiceListRow = {
   client_id: string
   client_name: string | null
   client_email: string | null
+  /** For list display — no longer guaranteed to be a domain; may be '—'. */
   site_domain: string
   billing_period_label: string
+  items_count: number
 }
 
 export type InvoicesSearchParams = {
@@ -31,113 +38,23 @@ export type InvoicesSearchParams = {
   client: string
   status?: InvoiceStatus
   billingPeriod?: string
+  invoiceNumber?: string
   minAmount?: number
   maxAmount?: number
-  invoiceNumber?: string
 }
 
 type InvoiceViewerRole = Database['public']['Enums']['user_role']
 
-function isMissingSentAtColumn(message: string): boolean {
-  return message.includes('column invoices.sent_at does not exist')
-}
-
-function isMissingBillingMonthColumn(message: string): boolean {
-  return message.includes('column invoices.billing_month does not exist')
-}
-
-function isMissingInvoiceNumberColumn(message: string): boolean {
-  return message.includes('column invoices.invoice_number does not exist')
-}
-
-function isMissingInvoiceItemsRelation(message: string): boolean {
+function isSchemaError(msg: string) {
   return (
-    message.includes("Could not find a relationship between 'invoices' and 'invoice_items'") ||
-    message.includes('invoice_items')
+    msg.includes('relationship') ||
+    msg.includes('schema cache') ||
+    msg.includes('does not exist') ||
+    msg.includes('column') ||
+    msg.includes('Could not find')
   )
 }
 
-function isMissingInvoiceItemsTable(message: string): boolean {
-  return (
-    message.includes('relation "public.invoice_items" does not exist') ||
-    message.includes("Could not find the table 'public.invoice_items' in the schema cache")
-  )
-}
-
-function normalizeSentAt<T extends { sent_at?: string | null }>(
-  row: T
-): T & { sent_at: string | null } {
-  return { ...row, sent_at: row.sent_at ?? null }
-}
-
-function normalizeBillingMonth<T extends { billing_month?: string | null }>(
-  row: T
-): T & { billing_month: string | null } {
-  return { ...row, billing_month: row.billing_month ?? null }
-}
-
-function normalizeInvoiceNumber<T extends { invoice_number?: string | null }>(
-  row: T
-): T & { invoice_number: string | null } {
-  return { ...row, invoice_number: row.invoice_number ?? null }
-}
-
-function invoicesListSelect(opts: {
-  billingMonth: boolean
-  sentAt: boolean
-  invoiceNumber: boolean
-}): string {
-  const cols = [
-    'id',
-    'order_id',
-    ...(opts.billingMonth ? ['billing_month'] : []),
-    'invoice_group_id',
-    ...(opts.invoiceNumber ? ['invoice_number'] : []),
-    'status',
-    'amount',
-    'due_date',
-    'paid_at',
-    ...(opts.sentAt ? ['sent_at'] : []),
-    'created_at',
-    'updated_at',
-  ]
-  return `
-        ${cols.join(', ')},
-        order:orders!inner(site_domain, user_id)
-      `
-}
-
-function invoiceDetailSelect(opts: {
-  billingMonth: boolean
-  sentAt: boolean
-  invoiceNumber: boolean
-}): string {
-  const cols = [
-    'id',
-    'order_id',
-    ...(opts.billingMonth ? ['billing_month'] : []),
-    'invoice_group_id',
-    ...(opts.invoiceNumber ? ['invoice_number'] : []),
-    'status',
-    'amount',
-    'due_date',
-    'paid_at',
-    ...(opts.sentAt ? ['sent_at'] : []),
-    'created_at',
-    'updated_at',
-  ]
-  return `
-      ${cols.join(', ')},
-      order:orders!inner(
-        site_domain, user_id, status, published_url, publish_date, price
-      )
-    `
-}
-
-/**
- * Loads invoices joined with their order's site domain + client. Uses the service-role
- * client because page-gated admin/manager pages already pre-flight role auth.
- */
 export async function loadInvoicesPage(
   supabase: SupabaseClient<Database>,
   role: InvoiceViewerRole,
@@ -145,109 +62,164 @@ export async function loadInvoicesPage(
 ): Promise<{ rows: InvoiceListRow[]; totalCount: number }> {
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
   let page = Math.max(1, Math.floor(params.page) || 1)
+  const client = role === 'admin' || role === 'manager' ? adminClient : supabase
 
-  let rows: InvoiceListRow[] = []
-  let totalCount = 0
-
+  // --- Attempt 1: new schema (post-migration) ---
   for (let attempt = 0; attempt < 2; attempt++) {
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
-    const client = role === 'admin' || role === 'manager' ? adminClient : supabase
+    let q = client.from('invoices').select(
+      `id, order_id, billing_month, invoice_number, invoice_group_id,
+         status, amount, subtotal, adjustments, total,
+         due_date, paid_at, sent_at, created_at, updated_at,
+         client_id,
+         client:profiles!client_id(full_name, email),
+         items:invoice_items(id)`,
+      { count: 'exact' }
+    )
 
-    let billingMonth = true
-    let sentAt = true
-    let invoiceNumber = true
-    let data: unknown = null
-    let error: { message: string } | null = null
-    let count: number | null = null
-
-    for (;;) {
-      let q = client
-        .from('invoices')
-        .select(invoicesListSelect({ billingMonth, sentAt, invoiceNumber }), {
-          count: 'exact',
-        })
-
-      if (params.status) q = q.eq('status', params.status)
-      if (params.minAmount !== undefined) q = q.gte('amount', params.minAmount)
-      if (params.maxAmount !== undefined) q = q.lte('amount', params.maxAmount)
-      if (params.invoiceNumber && invoiceNumber)
-        q = q.ilike('invoice_number', `%${params.invoiceNumber.trim()}%`)
-      if (params.billingPeriod && /^\d{4}-\d{2}$/.test(params.billingPeriod)) {
-        const monthStart = `${params.billingPeriod}-01`
-        const [yearPart, monthPart] = params.billingPeriod.split('-')
-        const year = Number(yearPart)
-        const month = Number(monthPart)
-        const nextMonthDate = new Date(Date.UTC(year, month, 1))
-        const nextMonthStart = nextMonthDate.toISOString().slice(0, 10)
-
-        if (billingMonth) {
-          q = q.or(
-            `billing_month.eq.${monthStart},and(billing_month.is.null,created_at.gte.${monthStart},created_at.lt.${nextMonthStart})`
-          )
-        } else {
-          q = q.gte('created_at', monthStart).lt('created_at', nextMonthStart)
-        }
-      }
-
-      const res = await q.order('created_at', { ascending: false }).range(from, to)
-      data = res.data
-      error = res.error
-      count = res.count
-
-      if (!error) break
-
-      const msg = error.message ?? ''
-      if (billingMonth && isMissingBillingMonthColumn(msg)) {
-        billingMonth = false
-        continue
-      }
-      if (sentAt && isMissingSentAtColumn(msg)) {
-        sentAt = false
-        continue
-      }
-      if (invoiceNumber && isMissingInvoiceNumberColumn(msg)) {
-        invoiceNumber = false
-        continue
-      }
-      break
+    if (params.status) q = q.eq('status', params.status)
+    if (params.minAmount !== undefined) q = q.gte('total', params.minAmount)
+    if (params.maxAmount !== undefined) q = q.lte('total', params.maxAmount)
+    if (params.invoiceNumber) {
+      q = q.ilike('invoice_number', `%${params.invoiceNumber.trim()}%`)
+    }
+    if (params.billingPeriod && /^\d{4}-\d{2}$/.test(params.billingPeriod)) {
+      q = q.eq('billing_month', `${params.billingPeriod}-01`)
     }
 
-    if (data && Array.isArray(data)) {
-      data = (data as unknown[]).map((r) =>
-        normalizeInvoiceNumber(
-          normalizeBillingMonth(
-            normalizeSentAt(
-              r as {
-                sent_at?: string | null
-                billing_month?: string | null
-                invoice_number?: string | null
-              }
-            )
-          )
-        )
-      ) as typeof data
-    }
+    const { data, error, count } = await q.order('created_at', { ascending: false }).range(from, to)
 
     if (error) {
+      if (isSchemaError(error.message ?? '')) {
+        // Migration not yet applied — fall through to legacy query below.
+        break
+      }
       console.error('[invoices/load]', error.message)
       throw new Error(error.message || 'Failed to load invoices')
     }
 
-    totalCount = count ?? 0
+    const totalCount = count ?? 0
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-    if (page > totalPages) {
+    if (page > totalPages && attempt === 0) {
       page = totalPages
       continue
     }
 
-    type InvRow = {
+    type RawRow = {
       id: string
-      order_id: string
-      billing_month: string | null
-      invoice_group_id: string | null
+      order_id: string | null
+      billing_month: string
       invoice_number: string | null
+      invoice_group_id: string | null
+      status: InvoiceStatus
+      amount: number
+      subtotal: number
+      adjustments: number
+      total: number
+      due_date: string | null
+      paid_at: string | null
+      sent_at: string | null
+      created_at: string
+      updated_at: string
+      client_id: string
+      client: { full_name: string | null; email: string | null } | null
+      items: Array<{ id: string }> | null
+    }
+
+    const rawRows = (data ?? []) as unknown as RawRow[]
+    let filtered = rawRows
+
+    if (params.client && (role === 'admin' || role === 'manager')) {
+      const needle = sanitizeIlikePattern(params.client).toLowerCase()
+      if (needle.length > 0) {
+        filtered = filtered.filter((r) => {
+          const name = (r.client?.full_name ?? '').toLowerCase()
+          const email = (r.client?.email ?? '').toLowerCase()
+          return name.includes(needle) || email.includes(needle)
+        })
+      }
+    }
+
+    return {
+      rows: filtered.map((r) => ({
+        id: r.id,
+        order_id: r.order_id,
+        billing_month: r.billing_month,
+        invoice_number: r.invoice_number,
+        invoice_group_id: r.invoice_group_id,
+        status: r.status,
+        amount: r.amount,
+        subtotal: r.subtotal,
+        adjustments: r.adjustments,
+        total: r.total,
+        due_date: r.due_date,
+        paid_at: r.paid_at,
+        sent_at: r.sent_at,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+        client_id: r.client_id,
+        client_name: r.client?.full_name ?? null,
+        client_email: r.client?.email ?? null,
+        site_domain: '—',
+        billing_period_label: (r.billing_month ?? '').slice(0, 7),
+        items_count: r.items?.length ?? 0,
+      })),
+      totalCount:
+        params.client && (role === 'admin' || role === 'manager') ? filtered.length : totalCount,
+    }
+  }
+
+  // --- Fallback: legacy schema (pre-migration, order_id is the FK) ---
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let q = client.from('invoices').select(
+      `id, order_id, billing_month, invoice_number, invoice_group_id,
+         status, amount, due_date, paid_at, sent_at, created_at, updated_at,
+         order:orders!order_id(site_domain, user_id, price,
+           client:profiles!user_id(full_name, email))`,
+      { count: 'exact' }
+    )
+
+    if (params.status) q = q.eq('status', params.status)
+    if (params.minAmount !== undefined) q = q.gte('amount', params.minAmount)
+    if (params.maxAmount !== undefined) q = q.lte('amount', params.maxAmount)
+    if (params.invoiceNumber) {
+      q = q.ilike('invoice_number', `%${params.invoiceNumber.trim()}%`)
+    }
+    if (params.billingPeriod && /^\d{4}-\d{2}$/.test(params.billingPeriod)) {
+      q = q.eq('billing_month', `${params.billingPeriod}-01`)
+    }
+
+    const { data, error, count } = await q.order('created_at', { ascending: false }).range(from, to)
+
+    if (error) {
+      console.error('[invoices/load:legacy]', error.message)
+      return { rows: [], totalCount: 0 }
+    }
+
+    const totalCount = count ?? 0
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    if (page > totalPages && attempt === 0) {
+      page = totalPages
+      continue
+    }
+
+    type LegacyOrder = {
+      site_domain: string | null
+      user_id: string
+      price: number
+      client: { full_name: string | null; email: string | null } | null
+    }
+    type LegacyRow = {
+      id: string
+      order_id: string | null
+      billing_month: string | null
+      invoice_number: string | null
+      invoice_group_id: string | null
       status: InvoiceStatus
       amount: number
       due_date: string | null
@@ -255,80 +227,80 @@ export async function loadInvoicesPage(
       sent_at: string | null
       created_at: string
       updated_at: string
-      order: { site_domain: string; user_id: string } | null
+      order: LegacyOrder | null
     }
 
-    const rawRows = (data ?? []) as unknown as InvRow[]
+    const rawRows = (data ?? []) as unknown as LegacyRow[]
+    let filtered = rawRows
 
-    const profileMap = new Map<string, { full_name: string | null; email: string | null }>()
-    if (role === 'admin' || role === 'manager') {
-      const userIds = [...new Set(rawRows.map((r) => r.order?.user_id).filter(Boolean))] as string[]
-      if (userIds.length > 0) {
-        const { data: profiles } = await adminClient
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds)
-        ;(profiles ?? []).forEach((p) => {
-          profileMap.set(p.id, { full_name: p.full_name, email: p.email })
+    if (params.client && (role === 'admin' || role === 'manager')) {
+      const needle = sanitizeIlikePattern(params.client).toLowerCase()
+      if (needle.length > 0) {
+        filtered = filtered.filter((r) => {
+          const name = (r.order?.client?.full_name ?? '').toLowerCase()
+          const email = (r.order?.client?.email ?? '').toLowerCase()
+          return name.includes(needle) || email.includes(needle)
         })
       }
     }
 
-    rows = rawRows.map((r) => {
-      const clientId = r.order?.user_id ?? ''
-      const profile = profileMap.get(clientId)
-      const billingPeriodLabel = r.billing_month
-        ? r.billing_month.slice(0, 7)
-        : r.created_at.slice(0, 7)
-      return {
+    return {
+      rows: filtered.map((r) => ({
         id: r.id,
         order_id: r.order_id,
-        billing_month: r.billing_month,
-        invoice_group_id: r.invoice_group_id,
+        billing_month: r.billing_month ?? r.created_at.slice(0, 10),
         invoice_number: r.invoice_number,
+        invoice_group_id: r.invoice_group_id,
         status: r.status,
         amount: r.amount,
+        subtotal: r.amount,
+        adjustments: 0,
+        total: r.amount,
         due_date: r.due_date,
         paid_at: r.paid_at,
         sent_at: r.sent_at,
         created_at: r.created_at,
         updated_at: r.updated_at,
-        client_id: clientId,
-        client_name: profile?.full_name ?? null,
-        client_email: profile?.email ?? null,
+        client_id: r.order?.user_id ?? '',
+        client_name: r.order?.client?.full_name ?? null,
+        client_email: r.order?.client?.email ?? null,
         site_domain: r.order?.site_domain ?? '—',
-        billing_period_label: billingPeriodLabel,
-      }
-    })
-
-    const safeClient = sanitizeIlikePattern(params.client)
-    if (safeClient.length > 0 && (role === 'admin' || role === 'manager')) {
-      const needle = safeClient.toLowerCase()
-      rows = rows.filter((row) => {
-        const name = (row.client_name ?? '').toLowerCase()
-        const email = (row.client_email ?? '').toLowerCase()
-        return name.includes(needle) || email.includes(needle)
-      })
-      totalCount = rows.length
+        billing_period_label: (r.billing_month ?? r.created_at).slice(0, 7),
+        items_count: r.order_id ? 1 : 0,
+      })),
+      totalCount:
+        params.client && (role === 'admin' || role === 'manager') ? filtered.length : totalCount,
     }
-
-    break
   }
 
-  return { rows, totalCount }
+  return { rows: [], totalCount: 0 }
 }
 
-export type InvoiceDetail = InvoiceListRow & {
+export type InvoiceItem = {
+  id: string
+  order_id: string
+  site_domain: string | null
+  description: string | null
+  amount: number
+  order_status: Database['public']['Enums']['order_status'] | null
+  order_published_url: string | null
+  order_publish_date: string | null
+  order_price: number
+}
+
+export type InvoiceDetail = Omit<InvoiceListRow, 'items_count'> & {
+  notes: string | null
+  generated_at: string | null
+  sent_by: string | null
+  paid_by: string | null
+  sent_by_name: string | null
+  paid_by_name: string | null
+  items: InvoiceItem[]
+  // Legacy: first item's order fields (for single-order invoices / PDF back-compat)
   order_status: Database['public']['Enums']['order_status']
   order_published_url: string | null
   order_publish_date: string | null
   order_price: number
-  items: Array<{
-    id: string
-    order_id: string
-    site_domain: string
-    amount: number
-  }>
 }
 
 export async function loadInvoiceDetail(
@@ -338,58 +310,21 @@ export async function loadInvoiceDetail(
 ): Promise<InvoiceDetail | null> {
   const client = role === 'admin' || role === 'manager' ? adminClient : supabase
 
-  let billingMonth = true
-  let sentAt = true
-  let invoiceNumber = true
-  let includeItemsJoin = true
-  let data: unknown = null
-  let error: { message: string } | null = null
-
-  for (;;) {
-    const select = includeItemsJoin
-      ? `${invoiceDetailSelect({ billingMonth, sentAt, invoiceNumber })},
-        items:invoice_items(id, order_id, site_domain, amount)`
-      : invoiceDetailSelect({ billingMonth, sentAt, invoiceNumber })
-
-    const res = await client.from('invoices').select(select).eq('id', invoiceId).maybeSingle()
-    data = res.data
-    error = res.error
-
-    if (!error) break
-
-    const msg = error.message ?? ''
-    if (billingMonth && isMissingBillingMonthColumn(msg)) {
-      billingMonth = false
-      continue
-    }
-    if (sentAt && isMissingSentAtColumn(msg)) {
-      sentAt = false
-      continue
-    }
-    if (invoiceNumber && isMissingInvoiceNumberColumn(msg)) {
-      invoiceNumber = false
-      continue
-    }
-    if (includeItemsJoin && isMissingInvoiceItemsRelation(msg)) {
-      includeItemsJoin = false
-      continue
-    }
-    break
-  }
-
-  if (data && typeof data === 'object') {
-    data = normalizeInvoiceNumber(
-      normalizeBillingMonth(
-        normalizeSentAt(
-          data as {
-            sent_at?: string | null
-            billing_month?: string | null
-            invoice_number?: string | null
-          }
-        )
-      )
-    ) as typeof data
-  }
+  const { data, error } = await client
+    .from('invoices')
+    .select(
+      `id, order_id, billing_month, invoice_number, invoice_group_id,
+       status, amount, subtotal, adjustments, total,
+       due_date, paid_at, sent_at, notes, generated_at, sent_by, paid_by,
+       created_at, updated_at, client_id,
+       client:profiles!client_id(full_name, email),
+       items:invoice_items(
+         id, order_id, site_domain, description, amount,
+         order:orders(status, published_url, publish_date, price)
+       )`
+    )
+    .eq('id', invoiceId)
+    .maybeSingle()
 
   if (error) {
     console.error('[invoices/detail]', error.message)
@@ -397,115 +332,107 @@ export async function loadInvoiceDetail(
   }
   if (!data) return null
 
-  type Joined = {
+  type RawInvoice = {
     id: string
-    order_id: string
-    billing_month: string | null
-    invoice_group_id: string | null
+    order_id: string | null
+    billing_month: string
     invoice_number: string | null
+    invoice_group_id: string | null
     status: InvoiceStatus
     amount: number
+    subtotal: number
+    adjustments: number
+    total: number
     due_date: string | null
     paid_at: string | null
     sent_at: string | null
+    notes: string | null
+    generated_at: string | null
+    sent_by: string | null
+    paid_by: string | null
     created_at: string
     updated_at: string
-    order: {
-      site_domain: string
-      user_id: string
-      status: Database['public']['Enums']['order_status']
-      published_url: string | null
-      publish_date: string | null
-      price: number
-    } | null
-    items?: Array<{
+    client_id: string
+    client: { full_name: string | null; email: string | null } | null
+    items: Array<{
       id: string
       order_id: string
-      site_domain: string
+      site_domain: string | null
+      description: string | null
       amount: number
+      order: {
+        status: Database['public']['Enums']['order_status']
+        published_url: string | null
+        publish_date: string | null
+        price: number
+      } | null
     }> | null
   }
 
-  const row = data as unknown as Joined
-  const clientId = row.order?.user_id ?? ''
-  let client_name: string | null = null
-  let client_email: string | null = null
-  if (clientId && (role === 'admin' || role === 'manager')) {
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('full_name, email')
-      .eq('id', clientId)
-      .maybeSingle()
-    client_name = profile?.full_name ?? null
-    client_email = profile?.email ?? null
-  }
+  const row = data as unknown as RawInvoice
 
-  let items =
-    (row.items ?? []).map((item) => ({
-      id: item.id,
-      order_id: item.order_id,
-      site_domain: item.site_domain,
-      amount: item.amount,
-    })) ?? []
-
-  if (!includeItemsJoin) {
-    const itemsRes = await client
-      .from('invoice_items')
-      .select('id, order_id, site_domain, amount')
-      .eq('invoice_id', invoiceId)
-      .order('created_at', { ascending: true })
-    if (itemsRes.error) {
-      const message = itemsRes.error.message ?? ''
-      if (!isMissingInvoiceItemsTable(message)) {
-        console.error('[invoices/detail/items]', message)
-        return null
-      }
-      items = []
-    } else {
-      items = (itemsRes.data ?? []).map((item) => ({
-        id: item.id,
-        order_id: item.order_id,
-        site_domain: item.site_domain,
-        amount: item.amount,
-      }))
+  // Resolve sent_by / paid_by names
+  let sent_by_name: string | null = null
+  let paid_by_name: string | null = null
+  if (role === 'admin' || role === 'manager') {
+    const actorIds = [...new Set([row.sent_by, row.paid_by].filter(Boolean))] as string[]
+    if (actorIds.length > 0) {
+      const { data: actors } = await adminClient
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', actorIds)
+      const nameMap = new Map((actors ?? []).map((p) => [p.id, p.full_name]))
+      sent_by_name = row.sent_by ? (nameMap.get(row.sent_by) ?? null) : null
+      paid_by_name = row.paid_by ? (nameMap.get(row.paid_by) ?? null) : null
     }
   }
 
-  if (items.length === 0) {
-    items = [
-      {
-        id: `fallback:${row.id}`,
-        order_id: row.order_id,
-        site_domain: row.order?.site_domain ?? '—',
-        amount: row.amount,
-      },
-    ]
-  }
+  const rawItems = row.items ?? []
+  const items: InvoiceItem[] = rawItems.map((it) => ({
+    id: it.id,
+    order_id: it.order_id,
+    site_domain: it.site_domain,
+    description: it.description,
+    amount: it.amount,
+    order_status: it.order?.status ?? null,
+    order_published_url: it.order?.published_url ?? null,
+    order_publish_date: it.order?.publish_date ?? null,
+    order_price: it.order?.price ?? it.amount,
+  }))
+
+  const firstItem = items[0]
 
   return {
     id: row.id,
     order_id: row.order_id,
     billing_month: row.billing_month,
-    invoice_group_id: row.invoice_group_id,
+    billing_period_label: row.billing_month.slice(0, 7),
     invoice_number: row.invoice_number,
+    invoice_group_id: row.invoice_group_id,
     status: row.status,
     amount: row.amount,
+    subtotal: row.subtotal,
+    adjustments: row.adjustments,
+    total: row.total,
     due_date: row.due_date,
     paid_at: row.paid_at,
     sent_at: row.sent_at,
+    notes: row.notes,
+    generated_at: row.generated_at,
+    sent_by: row.sent_by,
+    paid_by: row.paid_by,
+    sent_by_name,
+    paid_by_name,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    client_id: clientId,
-    client_name,
-    client_email,
-    site_domain: row.order?.site_domain ?? '—',
-    billing_period_label: row.billing_month
-      ? row.billing_month.slice(0, 7)
-      : row.created_at.slice(0, 7),
-    order_status: row.order?.status ?? 'new',
-    order_published_url: row.order?.published_url ?? null,
-    order_publish_date: row.order?.publish_date ?? null,
-    order_price: row.order?.price ?? row.amount,
+    client_id: row.client_id,
+    client_name: row.client?.full_name ?? null,
+    client_email: row.client?.email ?? null,
+    site_domain: firstItem?.site_domain ?? '—',
     items,
+    order_status: firstItem?.order_status ?? 'published',
+    order_published_url: firstItem?.order_published_url ?? null,
+    order_publish_date: firstItem?.order_publish_date ?? null,
+    order_price: firstItem?.order_price ?? row.amount,
   }
 }

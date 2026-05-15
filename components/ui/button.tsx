@@ -22,17 +22,17 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          'h-8 gap-inset px-block has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block',
-        xs: "h-6 gap-inset rounded-[min(var(--radius-md),10px)] px-inset text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-inset has-data-[icon=inline-start]:pl-inset [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-inset rounded-[min(var(--radius-md),12px)] px-block text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block [&_svg:not([class*='size-'])]:size-3.5",
-        lg: 'h-9 gap-inset px-block has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block',
+          'h-10 gap-inset px-block has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block',
+        xs: "h-10 gap-inset rounded-[min(var(--radius-md),10px)] px-inset text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-inset has-data-[icon=inline-start]:pl-inset [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-10 gap-inset rounded-[min(var(--radius-md),12px)] px-block text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block [&_svg:not([class*='size-'])]:size-3.5",
+        lg: 'h-10 gap-inset px-block has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block',
         xl: 'h-10 gap-inset px-block has-data-[icon=inline-end]:pr-block has-data-[icon=inline-start]:pl-block',
-        icon: 'size-8',
+        icon: 'size-10',
         'icon-xs':
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+          "size-10 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         'icon-sm':
-          'size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg',
-        'icon-lg': 'size-9',
+          'size-10 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg',
+        'icon-lg': 'size-10',
       },
     },
     defaultVariants: {

@@ -44,7 +44,7 @@ export function AppHeader({
   const showCart = user.role === 'client'
 
   return (
-    <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between border-b py-2 backdrop-blur-md md:h-14 md:min-h-0 md:py-0">
+    <header className="border-border bg-app-shell-canvas/95 gap-block px-block md:px-layout py-inset sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between border-b backdrop-blur-md md:h-14 md:min-h-0 md:py-0">
       <div className="gap-block flex min-w-0 flex-1 items-center">
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger
@@ -98,7 +98,7 @@ export function AppHeader({
       </div>
       <div
         className={cn(
-          'flex shrink-0 items-center gap-3 rounded-full border-0 bg-transparent px-0 py-0 shadow-none'
+          'gap-inset flex shrink-0 items-center rounded-full border-0 bg-transparent px-0 py-0 shadow-none'
         )}
       >
         {showCart ? (

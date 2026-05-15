@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { markInvoicePaid, sendInvoiceEmail } from '@/lib/invoices/invoice-actions'
+import { markInvoicePaid, sendInvoice } from '@/lib/invoices/invoice-actions'
 import type { InvoiceListRow } from '@/lib/invoices/load-invoices'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
@@ -56,7 +56,7 @@ export function StatementCard({
   const [pending, startTransition] = useTransition()
 
   const isStaff = role === 'admin' || role === 'manager'
-  const total = invoices.reduce((sum, inv) => sum + inv.amount, 0)
+  const total = invoices.reduce((sum, inv) => sum + inv.total, 0)
   const title = formatStatementTitle(invoices[0]?.billing_month ?? null)
   const badge = aggregateStatus(invoices)
   const clientName = invoices[0]?.client_name ?? null
@@ -70,7 +70,7 @@ export function StatementCard({
     startTransition(async () => {
       let sent = 0
       for (const id of draftIds) {
-        const res = await sendInvoiceEmail(id)
+        const res = await sendInvoice(id)
         if (!res.ok) {
           toast.error(res.message)
           return
@@ -143,7 +143,7 @@ export function StatementCard({
         <div className="gap-inset flex flex-wrap items-center justify-end">
           <div className="text-right">
             <p className="text-muted-foreground text-xs">
-              {invoices.length} order{invoices.length === 1 ? '' : 's'}
+              {invoices.length} invoice{invoices.length === 1 ? '' : 's'}
             </p>
             <p className="text-foreground text-base font-semibold tabular-nums">
               ${total.toFixed(2)}
@@ -188,16 +188,16 @@ export function StatementCard({
             <thead>
               <tr className="border-border border-b">
                 <th className="text-muted-foreground px-section py-block text-left font-medium">
-                  Site
-                </th>
-                <th className="text-muted-foreground px-section py-block text-left font-medium">
                   Invoice #
+                </th>
+                <th className="text-muted-foreground px-section py-block text-center font-medium">
+                  Orders
                 </th>
                 <th className="text-muted-foreground px-section py-block text-left font-medium">
                   Status
                 </th>
                 <th className="text-muted-foreground px-section py-block text-right font-medium">
-                  Amount
+                  Total
                 </th>
                 <th className="text-muted-foreground px-section py-block text-right font-medium">
                   Actions
@@ -210,22 +210,22 @@ export function StatementCard({
                   key={row.id}
                   className="border-border hover:bg-muted/30 border-b last:border-b-0"
                 >
-                  <td className="px-section py-block">
+                  <td className="px-section py-block font-mono text-sm">
                     <Link
                       href={`/invoices/${row.id}`}
                       className="text-foreground font-medium hover:underline"
                     >
-                      {row.site_domain}
+                      {row.invoice_number ?? row.id.slice(0, 8).toUpperCase()}
                     </Link>
                   </td>
-                  <td className="px-section py-block font-mono text-sm">
-                    {row.invoice_number ?? '—'}
+                  <td className="text-muted-foreground px-section py-block text-center tabular-nums">
+                    {row.items_count}
                   </td>
                   <td className="px-section py-block">
                     <InvoiceStatusBadge status={row.status} />
                   </td>
                   <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
-                    ${row.amount.toFixed(2)}
+                    ${row.total.toFixed(2)}
                   </td>
                   <td className="px-section py-block text-right">
                     <Link

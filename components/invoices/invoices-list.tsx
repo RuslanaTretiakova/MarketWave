@@ -200,8 +200,7 @@ export function InvoicesList({
       ? INVOICE_STATUSES_ORDERED.filter((s) => s !== 'draft')
       : INVOICE_STATUSES_ORDERED
 
-  const defaultBillingPeriod = new Date().toISOString().slice(0, 7)
-  const isBillingPeriodApplied = Boolean(billingPeriod && billingPeriod !== defaultBillingPeriod)
+  const isBillingPeriodApplied = Boolean(billingPeriod)
   const hasAppliedFilters = Boolean(
     client || status || isBillingPeriodApplied || invoiceNumber || minAmount || maxAmount
   )
@@ -209,7 +208,7 @@ export function InvoicesList({
   const statements = useMemo(() => {
     const map = new Map<string, InvoiceListRow[]>()
     for (const row of rows) {
-      const key = `${row.client_id}::${row.invoice_group_id ?? 'ungrouped'}::${row.billing_month ?? 'unscheduled'}`
+      const key = `${row.client_id}::${row.billing_month}`
       const bucket = map.get(key) ?? []
       bucket.push(row)
       map.set(key, bucket)
@@ -364,7 +363,7 @@ export function InvoicesList({
             <p className="text-muted-foreground text-sm">
               {client || status || billingPeriod
                 ? 'Try adjusting your filters.'
-                : 'Invoices appear here automatically when an order is placed.'}
+                : 'Invoices are generated automatically each month for published orders.'}
             </p>
           </div>
         </Card>
@@ -416,8 +415,11 @@ export function InvoicesList({
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Status
                   </th>
+                  <th className="text-muted-foreground px-section py-block text-center font-medium">
+                    Orders
+                  </th>
                   <th className="text-muted-foreground px-section py-block text-right font-medium">
-                    Total amount
+                    Total
                   </th>
                   <th className="text-muted-foreground px-section py-block text-right font-medium">
                     Actions
@@ -452,8 +454,11 @@ export function InvoicesList({
                     <td className="px-section py-block">
                       <InvoiceStatusBadge status={row.status} />
                     </td>
+                    <td className="text-muted-foreground px-section py-block text-center tabular-nums">
+                      {row.items_count}
+                    </td>
                     <td className="text-foreground px-section py-block text-right font-semibold tabular-nums">
-                      ${row.amount.toFixed(2)}
+                      ${row.total.toFixed(2)}
                     </td>
                     <td className="px-section py-block text-right">
                       <Link

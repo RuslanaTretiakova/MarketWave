@@ -60,7 +60,7 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
   const status = allowedStatuses.includes(statusRaw as InvoiceStatus)
     ? (statusRaw as InvoiceStatus)
     : undefined
-  const billingPeriod = billingPeriodRaw?.trim() || new Date().toISOString().slice(0, 7)
+  const billingPeriod = billingPeriodRaw?.trim() || undefined
   const invoiceNumber = invoiceNumberRaw?.trim() || undefined
   const minAmount = minAmountRaw ? Number(minAmountRaw) : undefined
   const maxAmount = maxAmountRaw ? Number(maxAmountRaw) : undefined

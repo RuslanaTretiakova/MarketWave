@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { generateMonthlyInvoiceGroupsInternal } from '@/lib/invoices/invoice-actions'
+import { adminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,11 +25,17 @@ export async function POST(request: Request) {
   }
 
   const now = new Date()
-  const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
-  const result = await generateMonthlyInvoiceGroupsInternal(month)
-  if (!result.ok) {
-    return NextResponse.json({ error: result.message }, { status: 500 })
+  // Generate invoices for the previous month
+  const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+  const billingMonth = prevMonth.toISOString().slice(0, 10)
+
+  const { data, error } = await adminClient.rpc('generate_monthly_invoices', {
+    p_billing_month: billingMonth,
+  })
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, month, grouped: result.grouped })
+  return NextResponse.json({ ok: true, billing_month: billingMonth, count: data })
 }

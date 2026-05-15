@@ -81,7 +81,7 @@ export function AppShell({
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebarCollapsed={toggleSidebarCollapsed}
         />
-        <main className="text-foreground px-block py-layout md:px-layout flex-1">
+        <main className="text-foreground px-block py-section md:px-layout md:py-layout flex-1">
           <AppBreadcrumbs navItems={navItems} />
           {children}
         </main>

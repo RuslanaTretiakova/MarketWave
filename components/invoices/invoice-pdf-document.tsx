@@ -73,21 +73,38 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  tableRowLast: {
+    borderBottomWidth: 0,
+  },
+  cellNo: {
+    width: 24,
+    paddingHorizontal: 8,
+    color: '#94a3b8',
+    fontSize: 9,
   },
   cellDescription: {
     flex: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
+  },
+  cellDate: {
+    flex: 2,
+    paddingHorizontal: 8,
+    color: '#475569',
+    fontSize: 10,
   },
   cellAmount: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     textAlign: 'right',
   },
   totals: {
     marginTop: 16,
     alignSelf: 'flex-end',
-    width: 220,
+    width: 240,
   },
   totalRow: {
     flexDirection: 'row',
@@ -100,11 +117,16 @@ const styles = StyleSheet.create({
   totalValue: {
     fontWeight: 700,
   },
+  divider: {
+    borderTopWidth: 1,
+    borderColor: '#e2e8f0',
+    marginVertical: 4,
+  },
   grandTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
-    marginTop: 6,
+    marginTop: 4,
     borderTopWidth: 1,
     borderColor: '#0f172a',
     fontSize: 14,
@@ -133,9 +155,10 @@ const styles = StyleSheet.create({
   },
 })
 
+const fmtMoney = (n: number) =>
+  `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
 export function InvoicePdfDocument({ invoice }: { invoice: InvoiceDetail }) {
-  const fmtMoney = (n: number) =>
-    `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const issued = new Date(invoice.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -148,11 +171,21 @@ export function InvoicePdfDocument({ invoice }: { invoice: InvoiceDetail }) {
         day: 'numeric',
       })
     : '—'
+
+  const billingMonth = invoice.billing_month
+    ? new Date(invoice.billing_month).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        timeZone: 'UTC',
+      })
+    : invoice.billing_period_label
+
   const invoiceNumber = invoice.invoice_number ?? invoice.id.slice(0, 8).toUpperCase()
 
   return (
     <Document title={`Invoice ${invoiceNumber}`}>
       <Page size="A4" style={styles.page}>
+        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.brand}>MarketWeave</Text>
@@ -168,49 +201,66 @@ export function InvoicePdfDocument({ invoice }: { invoice: InvoiceDetail }) {
           </View>
         </View>
 
+        {/* Bill to / Billing period */}
         <View style={styles.twoCol}>
           <View style={styles.col}>
             <Text style={styles.sectionTitle}>Bill to</Text>
             <Text style={styles.customerName}>{invoice.client_name ?? 'Client'}</Text>
-            {invoice.client_email && <Text style={{ marginTop: 4 }}>{invoice.client_email}</Text>}
+            {invoice.client_email ? (
+              <Text style={{ marginTop: 4 }}>{invoice.client_email}</Text>
+            ) : null}
           </View>
           <View style={styles.col}>
-            <Text style={styles.sectionTitle}>Order</Text>
-            <Text style={{ fontWeight: 700 }}>{invoice.site_domain}</Text>
-            {invoice.order_publish_date && (
-              <Text style={{ marginTop: 4 }}>Publish date: {invoice.order_publish_date}</Text>
-            )}
-            {invoice.order_published_url && (
-              <Text style={{ marginTop: 4, color: '#1d4ed8' }}>{invoice.order_published_url}</Text>
-            )}
+            <Text style={styles.sectionTitle}>Billing period</Text>
+            <Text style={{ fontWeight: 700 }}>{billingMonth}</Text>
           </View>
         </View>
 
+        {/* Items table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={styles.cellDescription}>Description</Text>
+            <Text style={styles.cellNo}>#</Text>
+            <Text style={styles.cellDescription}>Description / Site</Text>
+            <Text style={styles.cellDate}>Publish date</Text>
             <Text style={styles.cellAmount}>Amount</Text>
           </View>
-          <View style={styles.tableRow}>
-            <View style={styles.cellDescription}>
-              <Text style={{ fontWeight: 700 }}>Sponsored placement</Text>
-              <Text style={{ color: '#475569', marginTop: 4 }}>{invoice.site_domain}</Text>
+          {invoice.items.map((item, idx) => (
+            <View
+              key={item.id}
+              style={[styles.tableRow, idx === invoice.items.length - 1 ? styles.tableRowLast : {}]}
+            >
+              <Text style={styles.cellNo}>{idx + 1}</Text>
+              <View style={styles.cellDescription}>
+                <Text style={{ fontWeight: 700 }}>{item.description ?? 'Sponsored placement'}</Text>
+                {item.site_domain ? (
+                  <Text style={{ color: '#475569', marginTop: 2 }}>{item.site_domain}</Text>
+                ) : null}
+              </View>
+              <Text style={styles.cellDate}>{item.order_publish_date ?? '—'}</Text>
+              <Text style={styles.cellAmount}>{fmtMoney(item.amount)}</Text>
             </View>
-            <Text style={styles.cellAmount}>{fmtMoney(invoice.amount)}</Text>
-          </View>
+          ))}
         </View>
 
+        {/* Totals */}
         <View style={styles.totals}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>{fmtMoney(invoice.amount)}</Text>
+            <Text style={styles.totalValue}>{fmtMoney(invoice.subtotal)}</Text>
           </View>
+          {invoice.adjustments !== 0 ? (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Adjustments</Text>
+              <Text style={styles.totalValue}>{fmtMoney(invoice.adjustments)}</Text>
+            </View>
+          ) : null}
           <View style={styles.grandTotal}>
             <Text>Total due</Text>
-            <Text>{fmtMoney(invoice.amount)}</Text>
+            <Text>{fmtMoney(invoice.total)}</Text>
           </View>
         </View>
 
+        {/* Footer */}
         <View style={styles.footer}>
           <Text>
             Questions? Reply to this email or contact us through the chat in your dashboard.

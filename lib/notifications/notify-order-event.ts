@@ -272,6 +272,102 @@ function copyFor(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Invoice-level notifications (multi-order invoices don't have a single orderId)
+// ---------------------------------------------------------------------------
+
+export type InvoiceEventContext = {
+  invoiceId: string
+  actorUserId: string
+  actorName?: string | null
+}
+
+export async function notifyInvoiceEvent(
+  event: 'invoice_sent' | 'invoice_paid',
+  ctx: InvoiceEventContext
+): Promise<void> {
+  // Load invoice + client
+  const { data: invoice } = await adminClient
+    .from('invoices')
+    .select('client_id, billing_month, total, invoice_number, items:invoice_items(count)')
+    .eq('id', ctx.invoiceId)
+    .maybeSingle()
+
+  if (!invoice) return
+
+  const managerIds = await loadManagerRecipientIds(ctx.actorUserId)
+
+  type R = { recipientId: string; role: 'client' | 'manager' }
+  const seen = new Set<string>()
+  const plan: R[] = []
+  const push = (id: string | null | undefined, role: R['role']) => {
+    if (!id || id === ctx.actorUserId || seen.has(id)) return
+    seen.add(id)
+    plan.push({ recipientId: id, role })
+  }
+
+  push(invoice.client_id, 'client')
+  for (const id of managerIds) push(id, 'manager')
+  if (plan.length === 0) return
+
+  const invoiceLabel = invoice.invoice_number ?? ctx.invoiceId.slice(0, 8).toUpperCase()
+  const monthLabel = invoice.billing_month
+    ? new Date(invoice.billing_month).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        timeZone: 'UTC',
+      })
+    : ''
+  const total = `$${Number(invoice.total ?? 0).toFixed(2)}`
+  const count = (invoice.items as unknown as [{ count: number }])?.[0]?.count ?? 0
+  const ordersLabel = `${count} order${count === 1 ? '' : 's'}`
+  const actor = ctx.actorName?.trim() || 'A teammate'
+
+  function buildCopy(role: R['role']): { title: string; message: string } {
+    if (event === 'invoice_sent') {
+      if (role === 'client') {
+        return {
+          title: 'Invoice sent',
+          message: `Invoice ${invoiceLabel} for ${monthLabel} is now available — ${total} across ${ordersLabel}.`,
+        }
+      }
+      return {
+        title: 'Invoice sent',
+        message: `${actor} sent invoice ${invoiceLabel} for ${monthLabel} (${total}, ${ordersLabel}).`,
+      }
+    }
+    // invoice_paid
+    if (role === 'client') {
+      return {
+        title: 'Payment confirmed',
+        message: `Payment for invoice ${invoiceLabel} (${monthLabel}, ${total}) was confirmed.`,
+      }
+    }
+    return {
+      title: 'Invoice paid',
+      message: `Invoice ${invoiceLabel} for ${monthLabel} (${total}) marked as paid by ${actor}.`,
+    }
+  }
+
+  const rows = plan.map(({ recipientId, role }) => {
+    const { title, message } = buildCopy(role)
+    return {
+      recipient_user_id: recipientId,
+      actor_user_id: ctx.actorUserId,
+      event,
+      title,
+      message,
+      order_id: null,
+      invoice_id: ctx.invoiceId,
+      change_request_id: null,
+      site_id: null,
+    }
+  })
+
+  const { error } = await adminClient.from('notifications').insert(rows)
+  if (error) console.error('[notify-invoice-event/insert]', error.message)
+}
+
 /**
  * Single entry point for order/invoice notification emission. Builds a
  * role-specific row per related recipient, excludes the actor, and inserts
