@@ -66,8 +66,8 @@ export function AdminUserDisableDialog({
       <span>
         This sourcer has <strong className="text-foreground">{state.sitesAssigned}</strong> assigned
         site
-        {state.sitesAssigned === 1 ? '' : 's'}. Those assignments will be cleared, then the account
-        will be disabled.
+        {state.sitesAssigned === 1 ? '' : 's'}. Those sites will be archived and the account will be
+        disabled.
       </span>
     ) : state?.mode === 'reassign' ? (
       <span>

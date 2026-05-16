@@ -155,8 +155,6 @@ export async function loadCartWithTotal(
 
 /** Site IDs currently in the signed-in user's cart (empty if no cart). */
 export async function loadCartSiteIds(supabase: SupabaseClient<Database>): Promise<string[]> {
-  const { data: cart } = await supabase.from('carts').select('id').maybeSingle()
-  if (!cart) return []
-  const { data: rows } = await supabase.from('cart_items').select('site_id').eq('cart_id', cart.id)
-  return (rows ?? []).map((r) => r.site_id)
+  const { data } = await supabase.from('carts').select('cart_items(site_id)').maybeSingle()
+  return ((data?.cart_items ?? []) as { site_id: string }[]).map((r) => r.site_id)
 }

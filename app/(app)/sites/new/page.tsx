@@ -1,14 +1,5 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
 import { SiteListingForm } from '@/components/sites/site-listing-form'
 import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
@@ -47,23 +38,10 @@ export default async function NewSitePage() {
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
-      <div className="gap-block flex flex-col items-start">
-        <Breadcrumb>
-          <BreadcrumbList className="text-xs">
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/sites" />}>Sites</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Create site</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <PageHeader
-          title="Create site"
-          description="New listings start as Pending review. Attach countries and languages as ISO / BCP-47 codes (comma-separated)."
-        />
-      </div>
+      <PageHeader
+        title="Create site"
+        description="New listings start as Pending review. Attach countries and languages as ISO / BCP-47 codes (comma-separated)."
+      />
 
       <SiteListingForm mode="create" role={profile.role} categories={categoriesRaw} />
     </div>

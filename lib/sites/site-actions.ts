@@ -552,21 +552,19 @@ export async function changeSiteStatus(params: {
 export async function addSiteToCart(
   siteId: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const ctx = await getSessionContext()
-  if ('error' in ctx) {
-    return { ok: false, message: ctx.error }
-  }
-  const { supabase, role } = ctx
+  const supabase = await createClient()
 
-  if (role !== 'client') {
-    return { ok: false, message: 'Only clients use the cart.' }
-  }
+  const [{ data: authData, error: authErr }, { data: cart }, { data: profile }] = await Promise.all(
+    [
+      supabase.auth.getUser(),
+      supabase.from('carts').select('id').maybeSingle(),
+      supabase.from('profiles').select('role').maybeSingle(),
+    ]
+  )
 
-  const { data: cart, error: cartErr } = await supabase.from('carts').select('id').maybeSingle()
-
-  if (cartErr || !cart) {
-    return { ok: false, message: cartErr?.message ?? 'Cart not found.' }
-  }
+  if (authErr || !authData.user) return { ok: false, message: 'You must be signed in.' }
+  if (profile?.role !== 'client') return { ok: false, message: 'Only clients use the cart.' }
+  if (!cart) return { ok: false, message: 'Cart not found.' }
 
   const { error: itemErr } = await supabase.from('cart_items').insert({
     cart_id: cart.id,
