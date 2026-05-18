@@ -114,6 +114,7 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
         mode="edit"
         siteId={siteId}
         role={profile.role}
+        status={site.status}
         categories={categoriesRaw}
         sourcersForAdmin={sourcersForAdmin}
         initial={{

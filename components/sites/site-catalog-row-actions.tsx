@@ -14,15 +14,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 import { siteAdminTransitions } from '@/lib/sites/admin-site-transitions'
+import { SITE_STATUS_CHIP, SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import type { SiteCatalogRow } from '@/lib/sites/load-sites-catalog'
+import { cn } from '@/lib/utils'
 
 export function SiteCatalogRowActions({
   row,
+  role,
   canAdminStatus,
   editAllowed,
   onOpenChangeStatus,
 }: {
   row: SiteCatalogRow
+  role: 'admin' | 'sourcer' | 'manager' | 'client' | 'copywriter'
   canAdminStatus: boolean
   editAllowed: boolean
   onOpenChangeStatus: (row: SiteCatalogRow) => void
@@ -30,6 +34,7 @@ export function SiteCatalogRowActions({
   const router = useRouter()
   const transitions = siteAdminTransitions(row.status)
   const showChangeStatus = canAdminStatus && transitions.length > 0
+  const canSeeStatus = role === 'admin' || role === 'sourcer'
 
   return (
     <DropdownMenu>
@@ -40,6 +45,19 @@ export function SiteCatalogRowActions({
             Manage
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {canSeeStatus ? (
+            <div className="px-2 py-1.5">
+              <span
+                className={cn(
+                  'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  SITE_STATUS_CHIP[row.status]
+                )}
+              >
+                <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+                {SITE_STATUS_LABEL[row.status]}
+              </span>
+            </div>
+          ) : null}
           <DropdownMenuItem className="gap-2" onClick={() => router.push(`/sites/${row.id}`)}>
             <Eye className="size-4" aria-hidden />
             View

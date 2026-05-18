@@ -14,6 +14,7 @@ import {
 import { Label } from '@/components/ui/label'
 import type { SitesCatalogCategoryOption } from '@/components/sites/sites-catalog'
 import { createSite, updateSite, type SiteListingPayload } from '@/lib/sites/site-actions'
+import { SITE_STATUS_CHIP, SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +45,7 @@ export function SiteListingForm({
   sourcersForAdmin,
   initial,
   role,
+  status,
 }: {
   mode: 'create' | 'edit'
   siteId?: string
@@ -51,6 +53,7 @@ export function SiteListingForm({
   sourcersForAdmin?: SiteFormSourcerOption[]
   initial?: Partial<SiteListingPayload> & { category_id?: number }
   role: Database['public']['Enums']['user_role']
+  status?: Database['public']['Enums']['site_status']
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -201,6 +204,22 @@ export function SiteListingForm({
                 options={sourcerOptions}
                 name="sourcer"
               />
+            </div>
+          ) : null}
+          {mode === 'edit' && status !== undefined && (role === 'admin' || role === 'sourcer') ? (
+            <div className="gap-inset flex flex-col">
+              <Label>Status</Label>
+              <div className="flex items-center">
+                <span
+                  className={cn(
+                    'inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    SITE_STATUS_CHIP[status]
+                  )}
+                >
+                  <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+                  {SITE_STATUS_LABEL[status]}
+                </span>
+              </div>
             </div>
           ) : null}
         </div>

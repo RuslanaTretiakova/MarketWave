@@ -488,7 +488,7 @@ export function SitesCatalog({
 
   const canCreate = role === 'sourcer'
   const canUseCart = role === 'client'
-  const canAdminStatus = role === 'admin' || role === 'manager'
+  const canAdminStatus = role === 'admin'
 
   function openChangeStatusDialog(row: SiteCatalogRow) {
     setStatusDialog({
@@ -726,9 +726,11 @@ export function SitesCatalog({
                       <TableHead className="text-muted-foreground h-11 px-4 font-medium">
                         Price
                       </TableHead>
-                      <TableHead className="text-muted-foreground h-11 px-4 font-medium">
-                        Status
-                      </TableHead>
+                      {role === 'admin' || role === 'sourcer' ? (
+                        <TableHead className="text-muted-foreground h-11 px-4 font-medium">
+                          Status
+                        </TableHead>
+                      ) : null}
                       <TableHead className="text-muted-foreground h-11 pr-5 pl-4 text-right font-medium">
                         <span className="sr-only">Actions</span>
                       </TableHead>
@@ -759,9 +761,11 @@ export function SitesCatalog({
                             currency: 'USD',
                           })}
                         </TableCell>
-                        <TableCell className={SITE_ROW_CELL}>
-                          <SiteStatusBadge status={row.status} />
-                        </TableCell>
+                        {role === 'admin' || role === 'sourcer' ? (
+                          <TableCell className={SITE_ROW_CELL}>
+                            <SiteStatusBadge status={row.status} />
+                          </TableCell>
+                        ) : null}
                         <TableCell
                           className={SITE_ROW_CELL_ACTIONS}
                           data-row-actions
@@ -799,6 +803,7 @@ export function SitesCatalog({
                             ) : null}
                             <SiteCatalogRowActions
                               row={row}
+                              role={role}
                               canAdminStatus={canAdminStatus}
                               editAllowed={editAllowed(row)}
                               onOpenChangeStatus={openChangeStatusDialog}
@@ -832,9 +837,11 @@ export function SitesCatalog({
                                 currency: 'USD',
                               })}
                             </p>
-                            <div className="mt-inset">
-                              <SiteStatusBadge status={row.status} />
-                            </div>
+                            {role === 'admin' || role === 'sourcer' ? (
+                              <div className="mt-inset">
+                                <SiteStatusBadge status={row.status} />
+                              </div>
+                            ) : null}
                           </div>
                         </Button>
                         <div data-row-actions className="flex shrink-0 items-center gap-1">
@@ -865,6 +872,7 @@ export function SitesCatalog({
                           ) : null}
                           <SiteCatalogRowActions
                             row={row}
+                            role={role}
                             canAdminStatus={canAdminStatus}
                             editAllowed={editAllowed(row)}
                             onOpenChangeStatus={openChangeStatusDialog}
