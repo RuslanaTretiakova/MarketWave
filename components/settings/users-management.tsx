@@ -3,7 +3,17 @@
 import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Filter, Mail, Plus, RotateCcw, UserCog, UserMinus, UserPlus, Users } from 'lucide-react'
+import {
+  ChevronDown,
+  Filter,
+  Mail,
+  Plus,
+  RotateCcw,
+  UserCog,
+  UserMinus,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { inviteTeamMember, resendTeamInvite } from '@/lib/auth/invite-actions'
@@ -350,6 +360,8 @@ export function UsersManagement({
     { key: 'disabled', label: 'Disabled' },
   ]
 
+  const [isOpen, setIsOpen] = useState(false)
+
   const loadingCountLabel =
     rowBusyId !== null || disableBusy || activateBusy || resendBusy ? 'Loading…' : null
 
@@ -385,67 +397,86 @@ export function UsersManagement({
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
+        <div className="px-section py-block gap-inset flex items-center sm:flex-wrap">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium"
+          >
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Role</span>
-            <FilterSelect
-              aria-label="Filter by role"
-              value={roleFilter}
-              onChange={(e) =>
-                router.push(
-                  buildListHref({ page: 1, role: e.target.value as OrgUsersListRoleFilter }),
-                  { scroll: false }
-                )
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {roleFilters.map(({ key, label }) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
-            <FilterSelect
-              aria-label="Filter by status"
-              value={statusFilter}
-              onChange={(e) =>
-                router.push(
-                  buildListHref({ page: 1, status: e.target.value as OrgUsersListStatusFilter }),
-                  { scroll: false }
-                )
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {statusFilters.map(({ key, label }) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-          {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? (
-            <Link
-              href={'/settings/users'}
-              scroll={false}
+            <ChevronDown
               className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'gap-inset px-block h-8 shrink-0 self-end rounded-full text-xs'
+                'size-3.5 shrink-0 transition-transform duration-200 ease-in-out',
+                isOpen && 'rotate-180'
               )}
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Clear filters
-            </Link>
-          ) : null}
-          <span className="text-muted-foreground shrink-0 self-end pb-0.5 text-xs tabular-nums">
+              aria-hidden
+            />
+          </button>
+          <span className="text-muted-foreground ml-auto shrink-0 self-end pb-0.5 text-xs tabular-nums">
             {loadingCountLabel ?? usersCountLabel}
           </span>
+        </div>
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Role</span>
+              <FilterSelect
+                aria-label="Filter by role"
+                value={roleFilter}
+                onChange={(e) =>
+                  router.push(
+                    buildListHref({ page: 1, role: e.target.value as OrgUsersListRoleFilter }),
+                    { scroll: false }
+                  )
+                }
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {roleFilters.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
+              <FilterSelect
+                aria-label="Filter by status"
+                value={statusFilter}
+                onChange={(e) =>
+                  router.push(
+                    buildListHref({ page: 1, status: e.target.value as OrgUsersListStatusFilter }),
+                    { scroll: false }
+                  )
+                }
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {statusFilters.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? (
+              <Link
+                href={'/settings/users'}
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'gap-inset px-block h-8 shrink-0 self-end rounded-full text-xs'
+                )}
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
         </div>
       </section>
 

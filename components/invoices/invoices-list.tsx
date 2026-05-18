@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Receipt, RotateCcw } from 'lucide-react'
+import { ChevronDown, Filter, Receipt, RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -80,6 +80,7 @@ export function InvoicesList({
   const searchParams = useSearchParams()
   const isStaff = role === 'admin' || role === 'manager'
   const view: InvoicesView = searchParams.get('view') === 'invoice' ? 'invoice' : 'statement'
+  const [isOpen, setIsOpen] = useState(false)
   const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
   const [localMinAmount, setLocalMinAmount] = useState(minAmount ?? '')
   const [localMaxAmount, setLocalMaxAmount] = useState(maxAmount ?? '')
@@ -216,22 +217,6 @@ export function InvoicesList({
     return Array.from(map.entries()).map(([key, invoices]) => ({ key, invoices }))
   }, [rows])
 
-  function switchView(next: InvoicesView) {
-    if (next === view) return
-    router.push(
-      buildHref(pathname, {
-        client,
-        status,
-        billingPeriod,
-        invoiceNumber,
-        minAmount,
-        maxAmount,
-        view: next,
-      }),
-      { scroll: false }
-    )
-  }
-
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <PageHeader
@@ -255,12 +240,32 @@ export function InvoicesList({
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-block flex flex-col">
-          <div className="gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-            <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
-              <Filter className="size-3.5 shrink-0" aria-hidden />
-              <span>Filters</span>
-            </div>
+        <div className="px-section py-block gap-inset flex items-center sm:flex-wrap">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium"
+          >
+            <Filter className="size-3.5 shrink-0" aria-hidden />
+            <span>Filters</span>
+            <ChevronDown
+              className={cn(
+                'size-3.5 shrink-0 transition-transform duration-200 ease-in-out',
+                isOpen && 'rotate-180'
+              )}
+              aria-hidden
+            />
+          </button>
+          <span className="text-muted-foreground ml-auto shrink-0 self-end pb-0.5 text-xs tabular-nums">
+            {totalCount} invoice{totalCount === 1 ? '' : 's'}
+          </span>
+        </div>
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
             <div className="flex shrink-0 flex-col gap-0.5">
               <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
               <FilterSelect
@@ -331,41 +336,13 @@ export function InvoicesList({
                 scroll={false}
                 className={cn(
                   buttonVariants({ variant: 'outline', size: 'sm' }),
-                  'ml-auto h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
+                  'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
                 )}
               >
                 <RotateCcw className="size-3.5" aria-hidden />
                 Clear filters
               </Link>
             ) : null}
-          </div>
-          <div className="flex items-center justify-between">
-            <div
-              className="bg-muted flex shrink-0 gap-0.5 rounded-full p-0.5"
-              role="tablist"
-              aria-label="View mode"
-            >
-              {(['statement', 'invoice'] as InvoicesView[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  role="tab"
-                  aria-selected={view === v}
-                  onClick={() => switchView(v)}
-                  className={cn(
-                    'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                    view === v
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {v === 'statement' ? 'By statement' : 'By invoice'}
-                </button>
-              ))}
-            </div>
-            <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-              {totalCount} invoice{totalCount === 1 ? '' : 's'}
-            </span>
           </div>
         </div>
       </section>

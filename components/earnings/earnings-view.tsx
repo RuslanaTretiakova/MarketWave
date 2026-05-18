@@ -1,9 +1,9 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Filter, RotateCcw } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Filter, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import type { ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 
 import { PayoutStatusBadge } from '@/components/earnings/payout-status-badge'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
@@ -64,6 +64,7 @@ export function EarningsView({
   const pathname = usePathname()
   const router = useRouter()
   const canFilterBySourcer = role === 'admin' || role === 'manager'
+  const [isOpen, setIsOpen] = useState(false)
 
   function handleSourcerChange(e: ChangeEvent<HTMLSelectElement>) {
     router.push(buildHref(pathname, { month, sourcerId: e.target.value || null }))
@@ -96,72 +97,91 @@ export function EarningsView({
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
+        <div className="px-section py-block gap-inset flex items-center sm:flex-wrap">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium"
+          >
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Month</span>
-            <FilterInput
-              type="month"
-              value={month}
-              onChange={handleMonthChange}
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-              aria-label="Month"
-            />
-          </div>
-          {canFilterBySourcer ? (
-            <div className="flex shrink-0 flex-col gap-0.5">
-              <span className="text-muted-foreground px-1 text-[10px] font-medium">Sourcer</span>
-              <FilterSelect
-                value={selectedSourcerId ?? ''}
-                onChange={handleSourcerChange}
-                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-                aria-label="Filter by sourcer"
-              >
-                <option value="">All sourcers</option>
-                {sourcerOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </FilterSelect>
-            </div>
-          ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1 self-end rounded-full px-3 text-xs"
-            onClick={() => handleShift(-1)}
-          >
-            <ChevronLeft className="size-3.5" aria-hidden />
-            Prev
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1 self-end rounded-full px-3 text-xs"
-            onClick={() => handleShift(1)}
-          >
-            Next
-            <ChevronRight className="size-3.5" aria-hidden />
-          </Button>
-          {canFilterBySourcer && !!selectedSourcerId ? (
-            <Link
-              href="/earnings"
-              scroll={false}
+            <ChevronDown
               className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'gap-inset px-block h-8 shrink-0 self-end rounded-full text-xs'
+                'size-3.5 shrink-0 transition-transform duration-200 ease-in-out',
+                isOpen && 'rotate-180'
               )}
+              aria-hidden
+            />
+          </button>
+        </div>
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Month</span>
+              <FilterInput
+                type="month"
+                value={month}
+                onChange={handleMonthChange}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                aria-label="Month"
+              />
+            </div>
+            {canFilterBySourcer ? (
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">Sourcer</span>
+                <FilterSelect
+                  value={selectedSourcerId ?? ''}
+                  onChange={handleSourcerChange}
+                  className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                  aria-label="Filter by sourcer"
+                >
+                  <option value="">All sourcers</option>
+                  {sourcerOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 self-end rounded-full px-3 text-xs"
+              onClick={() => handleShift(-1)}
             >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Clear filters
-            </Link>
-          ) : null}
+              <ChevronLeft className="size-3.5" aria-hidden />
+              Prev
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 self-end rounded-full px-3 text-xs"
+              onClick={() => handleShift(1)}
+            >
+              Next
+              <ChevronRight className="size-3.5" aria-hidden />
+            </Button>
+            {canFilterBySourcer && !!selectedSourcerId ? (
+              <Link
+                href="/earnings"
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'gap-inset px-block h-8 shrink-0 self-end rounded-full text-xs'
+                )}
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
         </div>
       </section>
 
