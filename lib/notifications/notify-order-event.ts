@@ -52,15 +52,37 @@ async function loadManagerRecipientIds(excludeUserId: string): Promise<string[]>
   return (data ?? []).map((row) => row.id)
 }
 
+async function loadOrderRoomParticipantIds(
+  orderId: string,
+  excludeUserId: string
+): Promise<string[] | null> {
+  const { data: room } = await adminClient
+    .from('chat_rooms')
+    .select('id')
+    .eq('order_id', orderId)
+    .maybeSingle()
+  if (!room) return null
+
+  const { data: rows } = await adminClient
+    .from('chat_room_participants')
+    .select('user_id')
+    .eq('room_id', room.id)
+    .neq('user_id', excludeUserId)
+
+  return (rows ?? []).map((r) => r.user_id)
+}
+
 function buildRecipientPlan(
   event: NotificationEvent,
   ctx: OrderEventContext,
-  managerIds: string[]
+  managerIds: string[],
+  allowedIds?: Set<string>
 ): RecipientPlan[] {
   const plan: RecipientPlan[] = []
   const seen = new Set<string>()
   const push = (id: string | null | undefined, role: RecipientPlan['role']) => {
     if (!id || id === ctx.actorUserId || seen.has(id)) return
+    if (allowedIds && !allowedIds.has(id)) return
     seen.add(id)
     plan.push({ recipientId: id, role })
   }
@@ -382,8 +404,24 @@ export async function notifyOrderEvent(
     return
   }
 
-  const managerIds = await loadManagerRecipientIds(ctx.actorUserId)
-  const plan = buildRecipientPlan(event, ctx, managerIds)
+  const roomParticipantIds = await loadOrderRoomParticipantIds(ctx.orderId, ctx.actorUserId)
+
+  let managerIds: string[]
+  let allowedIds: Set<string> | undefined
+
+  if (roomParticipantIds !== null) {
+    const { data: mgrs } = await adminClient
+      .from('profiles')
+      .select('id')
+      .in('id', roomParticipantIds)
+      .in('role', ['admin', 'manager'] satisfies UserRole[])
+    managerIds = (mgrs ?? []).map((r) => r.id)
+    allowedIds = new Set(roomParticipantIds)
+  } else {
+    managerIds = await loadManagerRecipientIds(ctx.actorUserId)
+  }
+
+  const plan = buildRecipientPlan(event, ctx, managerIds, allowedIds)
   if (plan.length === 0) return
 
   const rows = plan.map(({ recipientId, role }) => {

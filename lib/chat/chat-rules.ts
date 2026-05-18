@@ -8,12 +8,8 @@ export function canEditChatMetadata(channel: ChatChannel): boolean {
   return channel === 'standard'
 }
 
-export function canArchiveChat(
-  channel: ChatChannel,
-  status: ChatRoomStatus,
-  systemManaged: boolean
-): boolean {
-  return channel === 'standard' && status === 'active' && !systemManaged
+export function canArchiveChat(channel: ChatChannel, status: ChatRoomStatus): boolean {
+  return channel === 'standard' && status === 'active'
 }
 
 export function canUnarchiveChat(channel: ChatChannel, status: ChatRoomStatus): boolean {
