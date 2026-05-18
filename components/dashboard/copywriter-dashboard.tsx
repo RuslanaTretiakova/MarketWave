@@ -1,13 +1,5 @@
 import Link from 'next/link'
-import {
-  CheckCircle2,
-  ClipboardList,
-  ListChecks,
-  MessageSquare,
-  Send,
-  Sparkles,
-  TrendingUp,
-} from 'lucide-react'
+import { CheckCircle2, ClipboardList, ListChecks, Send, Sparkles, TrendingUp } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
@@ -17,7 +9,6 @@ import {
   KpiCard,
   NotificationsSummaryCard,
   PipelineCard,
-  QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
@@ -62,30 +53,12 @@ export function CopywriterDashboard({
 
       {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
 
-      <QuickActionsBar
-        actions={[
-          {
-            href: '/orders?status=needs_changes',
-            label: 'Needs revision',
-            icon: ListChecks,
-            variant: 'outline',
-          },
-          {
-            href: '/orders?status=content_sent',
-            label: 'Sent for review',
-            icon: Send,
-            variant: 'outline',
-          },
-          { href: '/chats', label: 'Chats', icon: MessageSquare, variant: 'ghost' },
-        ]}
-      />
-
       <div className="gap-block grid sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Assigned"
           value={String(data.assignedOrders)}
           icon={ClipboardList}
-          href="/orders"
+          href="/orders?status=in_progress"
           ariaLabel={`Assigned orders: ${data.assignedOrders}. Open orders.`}
           tone="primary"
         />

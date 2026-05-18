@@ -4,10 +4,7 @@ import {
   CircleCheck,
   Clock,
   ExternalLink,
-  Globe,
-  Mail,
   Plus,
-  Search,
   Target,
   TrendingUp,
   Upload,
@@ -20,7 +17,6 @@ import {
   AttentionTableCard,
   KpiCard,
   NotificationsSummaryCard,
-  QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
@@ -75,26 +71,6 @@ export function SourcerDashboard({
       />
 
       {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
-
-      <QuickActionsBar
-        actions={[
-          { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
-          {
-            label: 'Find prospects',
-            icon: Search,
-            variant: 'ghost',
-            disabled: true,
-            title: 'Coming soon',
-          },
-          {
-            label: 'Outreach inbox',
-            icon: Mail,
-            variant: 'ghost',
-            disabled: true,
-            title: 'Coming soon',
-          },
-        ]}
-      />
 
       <div className="gap-block grid sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard

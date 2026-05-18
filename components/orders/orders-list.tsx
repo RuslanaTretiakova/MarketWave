@@ -79,7 +79,9 @@ export function OrdersList({
   const pathname = usePathname()
   const router = useRouter()
 
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(() =>
+    Boolean(status || copywriterId || clientId || publishDate || invoiceStatus)
+  )
   const isStaff = role === 'admin' || role === 'manager'
   const showClientColumn = isStaff
   const showCopywriterFilter = isStaff && (copywriterOptions?.length ?? 0) > 0

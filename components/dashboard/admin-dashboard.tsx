@@ -6,7 +6,6 @@ import {
   Mail,
   MessageSquare,
   Receipt,
-  Tags,
   TrendingUp,
   Users,
 } from 'lucide-react'
@@ -19,7 +18,6 @@ import {
   KpiCard,
   NotificationsSummaryCard,
   PipelineCard,
-  QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
@@ -68,15 +66,6 @@ export function AdminDashboard({
       />
 
       {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
-
-      <QuickActionsBar
-        actions={[
-          { href: '/settings/categories', label: 'Categories', icon: Tags, variant: 'outline' },
-          { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
-          { href: '/invoices', label: 'Invoices', icon: Receipt, variant: 'outline' },
-          { href: '/chats', label: 'Chats', icon: MessageSquare, variant: 'ghost' },
-        ]}
-      />
 
       <div className="gap-block grid sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard

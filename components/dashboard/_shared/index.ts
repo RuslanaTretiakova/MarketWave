@@ -1,7 +1,5 @@
 export { KpiCard } from './kpi-card'
 export type { KpiCardProps, KpiTone } from './kpi-card'
-export { QuickActionsBar } from './quick-actions-bar'
-export type { QuickAction, QuickActionVariant } from './quick-actions-bar'
 export { PipelineCard } from './pipeline-card'
 export type { PipelineStage } from './pipeline-card'
 export { WeeklyTrendChart } from './weekly-trend-chart'

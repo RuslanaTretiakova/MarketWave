@@ -4,6 +4,10 @@ export const APP_PROTECTED_PREFIXES = [
   '/sites',
   '/orders',
   '/cart',
+  '/invoices',
+  '/chats',
+  '/earnings',
+  '/notifications',
   '/settings',
 ] as const
 
