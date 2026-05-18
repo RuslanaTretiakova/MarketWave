@@ -36,8 +36,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      ENABLE_TEST_LOGIN: "true"
-      NEXT_PUBLIC_ENABLE_TEST_LOGIN: "true"
+      ENABLE_TEST_LOGIN: 'true'
+      NEXT_PUBLIC_ENABLE_TEST_LOGIN: 'true'
 
     steps:
       - uses: actions/checkout@v4
