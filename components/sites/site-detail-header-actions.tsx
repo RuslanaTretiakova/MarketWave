@@ -56,7 +56,7 @@ export function SiteDetailHeaderActions({
 
   const inCart = siteInCart || justAddedSiteId === siteId
 
-  const canAdminStatus = role === 'admin' || role === 'manager'
+  const canAdminStatus = role === 'admin'
   const showChangeStatus = canAdminStatus && siteAdminTransitions(status).length > 0
 
   const hasStaffActions = (canEdit && !isEditRoute) || (canEdit && isEditRoute) || showChangeStatus

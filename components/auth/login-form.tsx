@@ -86,18 +86,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         setError(prep.message)
         return
       }
-      const supabase = createClient()
-      const { error: signError } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: prep.passwordHint,
-      })
-      if (signError) {
-        const mapped = mapAuthError(signError)
-        reportAuthErrorClient(mapped, 'auth/admin-test-sign-in')
-        setError(mapped.message)
-        return
-      }
-      router.push(safeReturnPath(redirectTo))
+      setEmail(adminEmail)
+      setPassword(prep.passwordHint)
     } finally {
       setTestLoginLoading(null)
     }
@@ -119,18 +109,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         setError(`No prepared test user found for role: ${role}`)
         return
       }
-      const supabase = createClient()
-      const { error: signError } = await supabase.auth.signInWithPassword({
-        email: target.email,
-        password: prep.passwordHint,
-      })
-      if (signError) {
-        const mapped = mapAuthError(signError)
-        reportAuthErrorClient(mapped, 'auth/quick-test-sign-in')
-        setError(mapped.message)
-        return
-      }
-      router.push(safeReturnPath(redirectTo))
+      setEmail(target.email)
+      setPassword(prep.passwordHint)
     } finally {
       setTestLoginLoading(null)
     }
@@ -223,22 +203,25 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       </AuthPrimaryButton>
       {showTestLoginPanel ? (
         <div
-          className="bg-muted/40 flex flex-col rounded-lg border border-sky-500/30 px-3 py-3"
+          className="bg-muted/40 flex flex-col gap-2 rounded-lg border border-sky-500/30 px-3 py-3"
           suppressHydrationWarning
         >
           <div className="flex items-center gap-2" suppressHydrationWarning>
-            <FlaskConical className="size-4 text-sky-600 dark:text-sky-300" aria-hidden />
-            <p className="text-foreground text-sm font-medium">Quick test login</p>
+            <FlaskConical className="size-4 shrink-0 text-sky-600 dark:text-sky-300" aria-hidden />
+            <p className="text-foreground text-sm font-medium">Fill test credentials</p>
           </div>
-          <div className="mt-2 flex items-center gap-2 overflow-x-auto" suppressHydrationWarning>
+          <p className="text-muted-foreground text-xs leading-relaxed" suppressHydrationWarning>
+            Click a role to fill the form, then sign in.
+          </p>
+          <div className="flex flex-wrap items-center gap-2" suppressHydrationWarning>
             <button
               type="button"
               disabled={Boolean(testLoginLoading)}
               onClick={onAdminLogin}
-              className="inline-flex items-center justify-center rounded-full"
+              className="inline-flex items-center justify-center rounded-full opacity-100 transition-opacity disabled:opacity-50"
             >
               {testLoginLoading === 'admin' ? (
-                <span className="text-xs">Signing in…</span>
+                <span className="text-muted-foreground text-xs">Loading…</span>
               ) : (
                 <RoleBadge role="admin" />
               )}
@@ -249,10 +232,10 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
                 type="button"
                 disabled={Boolean(testLoginLoading)}
                 onClick={() => onQuickTestLogin(role)}
-                className="inline-flex items-center justify-center rounded-full"
+                className="inline-flex items-center justify-center rounded-full opacity-100 transition-opacity disabled:opacity-50"
               >
                 {testLoginLoading === role ? (
-                  <span className="text-xs">Signing in…</span>
+                  <span className="text-muted-foreground text-xs">Loading…</span>
                 ) : (
                   <RoleBadge role={role} />
                 )}

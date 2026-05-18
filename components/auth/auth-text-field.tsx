@@ -1,4 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import type * as React from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,8 +33,13 @@ export function AuthTextField({
   error,
   labelAccessory,
   className,
+  type,
   ...inputProps
 }: AuthTextFieldProps) {
+  const [revealed, setRevealed] = useState(false)
+  const isPassword = type === 'password'
+  const resolvedType = isPassword && revealed ? 'text' : type
+
   return (
     <div className="space-y-inset" suppressHydrationWarning>
       <div className="gap-inset flex min-h-5 items-center justify-between" suppressHydrationWarning>
@@ -39,13 +48,27 @@ export function AuthTextField({
         </Label>
         {labelAccessory ?? null}
       </div>
-      <Input
-        id={labelId}
-        className={cn(authInputClassName, className)}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-        {...inputProps}
-      />
+      <div className="relative" suppressHydrationWarning>
+        <Input
+          id={labelId}
+          className={cn(authInputClassName, isPassword && 'pr-10', className)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          type={resolvedType}
+          {...inputProps}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setRevealed((r) => !r)}
+            aria-label={revealed ? 'Hide password' : 'Show password'}
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+          >
+            {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        ) : null}
+      </div>
       {error && errorId ? (
         <p id={errorId} className="text-destructive text-sm" role="alert">
           {error}

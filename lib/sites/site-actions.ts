@@ -450,8 +450,8 @@ export async function changeSiteStatus(params: {
   }
   const { userId, role } = ctx
 
-  if (role !== 'admin' && role !== 'manager') {
-    return { ok: false, message: 'Only admin or manager can change site status.' }
+  if (role !== 'admin') {
+    return { ok: false, message: 'Only admin can change site status.' }
   }
 
   const commentTrimmed = params.comment?.trim() ?? ''
