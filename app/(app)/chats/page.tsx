@@ -34,20 +34,13 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
 
   const filters = chatListFiltersFromSearchParams(sp)
   const rooms = await loadChatRooms(user.id, filters)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  const isStaff = profile?.role === 'admin' || profile?.role === 'manager'
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
       <PageHeader
         title="Chats"
         description="Direct messages and order rooms."
-        action={<NewChatDialog currentUserId={user.id} isStaff={isStaff} />}
+        action={<NewChatDialog currentUserId={user.id} />}
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
@@ -61,8 +54,8 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
           <div className="gap-block flex max-w-xs flex-col">
             <p className="text-foreground text-base font-medium">Pick a conversation</p>
             <p>
-              Choose a room from the left to start chatting. Order rooms appear automatically when
-              an order is created.
+              Choose a room from the left to start chatting. Order rooms are opened from the order
+              detail page.
             </p>
           </div>
         </div>

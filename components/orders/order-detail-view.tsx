@@ -1,9 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { MessageSquare } from 'lucide-react'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+
+import { createOrderChatRoom } from '@/lib/chat/chat-actions'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
 import { AssignCopywriterButton } from '@/components/orders/assign-copywriter-select'
@@ -94,7 +97,7 @@ export function OrderDetailView({
   role,
   userId,
   copywriterOptions,
-  chatRoomId,
+  chatRoomId: initialChatRoomId,
 }: {
   order: OrderDetail
   role: UserRole
@@ -102,6 +105,9 @@ export function OrderDetailView({
   copywriterOptions?: CopywriterOption[]
   chatRoomId?: string | null
 }) {
+  const router = useRouter()
+  const [chatRoomId, setChatRoomId] = useState(initialChatRoomId ?? null)
+  const [chatPending, startChatTransition] = useTransition()
   const isStaff = role === 'admin' || role === 'manager'
   const isClientOwner = role === 'client' && userId === order.user_id
   const isAssignedCopywriter = role === 'copywriter' && userId === order.copywriter_id
@@ -130,13 +136,32 @@ export function OrderDetailView({
         }
         action={
           <div className="gap-inset flex flex-wrap">
-            {chatRoomId && (
+            {chatRoomId ? (
               <Link
                 href={`/chats/${chatRoomId}`}
                 className="border-border bg-background hover:bg-muted text-foreground gap-inset px-block inline-flex h-10 items-center rounded-md border text-sm font-medium"
               >
                 <MessageSquare className="size-4" /> Open chat
               </Link>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={chatPending}
+                onClick={() =>
+                  startChatTransition(async () => {
+                    const res = await createOrderChatRoom(order.id)
+                    if (!res.ok) {
+                      toast.error(res.message)
+                      return
+                    }
+                    setChatRoomId(res.roomId)
+                    router.push(`/chats/${res.roomId}`)
+                  })
+                }
+              >
+                <MessageSquare className="size-4" /> Start chat
+              </Button>
             )}
             <OrderActionsMenu
               context={{

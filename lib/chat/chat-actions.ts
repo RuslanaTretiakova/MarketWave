@@ -9,6 +9,7 @@ import {
   canUnarchiveChat,
 } from '@/lib/chat/chat-rules'
 import { adminClient } from '@/lib/supabase/admin'
+import { findOrderRoomId } from '@/lib/chat/find-room'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 
@@ -294,7 +295,10 @@ export async function createChannelRoom(input: {
   if (auth.role !== 'admin' && auth.role !== 'manager') {
     return { ok: false, message: 'Only admins and managers can create channel rooms.' }
   }
-  if (input.channel !== 'support' && input.channel !== 'sales' && input.channel !== 'standard') {
+  if (input.channel === 'support' || input.channel === 'sales') {
+    return { ok: false, message: 'Support and Sales rooms cannot be created manually.' }
+  }
+  if (input.channel !== 'standard') {
     return { ok: false, message: 'Invalid channel.' }
   }
 
@@ -368,6 +372,65 @@ export async function createStandardGroupChat(input: {
   if (pErr) return { ok: false, message: pErr.message ?? 'Could not add participants.' }
 
   revalidatePath('/chats')
+  return { ok: true, roomId: room.id }
+}
+
+export async function createOrderChatRoom(
+  orderId: string
+): Promise<{ ok: true; roomId: string } | { ok: false; message: string }> {
+  const auth = await requireSession()
+  if (!auth.ok) return auth
+
+  const { data: order } = await adminClient
+    .from('orders')
+    .select('id, user_id, copywriter_id, site_domain')
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (!order) return { ok: false, message: 'Order not found.' }
+
+  const isOwner = order.user_id === auth.userId
+  const isStaff = auth.role === 'admin' || auth.role === 'manager'
+  if (!isOwner && !isStaff) {
+    return { ok: false, message: 'You do not have access to this order.' }
+  }
+
+  const existing = await findOrderRoomId(orderId)
+  if (existing) return { ok: true, roomId: existing }
+
+  const { data: room, error } = await adminClient
+    .from('chat_rooms')
+    .insert({
+      kind: 'order',
+      channel: 'standard',
+      order_id: orderId,
+      title: order.site_domain,
+      system_managed: false,
+      status: 'active',
+    })
+    .select('id')
+    .maybeSingle()
+
+  if (error || !room) return { ok: false, message: error?.message ?? 'Could not create chat room.' }
+
+  const participantIds = new Set<string>([order.user_id])
+  if (order.copywriter_id) participantIds.add(order.copywriter_id)
+
+  const [adminsResult, clientProfileResult] = await Promise.all([
+    adminClient.from('profiles').select('id').eq('role', 'admin'),
+    adminClient.from('profiles').select('account_manager_id').eq('id', order.user_id).maybeSingle(),
+  ])
+  for (const a of adminsResult.data ?? []) participantIds.add(a.id)
+  if (clientProfileResult.data?.account_manager_id) {
+    participantIds.add(clientProfileResult.data.account_manager_id)
+  }
+
+  await adminClient
+    .from('chat_room_participants')
+    .insert([...participantIds].map((user_id) => ({ room_id: room.id, user_id })))
+
+  revalidatePath('/chats')
+  revalidatePath(`/orders/${orderId}`)
   return { ok: true, roomId: room.id }
 }
 
@@ -449,7 +512,7 @@ export async function archiveChat(
 
   const meta = await loadRoomMeta(roomId)
   if (!meta) return { ok: false, message: 'Chat not found.' }
-  if (!canArchiveChat(meta.channel, meta.status, meta.system_managed)) {
+  if (!canArchiveChat(meta.channel, meta.status)) {
     return { ok: false, message: 'Action forbidden: only active Standard chats can be archived.' }
   }
 

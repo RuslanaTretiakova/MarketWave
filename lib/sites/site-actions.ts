@@ -522,7 +522,7 @@ export async function changeSiteStatus(params: {
     .eq('id', params.siteId)
     .maybeSingle()
 
-  if (site?.sourcer_id) {
+  if (site?.sourcer_id && site.sourcer_id !== userId) {
     const meta = SITE_TRANSITION_NOTIFICATION[params.transition]
     const { error: notifErr } = await adminClient.from('notifications').insert({
       recipient_user_id: site.sourcer_id,
