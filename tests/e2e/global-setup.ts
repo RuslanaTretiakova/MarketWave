@@ -1,13 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { chromium, type FullConfig } from '@playwright/test'
+import { chromium } from '@playwright/test'
 
-import { loginAndSaveSession, storageStatePath } from './helpers/auth'
+import { loginAndSaveSession } from './helpers/auth'
 import { upsertTestSite, upsertTestUser, type TestRole } from './helpers/supabase'
 
 const ROLES: TestRole[] = ['admin', 'manager', 'client', 'copywriter', 'sourcer']
 
-export default async function globalSetup(_config: FullConfig) {
+export default async function globalSetup(): Promise<void> {
   // Ensure .auth directory exists for session state files
   const authDir = path.resolve(__dirname, '../.auth')
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })

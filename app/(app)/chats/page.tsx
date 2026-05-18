@@ -50,9 +50,9 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
         action={<NewChatDialog currentUserId={user.id} isStaff={isStaff} />}
       />
 
-      <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
+      <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
         <Suspense fallback={null}>
-          <ChatsToolbar />
+          <ChatsToolbar totalCount={rooms.length} />
         </Suspense>
       </section>
 

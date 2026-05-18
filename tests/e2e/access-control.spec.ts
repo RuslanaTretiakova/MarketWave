@@ -30,7 +30,7 @@ test.describe('Access control — client', () => {
 
   test('client cannot see users settings', async ({ page }) => {
     await page.goto('/settings/users')
-    const status = await page.evaluate(() => document.title)
+    await page.evaluate(() => document.title)
     // Either redirected away or shows not found
     await expect(
       page

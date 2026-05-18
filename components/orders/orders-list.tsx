@@ -1,5 +1,6 @@
 'use client'
-import { ClipboardList, Filter, Link2, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, ClipboardList, Filter, Link2, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -78,6 +79,7 @@ export function OrdersList({
   const pathname = usePathname()
   const router = useRouter()
 
+  const [isOpen, setIsOpen] = useState(false)
   const isStaff = role === 'admin' || role === 'manager'
   const showClientColumn = isStaff
   const showCopywriterFilter = isStaff && (copywriterOptions?.length ?? 0) > 0
@@ -136,105 +138,130 @@ export function OrdersList({
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
+        <div className="px-section py-block gap-inset flex items-center sm:flex-wrap">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium"
+          >
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Order status</span>
-            <FilterSelect
-              aria-label="Filter by order status"
-              value={status ?? ''}
-              onChange={(e) => navigateFilter({ status: e.target.value })}
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {statusFilters.map(({ key, label }) => (
-                <option key={key} value={key === 'all' ? '' : key}>
-                  {label}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">
-              Invoice status
-            </span>
-            <FilterSelect
-              aria-label="Filter by invoice status"
-              value={invoiceStatus ?? ''}
-              onChange={(e) => navigateFilter({ invoiceStatus: e.target.value })}
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {invoiceStatusFilters.map(({ key, label }) => (
-                <option key={key} value={key === 'all' ? '' : key}>
-                  {label}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-          {showClientFilter && (
-            <div className="flex shrink-0 flex-col gap-0.5">
-              <span className="text-muted-foreground px-1 text-[10px] font-medium">Client</span>
-              <FilterSelect
-                aria-label="Filter by client"
-                value={clientId ?? ''}
-                onChange={(e) => navigateFilter({ client: e.target.value })}
-                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-              >
-                <option value="">All clients</option>
-                {(clientOptions ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.full_name ?? c.email ?? c.id.slice(0, 8)}
-                  </option>
-                ))}
-              </FilterSelect>
-            </div>
-          )}
-          {showCopywriterFilter && (
-            <div className="flex shrink-0 flex-col gap-0.5">
-              <span className="text-muted-foreground px-1 text-[10px] font-medium">Copywriter</span>
-              <FilterSelect
-                aria-label="Filter by copywriter"
-                value={copywriterId ?? ''}
-                onChange={(e) => navigateFilter({ copywriter: e.target.value })}
-                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-              >
-                <option value="">All copywriters</option>
-                {(copywriterOptions ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.full_name ?? c.email ?? c.id.slice(0, 8)}
-                  </option>
-                ))}
-              </FilterSelect>
-            </div>
-          )}
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Publish date</span>
-            <FilterInput
-              aria-label="Filter by publish date"
-              type="date"
-              value={publishDate ?? ''}
-              onChange={(e) => navigateFilter({ publishDate: e.target.value })}
-              className="h-8 w-auto rounded-full px-3 text-xs"
-            />
-          </div>
-          {!!(q || status || invoiceStatus || copywriterId || clientId || publishDate) ? (
-            <Link
-              href="/orders"
-              scroll={false}
+            <ChevronDown
               className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
+                'size-3.5 shrink-0 transition-transform duration-200 ease-in-out',
+                isOpen && 'rotate-180'
               )}
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Clear filters
-            </Link>
-          ) : null}
-          <span className="text-muted-foreground shrink-0 self-end pb-0.5 text-xs tabular-nums">
+              aria-hidden
+            />
+          </button>
+          <span className="text-muted-foreground ml-auto shrink-0 self-end pb-0.5 text-xs tabular-nums">
             {totalCount} order{totalCount === 1 ? '' : 's'}
           </span>
+        </div>
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">
+                Order status
+              </span>
+              <FilterSelect
+                aria-label="Filter by order status"
+                value={status ?? ''}
+                onChange={(e) => navigateFilter({ status: e.target.value })}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {statusFilters.map(({ key, label }) => (
+                  <option key={key} value={key === 'all' ? '' : key}>
+                    {label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">
+                Invoice status
+              </span>
+              <FilterSelect
+                aria-label="Filter by invoice status"
+                value={invoiceStatus ?? ''}
+                onChange={(e) => navigateFilter({ invoiceStatus: e.target.value })}
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {invoiceStatusFilters.map(({ key, label }) => (
+                  <option key={key} value={key === 'all' ? '' : key}>
+                    {label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            {showClientFilter && (
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">Client</span>
+                <FilterSelect
+                  aria-label="Filter by client"
+                  value={clientId ?? ''}
+                  onChange={(e) => navigateFilter({ client: e.target.value })}
+                  className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                >
+                  <option value="">All clients</option>
+                  {(clientOptions ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name ?? c.email ?? c.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+            )}
+            {showCopywriterFilter && (
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">
+                  Copywriter
+                </span>
+                <FilterSelect
+                  aria-label="Filter by copywriter"
+                  value={copywriterId ?? ''}
+                  onChange={(e) => navigateFilter({ copywriter: e.target.value })}
+                  className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                >
+                  <option value="">All copywriters</option>
+                  {(copywriterOptions ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name ?? c.email ?? c.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+            )}
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">
+                Publish date
+              </span>
+              <FilterInput
+                aria-label="Filter by publish date"
+                type="date"
+                value={publishDate ?? ''}
+                onChange={(e) => navigateFilter({ publishDate: e.target.value })}
+                className="h-8 w-auto rounded-full px-3 text-xs"
+              />
+            </div>
+            {!!(q || status || invoiceStatus || copywriterId || clientId || publishDate) ? (
+              <Link
+                href="/orders"
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
+                )}
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
+          </div>
         </div>
       </section>
 

@@ -3,7 +3,17 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Eye, Filter, Globe, Pencil, Plus, RotateCcw, ShoppingCart, Trash2 } from 'lucide-react'
+import {
+  ChevronDown,
+  Eye,
+  Filter,
+  Globe,
+  Pencil,
+  Plus,
+  RotateCcw,
+  ShoppingCart,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SiteCatalogRowActions } from '@/components/sites/site-catalog-row-actions'
@@ -314,6 +324,7 @@ export function SitesCatalog({
   const router = useRouter()
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
 
+  const [isOpen, setIsOpen] = useState(false)
   const [mobileDetailRow, setMobileDetailRow] = useState<SiteCatalogRow | null>(null)
   const [addingSiteId, setAddingSiteId] = useState<string | null>(null)
   const [removingSiteId, setRemovingSiteId] = useState<string | null>(null)
@@ -570,93 +581,114 @@ export function SitesCatalog({
       />
 
       <section className="border-border/60 bg-card shadow-soft sticky top-14 z-30 overflow-hidden rounded-2xl border">
-        <div className="px-section py-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-          <div className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium">
+        <div className="px-section py-block gap-inset flex items-center sm:flex-wrap">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-muted-foreground gap-inset mb-0.5 flex shrink-0 items-center text-xs font-medium"
+          >
             <Filter className="size-3.5 shrink-0" aria-hidden />
             <span>Filters</span>
-          </div>
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Category</span>
-            <FilterSelect
-              aria-label="Filter by category"
-              value={categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL}
-              onChange={(e) =>
-                router.push(buildListHref(1, { category_id: e.target.value }), {
-                  scroll: false,
-                })
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {categoryFilterOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-          {role !== 'client' ? (
+            <ChevronDown
+              className={cn(
+                'size-3.5 shrink-0 transition-transform duration-200 ease-in-out',
+                isOpen && 'rotate-180'
+              )}
+              aria-hidden
+            />
+          </button>
+          <span className="text-muted-foreground ml-auto shrink-0 self-end pb-0.5 text-xs tabular-nums">
+            {countLabel}
+          </span>
+        </div>
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-125 opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
             <div className="flex shrink-0 flex-col gap-0.5">
-              <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Category</span>
               <FilterSelect
-                aria-label="Filter by status"
-                value={status ?? SITES_CATALOG_FILTER_SENTINEL}
+                aria-label="Filter by category"
+                value={
+                  categoryId !== undefined ? String(categoryId) : SITES_CATALOG_FILTER_SENTINEL
+                }
                 onChange={(e) =>
-                  router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+                  router.push(buildListHref(1, { category_id: e.target.value }), {
+                    scroll: false,
+                  })
                 }
                 className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
               >
-                {statusOptions.map((o) => (
+                {categoryFilterOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
               </FilterSelect>
             </div>
-          ) : null}
-          <div className="flex shrink-0 flex-col gap-0.5">
-            <span className="text-muted-foreground px-1 text-[10px] font-medium">Link type</span>
-            <FilterSelect
-              aria-label="Filter by link type"
-              value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
-              onChange={(e) =>
-                router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
-              }
-              className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-            >
-              {linkTypeOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </FilterSelect>
+            {role !== 'client' ? (
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">Status</span>
+                <FilterSelect
+                  aria-label="Filter by status"
+                  value={status ?? SITES_CATALOG_FILTER_SENTINEL}
+                  onChange={(e) =>
+                    router.push(buildListHref(1, { status: e.target.value }), { scroll: false })
+                  }
+                  className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                >
+                  {statusOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+            ) : null}
+            <div className="flex shrink-0 flex-col gap-0.5">
+              <span className="text-muted-foreground px-1 text-[10px] font-medium">Link type</span>
+              <FilterSelect
+                aria-label="Filter by link type"
+                value={linkType ?? SITES_CATALOG_FILTER_SENTINEL}
+                onChange={(e) =>
+                  router.push(buildListHref(1, { link_type: e.target.value }), { scroll: false })
+                }
+                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+              >
+                {linkTypeOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </FilterSelect>
+            </div>
+            <SitesCatalogDebouncedFilters
+              key={debouncedFiltersKey}
+              country={country}
+              language={language}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              drMin={drMin}
+              drMax={drMax}
+              buildListHref={buildListHref}
+              router={router}
+            />
+            {filtersActive ? (
+              <Link
+                href="/sites"
+                scroll={false}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                  'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
+                )}
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Clear filters
+              </Link>
+            ) : null}
           </div>
-          <SitesCatalogDebouncedFilters
-            key={debouncedFiltersKey}
-            country={country}
-            language={language}
-            priceMin={priceMin}
-            priceMax={priceMax}
-            drMin={drMin}
-            drMax={drMax}
-            buildListHref={buildListHref}
-            router={router}
-          />
-          {filtersActive ? (
-            <Link
-              href="/sites"
-              scroll={false}
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'h-8 shrink-0 gap-2 self-end rounded-full px-3 text-xs'
-              )}
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Clear filters
-            </Link>
-          ) : null}
-          <span className="text-muted-foreground shrink-0 self-end pb-0.5 text-xs tabular-nums">
-            {countLabel}
-          </span>
         </div>
       </section>
 
