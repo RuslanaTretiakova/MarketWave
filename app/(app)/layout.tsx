@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 
 import { AppShell } from '@/components/app-shell/app-shell'
 import { agentDebugLog } from '@/lib/agent-debug-log.server'
@@ -32,7 +32,7 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   })
 
   if (!user) {
-    notFound()
+    redirect('/auth/login')
   }
 
   if (profile?.require_password_change) {

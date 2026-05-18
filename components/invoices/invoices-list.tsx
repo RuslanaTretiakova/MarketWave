@@ -80,7 +80,9 @@ export function InvoicesList({
   const searchParams = useSearchParams()
   const isStaff = role === 'admin' || role === 'manager'
   const view: InvoicesView = searchParams.get('view') === 'invoice' ? 'invoice' : 'statement'
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(() =>
+    Boolean(status || client || billingPeriod || invoiceNumber || minAmount || maxAmount)
+  )
   const [localBillingPeriod, setLocalBillingPeriod] = useState(billingPeriod ?? '')
   const [localMinAmount, setLocalMinAmount] = useState(minAmount ?? '')
   const [localMaxAmount, setLocalMaxAmount] = useState(maxAmount ?? '')

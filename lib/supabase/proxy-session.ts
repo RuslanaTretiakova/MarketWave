@@ -96,6 +96,14 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     return NextResponse.redirect(url)
   }
 
+  if (!user && isAppProtectedPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.search = ''
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
+  }
+
   let requirePasswordChange = false
   if (user) {
     const { data: profile } = await supabase

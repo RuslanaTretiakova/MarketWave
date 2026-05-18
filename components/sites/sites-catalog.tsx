@@ -324,7 +324,19 @@ export function SitesCatalog({
   const router = useRouter()
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
 
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(() =>
+    Boolean(
+      status ||
+      categoryId ||
+      country ||
+      language ||
+      linkType ||
+      priceMin ||
+      priceMax ||
+      drMin ||
+      drMax
+    )
+  )
   const [mobileDetailRow, setMobileDetailRow] = useState<SiteCatalogRow | null>(null)
   const [addingSiteId, setAddingSiteId] = useState<string | null>(null)
   const [removingSiteId, setRemovingSiteId] = useState<string | null>(null)

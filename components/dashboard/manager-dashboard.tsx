@@ -3,10 +3,7 @@ import {
   CheckCircle2,
   ClipboardList,
   DollarSign,
-  Globe,
   Mail,
-  MessageSquare,
-  Receipt,
   TrendingUp,
   UserCheck,
   Users,
@@ -20,7 +17,6 @@ import {
   KpiCard,
   NotificationsSummaryCard,
   PipelineCard,
-  QuickActionsBar,
   SideListCard,
   WeeklyTrendChart,
 } from '@/components/dashboard/_shared'
@@ -78,14 +74,6 @@ export function ManagerDashboard({
 
       {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
 
-      <QuickActionsBar
-        actions={[
-          { href: '/invoices', label: 'Open invoices', icon: Receipt, variant: 'outline' },
-          { href: '/sites', label: 'Site catalog', icon: Globe, variant: 'outline' },
-          { href: '/chats', label: 'Open chats', icon: MessageSquare, variant: 'ghost' },
-        ]}
-      />
-
       <div className="gap-block grid sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Active orders"
@@ -99,7 +87,7 @@ export function ManagerDashboard({
           label="Awaiting assignment"
           value={String(data.ordersAwaitingAssignment)}
           icon={UserCheck}
-          href="/orders"
+          href="/orders?status=new"
           ariaLabel={`Awaiting assignment: ${data.ordersAwaitingAssignment}. Open orders.`}
           tone="muted"
         />

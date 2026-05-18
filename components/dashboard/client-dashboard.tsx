@@ -5,7 +5,6 @@ import {
   ClipboardList,
   Globe,
   Inbox,
-  MessageSquare,
   Receipt,
   ShoppingCart,
   Sparkles,
@@ -19,7 +18,6 @@ import {
   KpiCard,
   NotificationsSummaryCard,
   PipelineCard,
-  QuickActionsBar,
   SideListCard,
 } from '@/components/dashboard/_shared'
 import type { ClientDashboardData } from '@/lib/dashboard/load-client-dashboard'
@@ -63,15 +61,6 @@ export function ClientDashboard({
       />
 
       {unreadByEvent ? <NotificationsSummaryCard counts={unreadByEvent} /> : null}
-
-      <QuickActionsBar
-        actions={[
-          { href: '/cart', label: 'View cart', icon: ShoppingCart, variant: 'outline' },
-          { href: '/orders', label: 'My orders', icon: ClipboardList, variant: 'outline' },
-          { href: '/invoices', label: 'My invoices', icon: Receipt, variant: 'outline' },
-          { href: '/chats', label: 'Chats', icon: MessageSquare, variant: 'ghost' },
-        ]}
-      />
 
       <div className="gap-block grid sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard

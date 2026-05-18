@@ -109,8 +109,18 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         setError(`No prepared test user found for role: ${role}`)
         return
       }
-      setEmail(target.email)
-      setPassword(prep.passwordHint)
+      const supabase = createClient()
+      const { error: signError } = await supabase.auth.signInWithPassword({
+        email: target.email,
+        password: prep.passwordHint,
+      })
+      if (signError) {
+        const mapped = mapAuthError(signError)
+        reportAuthErrorClient(mapped, 'auth/test-sign-in')
+        setError(mapped.message)
+        return
+      }
+      router.push(safeReturnPath(redirectTo))
     } finally {
       setTestLoginLoading(null)
     }
