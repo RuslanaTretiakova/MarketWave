@@ -79,6 +79,7 @@ export function OrderActionsMenu({
   invoiceHref,
   copywriterOptions,
   initialPublishDate,
+  initialPublishMonth,
   initialAnchorText,
   initialTargetUrl,
   initialClientNotes,
@@ -92,6 +93,7 @@ export function OrderActionsMenu({
   invoiceHref?: string
   copywriterOptions?: CopywriterOption[]
   initialPublishDate?: string | null
+  initialPublishMonth?: string | null
   initialAnchorText?: string | null
   initialTargetUrl?: string | null
   initialClientNotes?: string | null
@@ -108,6 +110,9 @@ export function OrderActionsMenu({
   const [publishDateForPublish, setPublishDateForPublish] = useState(initialPublishDate ?? '')
   const [copywriterId, setCopywriterId] = useState(context.copywriterId ?? '')
   const [publishDate, setPublishDate] = useState(initialPublishDate ?? '')
+  const [publishMonth, setPublishMonth] = useState(
+    initialPublishMonth ? initialPublishMonth.slice(0, 7) : ''
+  )
   const [anchorText, setAnchorText] = useState(initialAnchorText ?? '')
   const [targetUrl, setTargetUrl] = useState(initialTargetUrl ?? '')
   const [clientNotes, setClientNotes] = useState(initialClientNotes ?? '')
@@ -164,7 +169,16 @@ export function OrderActionsMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href={detailHref} />}>Open details</DropdownMenuItem>
             {isOrderActionEnabled(actions, 'edit_order') && (
-              <DropdownMenuItem onClick={() => setSheetAction('edit_order')}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setPublishDate(initialPublishDate ?? '')
+                  setPublishMonth(initialPublishMonth ? initialPublishMonth.slice(0, 7) : '')
+                  setAnchorText(initialAnchorText ?? '')
+                  setTargetUrl(initialTargetUrl ?? '')
+                  setClientNotes(initialClientNotes ?? '')
+                  setSheetAction('edit_order')
+                }}
+              >
                 Edit order
               </DropdownMenuItem>
             )}
@@ -400,6 +414,7 @@ export function OrderActionsMenu({
                       updateOrderFields({
                         orderId,
                         publishDate: publishDate || null,
+                        publishMonth: publishMonth || null,
                         anchorText,
                         targetUrl,
                         clientNotes,
@@ -483,11 +498,11 @@ export function OrderActionsMenu({
         {sheetAction === 'edit_order' && (
           <div className="gap-inset flex flex-col">
             <label className="gap-1 text-sm">
-              <span className="text-muted-foreground">Publish date</span>
+              <span className="text-muted-foreground">Publication month</span>
               <input
-                type="date"
-                value={publishDate}
-                onChange={(event) => setPublishDate(event.target.value)}
+                type="month"
+                value={publishMonth}
+                onChange={(event) => setPublishMonth(event.target.value)}
                 className="border-border bg-background text-foreground h-9 w-full rounded-md border px-3 text-sm"
               />
             </label>

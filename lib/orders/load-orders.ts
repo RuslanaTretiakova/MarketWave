@@ -17,6 +17,10 @@ export type OrderListRow = {
   site_dr: number | null
   price: number
   publish_date: string | null
+  publish_month: string | null
+  anchor_text: string | null
+  target_url: string | null
+  client_notes: string | null
   created_at: string
   user_id: string
   copywriter_id: string | null
@@ -52,7 +56,7 @@ export async function loadOrdersPage(
     let q = supabase
       .from('orders')
       .select(
-        'id, status, site_domain, site_category, site_dr, price, publish_date, created_at, user_id, copywriter_id',
+        'id, status, site_domain, site_category, site_dr, price, publish_date, publish_month, anchor_text, target_url, client_notes, created_at, user_id, copywriter_id',
         {
           count: 'exact',
         }
@@ -173,6 +177,10 @@ export async function loadOrdersPage(
       site_dr: r.site_dr,
       price: r.price,
       publish_date: r.publish_date,
+      publish_month: r.publish_month,
+      anchor_text: r.anchor_text,
+      target_url: r.target_url,
+      client_notes: r.client_notes,
       created_at: r.created_at,
       user_id: r.user_id,
       copywriter_id: r.copywriter_id,
