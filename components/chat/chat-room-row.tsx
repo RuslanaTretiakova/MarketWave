@@ -55,7 +55,7 @@ export function ChatRoomRow({
   const title = room.title ?? room.order_site_domain ?? 'Conversation'
 
   const showEdit = canEditChatMetadata(room.channel) && !room.system_managed
-  const showArchive = canArchiveChat(room.channel, room.status, room.system_managed)
+  const showArchive = canArchiveChat(room.channel, room.status)
   const showUnarchive = canUnarchiveChat(room.channel, room.status)
   const showMenu = showEdit || showArchive || showUnarchive
 
