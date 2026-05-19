@@ -178,6 +178,7 @@ export function OrderDetailView({
               invoiceHref={order.invoice ? `/invoices/${order.invoice.id}` : undefined}
               copywriterOptions={copywriterOptions}
               initialPublishDate={order.publish_date}
+              initialPublishMonth={order.publish_month}
               initialAnchorText={order.anchor_text}
               initialTargetUrl={order.target_url}
               initialClientNotes={order.client_notes}

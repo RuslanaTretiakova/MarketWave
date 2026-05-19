@@ -351,6 +351,7 @@ function normalizeOptionalUrl(
 export async function updateOrderFields(input: {
   orderId: string
   publishDate?: string | null
+  publishMonth?: string | null
   anchorText?: string | null
   targetUrl?: string | null
   clientNotes?: string | null
@@ -379,12 +380,26 @@ export async function updateOrderFields(input: {
     }
   }
 
+  if (
+    input.publishMonth !== undefined &&
+    input.publishMonth !== null &&
+    input.publishMonth !== ''
+  ) {
+    const monthStr = input.publishMonth.trim()
+    if (!/^\d{4}-\d{2}$/.test(monthStr)) {
+      return { ok: false, message: 'Publication month must be in YYYY-MM format.' }
+    }
+  }
+
   const url = normalizeOptionalUrl(input.targetUrl)
   if (!url.ok) return url
 
   const patch: OrderUpdate = {}
   if (input.publishDate !== undefined) {
     patch.publish_date = input.publishDate ? input.publishDate.trim() : null
+  }
+  if (input.publishMonth !== undefined) {
+    patch.publish_month = input.publishMonth ? input.publishMonth.trim() : null
   }
   if (input.anchorText !== undefined)
     patch.anchor_text = normalizeOptionalText(input.anchorText, 500)

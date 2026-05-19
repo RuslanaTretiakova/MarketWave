@@ -373,6 +373,11 @@ export function OrdersList({
                         orderId={row.id}
                         detailHref={`/orders/${row.id}`}
                         copywriterOptions={copywriterOptions}
+                        initialPublishDate={row.publish_date}
+                        initialPublishMonth={row.publish_month}
+                        initialAnchorText={row.anchor_text}
+                        initialTargetUrl={row.target_url}
+                        initialClientNotes={row.client_notes}
                         siteDomain={row.site_domain}
                         price={row.price}
                       />

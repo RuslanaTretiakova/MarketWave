@@ -4,21 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
+import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { FormControlSelect, FormControlTextarea } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
-import {
-  menuActionDialogContentClassName,
-  menuActionDialogTitleClassName,
-} from '@/components/ui/menu-action-dialog'
 import { siteAdminTransitionMenuLabel } from '@/lib/sites/admin-site-transitions'
 import type { SiteAdminTransition } from '@/lib/sites/site-actions'
 import { changeSiteStatus } from '@/lib/sites/site-actions'
@@ -154,65 +143,13 @@ export function SiteChangeStatusDialog({
   )
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={!pending}
-        aria-describedby="site-status-disclaimer"
-        className={menuActionDialogContentClassName}
-      >
-        <DialogHeader className="gap-2">
-          <DialogTitle className={menuActionDialogTitleClassName}>{title}</DialogTitle>
-          <DialogDescription id="site-status-disclaimer">{description}</DialogDescription>
-        </DialogHeader>
-
-        {showPicker ? (
-          <div className="gap-inset flex flex-col">
-            <Label htmlFor="site-status-transition">Select Status</Label>
-            <FormControlSelect
-              id="site-status-transition"
-              value={picked ?? ''}
-              onValueChange={(v) => {
-                setPicked(v as SiteAdminTransition)
-                setError(null)
-              }}
-              placeholder="Choose a status…"
-              options={transitions!.map((t) => ({
-                value: t,
-                label: siteAdminTransitionMenuLabel(t),
-              }))}
-              disabled={pending}
-            />
-          </div>
-        ) : null}
-
-        <div className="gap-inset flex flex-col">
-          <Label htmlFor="site-status-comment">
-            Comment{commentRequired ? <span className="text-destructive"> *</span> : null}
-          </Label>
-          <FormControlTextarea
-            id="site-status-comment"
-            rows={4}
-            value={comment}
-            onChange={(e) => {
-              setComment(e.target.value)
-              if (error) setError(null)
-            }}
-            disabled={pending}
-            placeholder={
-              commentRequired
-                ? 'Describe what the sourcer should fix or update…'
-                : 'Add context for your team (optional)…'
-            }
-          />
-        </div>
-
-        {error ? (
-          <p className="text-destructive text-sm" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <DialogFooter>
+    <SettingsRightSheet
+      open={open}
+      onOpenChange={handleOpenChange}
+      title={title}
+      description={description}
+      footer={
+        <>
           <Button
             type="button"
             variant="outline"
@@ -224,8 +161,55 @@ export function SiteChangeStatusDialog({
           <Button type="button" variant="cta" disabled={pending || !canSubmit} onClick={submit}>
             {pending ? 'Confirming…' : 'Confirm'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      {showPicker ? (
+        <div className="gap-inset flex flex-col">
+          <Label htmlFor="site-status-transition">Select Status</Label>
+          <FormControlSelect
+            id="site-status-transition"
+            value={picked ?? ''}
+            onValueChange={(v) => {
+              setPicked(v as SiteAdminTransition)
+              setError(null)
+            }}
+            placeholder="Choose a status…"
+            options={transitions!.map((t) => ({
+              value: t,
+              label: siteAdminTransitionMenuLabel(t),
+            }))}
+            disabled={pending}
+          />
+        </div>
+      ) : null}
+
+      <div className="gap-inset flex flex-col">
+        <Label htmlFor="site-status-comment">
+          Comment{commentRequired ? <span className="text-destructive"> *</span> : null}
+        </Label>
+        <FormControlTextarea
+          id="site-status-comment"
+          rows={4}
+          value={comment}
+          onChange={(e) => {
+            setComment(e.target.value)
+            if (error) setError(null)
+          }}
+          disabled={pending}
+          placeholder={
+            commentRequired
+              ? 'Describe what the sourcer should fix or update…'
+              : 'Add context for your team (optional)…'
+          }
+        />
+      </div>
+
+      {error ? (
+        <p className="text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </SettingsRightSheet>
   )
 }

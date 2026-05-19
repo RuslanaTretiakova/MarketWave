@@ -32,8 +32,22 @@ export default async function NewSitePage() {
     .select('id, name')
     .order('name', { ascending: true })
 
-  if (catErr || !categoriesRaw?.length) {
-    throw new Error(catErr?.message ?? 'No categories available. Create a category first.')
+  if (catErr) {
+    throw new Error(catErr.message)
+  }
+
+  if (!categoriesRaw?.length) {
+    return (
+      <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+        <PageHeader title="Create site" description="New listings start as Pending review." />
+        <div className="border-border bg-card text-muted-foreground gap-block flex flex-col items-center justify-center rounded-2xl border px-8 py-16 text-center text-sm">
+          <p className="text-foreground text-base font-medium">No categories yet</p>
+          <p className="max-w-xs">
+            An admin needs to create at least one category before you can submit a site.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
