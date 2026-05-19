@@ -2,22 +2,15 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react'
 
 import { HeroProductMockup } from '@/components/marketing/hero-product-mockup'
 import { buttonVariants } from '@/components/ui/button'
-import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 
 const trust = ['Invitation-based access', 'Role-aware UI', 'Audit-ready history'] as const
 
-/** Pill CTAs like the reference; `shrink-0` + `flex-nowrap` so flex parents with `min-w-0` don’t split label and icon. */
+/** Pill CTAs like the reference; `shrink-0` + `flex-nowrap` so flex parents with `min-w-0` don't split label and icon. */
 const heroButtonClass =
   'inline-flex h-12 min-h-12 shrink-0 flex-row flex-nowrap items-center justify-center gap-2 whitespace-nowrap rounded-full px-7 text-[0.9375rem] font-semibold sm:h-14 sm:min-h-14 sm:px-8 sm:text-base md:px-10 md:text-lg w-full sm:w-auto sm:min-w-[11.5rem] md:min-w-[13rem] [&_svg]:size-[1.125rem] md:[&_svg]:size-5 [&_svg]:shrink-0'
 
-export async function LandingHero() {
-  const supabase = await createClientOrNull()
-  const {
-    data: { user },
-  } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
-  const isLoggedIn = Boolean(user)
-
+export function LandingHero() {
   return (
     <section
       id="hero"
@@ -51,31 +44,17 @@ export async function LandingHero() {
           </p>
 
           <div className="mt-10 flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            {isLoggedIn ? (
-              <a
-                href="/dashboard"
-                className={cn(
-                  buttonVariants({ variant: 'cta', size: 'xl' }),
-                  heroButtonClass,
-                  'shadow-accent overflow-hidden'
-                )}
-              >
-                <span>Go to dashboard</span>
-                <ArrowRight className="shrink-0" data-icon="inline-end" aria-hidden />
-              </a>
-            ) : (
-              <a
-                href="/auth/login"
-                className={cn(
-                  buttonVariants({ variant: 'cta', size: 'xl' }),
-                  heroButtonClass,
-                  'shadow-accent overflow-hidden'
-                )}
-              >
-                <span>Log in</span>
-                <ArrowRight className="shrink-0" data-icon="inline-end" aria-hidden />
-              </a>
-            )}
+            <a
+              href="/auth/login"
+              className={cn(
+                buttonVariants({ variant: 'cta', size: 'xl' }),
+                heroButtonClass,
+                'shadow-accent overflow-hidden'
+              )}
+            >
+              <span>Log in</span>
+              <ArrowRight className="shrink-0" data-icon="inline-end" aria-hidden />
+            </a>
             <a
               href="#workflow"
               className={cn(
