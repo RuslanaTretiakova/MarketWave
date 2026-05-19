@@ -12,8 +12,11 @@ import {
   FormControlTextarea,
 } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
+import { MultiSelect } from '@/components/ui/multi-select'
 import type { SitesCatalogCategoryOption } from '@/components/sites/sites-catalog'
 import { createSite, updateSite, type SiteListingPayload } from '@/lib/sites/site-actions'
+import { COUNTRIES } from '@/lib/sites/countries'
+import { LANGUAGES } from '@/lib/sites/languages'
 import { SITE_STATUS_CHIP, SITE_STATUS_LABEL } from '@/lib/sites/site-status-labels'
 import type { Database } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
@@ -69,12 +72,12 @@ export function SiteListingForm({
       description: initial?.description ?? '',
       sourcer_notes: initial?.sourcer_notes ?? '',
       contact_info: initial?.contact_info ?? '',
-      keywords_relevance: initial?.keywords_relevance ?? '',
+      keywords_relevance: (initial?.keywords_relevance ?? []).join(', '),
       organic_keywords_count: initial?.organic_keywords_count ?? 0,
       organic_traffic_count: initial?.organic_traffic_count ?? 0,
-      top_countries: initial?.top_countries ?? '',
-      countriesCsv: initial?.countriesCsv ?? '',
-      languagesCsv: initial?.languagesCsv ?? '',
+      audience_notes: initial?.audience_notes ?? '',
+      countries: initial?.countries ?? [],
+      languages: initial?.languages ?? [],
       sourcer_id: initial?.sourcer_id ?? '',
     }),
     [initial, categories]
@@ -97,6 +100,14 @@ export function SiteListingForm({
     [sourcersForAdmin]
   )
   const linkTypeOptions = useMemo(() => LINK_TYPES.map((lt) => ({ value: lt, label: lt })), [])
+  const countryOptions = useMemo(
+    () => COUNTRIES.map((c) => ({ value: c.code, label: c.label })),
+    []
+  )
+  const languageOptions = useMemo(
+    () => LANGUAGES.map((l) => ({ value: l.code, label: l.label })),
+    []
+  )
 
   const submit = useCallback(() => {
     const payload: SiteListingPayload = {
@@ -109,12 +120,17 @@ export function SiteListingForm({
       description: form.description || null,
       sourcer_notes: form.sourcer_notes || null,
       contact_info: form.contact_info || null,
-      keywords_relevance: form.keywords_relevance || null,
+      keywords_relevance: form.keywords_relevance
+        ? form.keywords_relevance
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : null,
       organic_keywords_count: Number(form.organic_keywords_count),
       organic_traffic_count: Number(form.organic_traffic_count),
-      top_countries: form.top_countries || null,
-      countriesCsv: form.countriesCsv,
-      languagesCsv: form.languagesCsv,
+      audience_notes: form.audience_notes || null,
+      countries: form.countries,
+      languages: form.languages,
       sourcer_id:
         role === 'admin' && form.sourcer_id.trim()
           ? form.sourcer_id.trim()
@@ -124,30 +140,34 @@ export function SiteListingForm({
     }
 
     startTransition(async () => {
-      if (mode === 'create') {
-        const res = await createSite(payload)
+      try {
+        if (mode === 'create') {
+          const res = await createSite(payload)
+          if (!res.ok) {
+            toast.error(res.message)
+            return
+          }
+          toast.success('Site created.')
+          router.push('/sites')
+          return
+        }
+
+        if (!siteId) {
+          toast.error('Missing site id.')
+          return
+        }
+
+        const res = await updateSite(siteId, payload)
         if (!res.ok) {
           toast.error(res.message)
           return
         }
-        toast.success('Site created.')
-        router.push('/sites')
-        return
+        toast.success('Site updated.')
+        router.push(`/sites/${siteId}`)
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       }
-
-      if (!siteId) {
-        toast.error('Missing site id.')
-        return
-      }
-
-      const res = await updateSite(siteId, payload)
-      if (!res.ok) {
-        toast.error(res.message)
-        return
-      }
-      toast.success('Site updated.')
-      router.push(`/sites/${siteId}`)
-      router.refresh()
     })
   }, [form, mode, siteId, router, role])
 
@@ -289,32 +309,30 @@ export function SiteListingForm({
       <SectionCard title="Geography & Language">
         <div className="gap-block grid grid-cols-1 lg:grid-cols-2">
           <div className="gap-inset flex flex-col">
-            <Label htmlFor="countries">Countries *</Label>
-            <FormControlInput
-              id="countries"
-              value={form.countriesCsv}
-              onChange={(e) => setForm((f) => ({ ...f, countriesCsv: e.target.value }))}
-              placeholder="US, GB, CA"
-              required
+            <Label>Countries *</Label>
+            <MultiSelect
+              options={countryOptions}
+              value={form.countries}
+              onChange={(v) => setForm((f) => ({ ...f, countries: v }))}
+              placeholder="Select countries…"
             />
           </div>
           <div className="gap-inset flex flex-col">
-            <Label htmlFor="languages">Languages *</Label>
-            <FormControlInput
-              id="languages"
-              value={form.languagesCsv}
-              onChange={(e) => setForm((f) => ({ ...f, languagesCsv: e.target.value }))}
-              placeholder="en, es"
-              required
+            <Label>Languages *</Label>
+            <MultiSelect
+              options={languageOptions}
+              value={form.languages}
+              onChange={(v) => setForm((f) => ({ ...f, languages: v }))}
+              placeholder="Select languages…"
             />
           </div>
           <div className="gap-inset flex flex-col lg:col-span-2">
-            <Label htmlFor="top_countries">Top countries</Label>
+            <Label htmlFor="audience_notes">Audience notes</Label>
             <FormControlInput
-              id="top_countries"
-              value={form.top_countries}
-              onChange={(e) => setForm((f) => ({ ...f, top_countries: e.target.value }))}
-              placeholder="Primary target countries, e.g. US, GB"
+              id="audience_notes"
+              value={form.audience_notes}
+              onChange={(e) => setForm((f) => ({ ...f, audience_notes: e.target.value }))}
+              placeholder="US 60%, GB 20% — informal audience breakdown"
             />
           </div>
         </div>
@@ -364,7 +382,7 @@ export function SiteListingForm({
               id="keywords_rel"
               value={form.keywords_relevance}
               onChange={(e) => setForm((f) => ({ ...f, keywords_relevance: e.target.value }))}
-              placeholder="Comma-separated relevance keywords."
+              placeholder="finance, crypto, investing — comma-separated"
             />
           </div>
         </div>

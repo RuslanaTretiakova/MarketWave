@@ -15,20 +15,10 @@ const TEST_USERS: Array<{ role: Role; email: string; fullName: string }> = [
   { role: 'copywriter', email: 'test.copywriter@local.marketweave', fullName: 'Test Copywriter' },
 ]
 
-function testLoginEnabled(): boolean {
-  const override = process.env.ENABLE_TEST_LOGIN?.trim().toLowerCase()
-  if (override === 'true') return true
-  return process.env.NODE_ENV === 'development'
-}
-
 export async function ensureTestUsersForLogin(): Promise<
   | { ok: true; users: Array<{ role: Role; email: string }>; passwordHint: string }
   | { ok: false; message: string }
 > {
-  if (!testLoginEnabled()) {
-    return { ok: false, message: 'Test login helper is disabled in this environment.' }
-  }
-
   try {
     for (const target of TEST_USERS) {
       const email = target.email.trim().toLowerCase()

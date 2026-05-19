@@ -57,23 +57,6 @@ async function getSessionContext(): Promise<
   return { supabase, userId: user.id, role: profile.role }
 }
 
-function parseCodeList(raw: string): string[] {
-  return raw
-    .split(/[,;\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
-
-/** Validate ISO 3166-1 alpha-2 country code */
-function isValidCountryCode(code: string): boolean {
-  return /^[A-Z]{2}$/.test(code)
-}
-
-/** Validate ISO 639-1/3 language code */
-function isValidLanguageCode(code: string): boolean {
-  return /^[a-z]{2,3}$/.test(code)
-}
-
 /** Normalize DR / counts; rejects NaN and negatives. */
 function reqNat(name: string, v: number): string | null {
   if (!Number.isFinite(v) || v < 0 || !Number.isInteger(v)) {
@@ -100,12 +83,12 @@ export type SiteListingPayload = {
   description?: string | null
   sourcer_notes?: string | null
   contact_info?: string | null
-  keywords_relevance?: string | null
+  keywords_relevance?: string[] | null
   organic_keywords_count: number
   organic_traffic_count: number
-  top_countries?: string | null
-  countriesCsv: string
-  languagesCsv: string
+  audience_notes?: string | null
+  countries: string[]
+  languages: string[]
   sourcer_id?: string | null
 }
 
@@ -127,19 +110,13 @@ export async function createSite(
     return { ok: false, message: 'Domain is required.' }
   }
 
-  const countries = parseCodeList(input.countriesCsv).map((c) => c.toUpperCase())
-  const languages = parseCodeList(input.languagesCsv).map((l) => l.toLowerCase())
+  const countries = input.countries
+  const languages = input.languages
   if (countries.length === 0) {
-    return { ok: false, message: 'Add at least one country code.' }
+    return { ok: false, message: 'Add at least one country.' }
   }
   if (languages.length === 0) {
-    return { ok: false, message: 'Add at least one language code.' }
-  }
-  if (!countries.every(isValidCountryCode)) {
-    return { ok: false, message: 'Invalid country code(s). Use ISO 3166-1 alpha-2 (e.g., US, GB).' }
-  }
-  if (!languages.every(isValidLanguageCode)) {
-    return { ok: false, message: 'Invalid language code(s). Use ISO 639-1/3 (e.g., en, spa).' }
+    return { ok: false, message: 'Add at least one language.' }
   }
 
   const eDr = reqNat('DR', input.dr)
@@ -192,10 +169,10 @@ export async function createSite(
     description: input.description?.trim() || null,
     sourcer_notes: input.sourcer_notes?.trim() || null,
     contact_info: input.contact_info?.trim() || null,
-    keywords_relevance: input.keywords_relevance?.trim() || null,
+    keywords_relevance: input.keywords_relevance?.length ? input.keywords_relevance : null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
-    top_countries: input.top_countries?.trim() || null,
+    audience_notes: input.audience_notes?.trim() || null,
   }
 
   const { data: inserted, error: insErr } = await supabase
@@ -256,19 +233,13 @@ export async function updateSite(
     return { ok: false, message: 'Domain is required.' }
   }
 
-  const countries = parseCodeList(input.countriesCsv).map((c) => c.toUpperCase())
-  const languages = parseCodeList(input.languagesCsv).map((l) => l.toLowerCase())
+  const countries = input.countries
+  const languages = input.languages
   if (countries.length === 0) {
-    return { ok: false, message: 'Add at least one country code.' }
+    return { ok: false, message: 'Add at least one country.' }
   }
   if (languages.length === 0) {
-    return { ok: false, message: 'Add at least one language code.' }
-  }
-  if (!countries.every(isValidCountryCode)) {
-    return { ok: false, message: 'Invalid country code(s). Use ISO 3166-1 alpha-2 (e.g., US, GB).' }
-  }
-  if (!languages.every(isValidLanguageCode)) {
-    return { ok: false, message: 'Invalid language code(s). Use ISO 639-1/3 (e.g., en, spa).' }
+    return { ok: false, message: 'Add at least one language.' }
   }
 
   const eDr = reqNat('DR', input.dr)
@@ -340,10 +311,10 @@ export async function updateSite(
     description: input.description?.trim() || null,
     sourcer_notes: input.sourcer_notes?.trim() || null,
     contact_info: input.contact_info?.trim() || null,
-    keywords_relevance: input.keywords_relevance?.trim() || null,
+    keywords_relevance: input.keywords_relevance?.length ? input.keywords_relevance : null,
     organic_keywords_count: input.organic_keywords_count,
     organic_traffic_count: input.organic_traffic_count,
-    top_countries: input.top_countries?.trim() || null,
+    audience_notes: input.audience_notes?.trim() || null,
   }
 
   if (role === 'admin') {

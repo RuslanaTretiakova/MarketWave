@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { loadCartSiteIds } from '@/lib/cart/load-cart'
 
+import { SiteAuditHistory, type SiteAuditHistoryItem } from '@/components/sites/site-audit-history'
 import { SiteDetailHeaderActions } from '@/components/sites/site-detail-header-actions'
 import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
@@ -19,6 +20,7 @@ type SiteDetailRow = Database['public']['Tables']['sites']['Row'] & {
   categories: { id: number; name: string } | null
   site_countries: { country: string }[] | null
   site_languages: { language: string }[] | null
+  site_status_history: SiteAuditHistoryItem[] | null
 }
 
 function formatMoney(n: number): string {
@@ -71,9 +73,11 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
       *,
       categories(id, name),
       site_countries(country),
-      site_languages(language)
+      site_languages(language),
+      site_status_history(id, from_status, to_status, actor_user_id, comment, created_at, actor:profiles(full_name))
     `
     )
+    .order('created_at', { ascending: false, referencedTable: 'site_status_history' })
     .eq('id', siteId)
     .maybeSingle()
 
@@ -167,7 +171,7 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
           <Field label="Domain">{row.domain}</Field>
           <Field label="DR">{row.dr ?? '—'}</Field>
           <Field label="Category">{row.categories?.name ?? '—'}</Field>
-          <Field label="Top countries">{row.top_countries?.trim() || '—'}</Field>
+          <Field label="Audience notes">{row.audience_notes?.trim() || '—'}</Field>
           <Field label="Countries">{countries.length ? countries.join(', ') : '—'}</Field>
           <Field label="Languages">{languages.length ? languages.join(', ') : '—'}</Field>
           <Field label="Price">{formatMoney(row.price)}</Field>
@@ -212,7 +216,7 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
           ) : null}
 
           <Field label="Link type">{row.link_type}</Field>
-          <Field label="Keywords relevance">{row.keywords_relevance?.trim() || '—'}</Field>
+          <Field label="Keywords relevance">{row.keywords_relevance?.join(', ') || '—'}</Field>
           <Field label="Organic keywords count">{row.organic_keywords_count ?? '—'}</Field>
           <Field label="Organic traffic count">{row.organic_traffic_count ?? '—'}</Field>
 
@@ -226,6 +230,8 @@ export default async function SiteDetailPage(props: { params: Promise<{ siteId: 
           ) : null}
         </dl>
       </section>
+
+      {showStaffExtras ? <SiteAuditHistory history={row.site_status_history ?? []} /> : null}
 
       <Separator className="opacity-60" />
 
