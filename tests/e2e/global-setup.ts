@@ -13,13 +13,16 @@ export default async function globalSetup(): Promise<void> {
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
 
   // Create / refresh test users in local Supabase
+  const userIds: Partial<Record<TestRole, string>> = {}
   for (const role of ROLES) {
-    await upsertTestUser(role)
+    userIds[role] = await upsertTestUser(role)
   }
 
   // Seed test sites
   await upsertTestSite('e2e-active-site.com', 'active')
   await upsertTestSite('e2e-inactive-site.com', 'inactive')
+  // Site owned by the test sourcer — used by edit-page tests
+  await upsertTestSite('e2e-sourcer-edit-site.com', 'active', userIds.sourcer)
 
   // Log in as each role and save session to disk
   const browser = await chromium.launch()

@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test'
 
+import { getAdminClient } from './helpers/supabase'
+import { SiteEditPage } from './pages/SiteEditPage'
 import { SitesCatalogPage } from './pages/SitesCatalogPage'
+
+async function getSiteIdByDomain(domain: string): Promise<string> {
+  const db = getAdminClient()
+  const { data } = await db.from('sites').select('id').eq('domain', domain).single()
+  if (!data) throw new Error(`E2E: site not found: ${domain}`)
+  return data.id as string
+}
 
 test.describe('Sites catalog — admin', () => {
   test.use({ storageState: 'tests/.auth/admin.json' })
@@ -50,5 +59,69 @@ test.describe('Sites catalog — sourcer', () => {
     await expect(
       page.locator('[data-sonner-toast]').or(page.getByText(/site.*added|submitted/i))
     ).toBeVisible({ timeout: 10_000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Edit page — access control
+// ---------------------------------------------------------------------------
+test.describe('Site edit page — admin', () => {
+  test.use({ storageState: 'tests/.auth/admin.json' })
+
+  test('admin can load the edit form for any site', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-active-site.com')
+    const editPage = new SiteEditPage(page)
+    await editPage.goto(siteId)
+    await expect(editPage.form()).toBeVisible({ timeout: 8_000 })
+  })
+
+  test('admin can update a site and see success feedback', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-active-site.com')
+    const editPage = new SiteEditPage(page)
+    await editPage.goto(siteId)
+    await editPage.fillPrice(120)
+    await editPage.submit()
+    await expect(editPage.successToast()).toBeVisible({ timeout: 10_000 })
+  })
+})
+
+test.describe('Site edit page — sourcer', () => {
+  test.use({ storageState: 'tests/.auth/sourcer.json' })
+
+  test('sourcer can load edit form for their own site', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-sourcer-edit-site.com')
+    const editPage = new SiteEditPage(page)
+    await editPage.goto(siteId)
+    await expect(editPage.form()).toBeVisible({ timeout: 8_000 })
+  })
+
+  test('sourcer cannot edit a site they do not own', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-active-site.com')
+    await page.goto(`/sites/${siteId}/edit`)
+    // Expect 404 — either a not-found heading or no edit form
+    await expect((editPage) =>
+      page.getByRole('heading', { name: /not found|404/i }).or(page.locator('form'))
+    ).toBeTruthy()
+    await expect(page.locator('form')).not.toBeVisible({ timeout: 6_000 })
+  })
+})
+
+test.describe('Site edit page — client', () => {
+  test.use({ storageState: 'tests/.auth/client.json' })
+
+  test('client cannot access the edit page', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-active-site.com')
+    await page.goto(`/sites/${siteId}/edit`)
+    await expect(page.locator('form')).not.toBeVisible({ timeout: 6_000 })
+  })
+})
+
+test.describe('Site edit page — manager', () => {
+  test.use({ storageState: 'tests/.auth/manager.json' })
+
+  test('manager cannot access the edit page', async ({ page }) => {
+    const siteId = await getSiteIdByDomain('e2e-active-site.com')
+    await page.goto(`/sites/${siteId}/edit`)
+    await expect(page.locator('form')).not.toBeVisible({ timeout: 6_000 })
   })
 })
