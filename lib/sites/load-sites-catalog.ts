@@ -43,7 +43,8 @@ type SitesJoinRow = {
   status: Database['public']['Enums']['site_status']
   link_type: Database['public']['Enums']['link_type']
   category_id: number
-  keywords_relevance: string | null
+  keywords_relevance: string[] | null
+  keywords_text: string | null
   description: string | null
   sourcer_id: string | null
   categories: { name: string } | null
@@ -63,7 +64,7 @@ function mapRow(raw: SitesJoinRow): SiteCatalogRow {
     link_type: raw.link_type,
     category_id: raw.category_id,
     category_name: raw.categories?.name ?? null,
-    keywords_relevance: raw.keywords_relevance,
+    keywords_relevance: raw.keywords_relevance?.join(', ') ?? null,
     description: raw.description,
     sourcer_id: raw.sourcer_id,
     countries,
@@ -99,6 +100,7 @@ function buildSelect(countryInner: boolean, langInner: boolean): string {
     'link_type',
     'category_id',
     'keywords_relevance',
+    'keywords_text',
     'description',
     'sourcer_id',
     'categories(name)',
@@ -131,7 +133,7 @@ export async function loadSitesCatalogPage(
       const pat = `%${token}%`
       const quoted = quotePostgrestFilterValue(pat)
       q = q.or(
-        `domain.ilike.${quoted},keywords_relevance.ilike.${quoted},description.ilike.${quoted},categories.name.ilike.${quoted}`
+        `domain.ilike.${quoted},keywords_text.ilike.${quoted},description.ilike.${quoted},categories.name.ilike.${quoted}`
       )
     }
 

@@ -1112,10 +1112,56 @@ export type Database = {
           },
         ]
       }
+      site_status_history: {
+        Row: {
+          actor_user_id: string | null
+          comment: string | null
+          created_at: string
+          from_status: Database['public']['Enums']['site_status']
+          id: string
+          site_id: string
+          to_status: Database['public']['Enums']['site_status']
+        }
+        Insert: {
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status: Database['public']['Enums']['site_status']
+          id?: string
+          site_id: string
+          to_status: Database['public']['Enums']['site_status']
+        }
+        Update: {
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: Database['public']['Enums']['site_status']
+          id?: string
+          site_id?: string
+          to_status?: Database['public']['Enums']['site_status']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'site_status_history_actor_user_id_fkey'
+            columns: ['actor_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'site_status_history_site_id_fkey'
+            columns: ['site_id']
+            isOneToOne: false
+            referencedRelation: 'sites'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       sites: {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          audience_notes: string | null
           category_id: number
           contact_info: string | null
           created_at: string
@@ -1123,7 +1169,8 @@ export type Database = {
           domain: string
           dr: number
           id: string
-          keywords_relevance: string | null
+          keywords_relevance: string[] | null
+          keywords_text: string | null
           link_type: Database['public']['Enums']['link_type']
           needs_changes_at: string | null
           needs_changes_by: string | null
@@ -1135,12 +1182,13 @@ export type Database = {
           sourcer_id: string | null
           sourcer_notes: string | null
           status: Database['public']['Enums']['site_status']
-          top_countries: string | null
+          submitted_at: string
           updated_at: string
         }
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          audience_notes?: string | null
           category_id: number
           contact_info?: string | null
           created_at?: string
@@ -1148,7 +1196,8 @@ export type Database = {
           domain: string
           dr: number
           id?: string
-          keywords_relevance?: string | null
+          keywords_relevance?: string[] | null
+          keywords_text?: string | null
           link_type?: Database['public']['Enums']['link_type']
           needs_changes_at?: string | null
           needs_changes_by?: string | null
@@ -1160,12 +1209,13 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
-          top_countries?: string | null
+          submitted_at?: string
           updated_at?: string
         }
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          audience_notes?: string | null
           category_id?: number
           contact_info?: string | null
           created_at?: string
@@ -1173,7 +1223,8 @@ export type Database = {
           domain?: string
           dr?: number
           id?: string
-          keywords_relevance?: string | null
+          keywords_relevance?: string[] | null
+          keywords_text?: string | null
           link_type?: Database['public']['Enums']['link_type']
           needs_changes_at?: string | null
           needs_changes_by?: string | null
@@ -1185,7 +1236,7 @@ export type Database = {
           sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database['public']['Enums']['site_status']
-          top_countries?: string | null
+          submitted_at?: string
           updated_at?: string
         }
         Relationships: [
@@ -1327,6 +1378,7 @@ export type Database = {
         Args: { p_room_id: string; p_user_id: string }
         Returns: boolean
       }
+      keywords_array_to_text: { Args: { arr: string[] }; Returns: string }
       refresh_sourcer_earning_for_order: {
         Args: { p_order_id: string }
         Returns: undefined

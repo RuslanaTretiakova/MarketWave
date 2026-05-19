@@ -88,15 +88,19 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
   } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+  // Server Actions POST to the current page URL. Redirecting them causes a hard page
+  // navigation instead of returning a structured error to the client. Skip page-level
+  // redirects for Server Action requests — the action checks auth internally.
+  const isServerAction = request.headers.has('next-action')
 
-  if (pathname === '/auth/sign-up') {
+  if (!isServerAction && pathname === '/auth/sign-up') {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.search = ''
     return NextResponse.redirect(url)
   }
 
-  if (!user && isAppProtectedPath(pathname)) {
+  if (!isServerAction && !user && isAppProtectedPath(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.search = ''
@@ -114,7 +118,7 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     requirePasswordChange = profile?.require_password_change ?? false
   }
 
-  if (user && requirePasswordChange) {
+  if (!isServerAction && user && requirePasswordChange) {
     if (!isAuthPasswordCompletionPath(pathname)) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth/first-login-password'
@@ -123,14 +127,19 @@ async function refreshSession(request: NextRequest, supabaseUrl: string, supabas
     }
   }
 
-  if (user && !requirePasswordChange && pathname === '/auth/login') {
+  if (!isServerAction && user && !requirePasswordChange && pathname === '/auth/login') {
     const url = request.nextUrl.clone()
     url.pathname = safeReturnPath(request.nextUrl.searchParams.get('next'))
     url.search = ''
     return NextResponse.redirect(url)
   }
 
-  if (user && !requirePasswordChange && pathname === '/auth/first-login-password') {
+  if (
+    !isServerAction &&
+    user &&
+    !requirePasswordChange &&
+    pathname === '/auth/first-login-password'
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     url.search = ''

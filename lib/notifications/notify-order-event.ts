@@ -22,7 +22,7 @@ export type OrderEventContext = {
 
 type RecipientPlan = {
   recipientId: string
-  role: 'client' | 'copywriter' | 'previousCopywriter' | 'manager'
+  role: 'client' | 'copywriter' | 'previousCopywriter' | 'manager' | 'actorManager'
 }
 
 type Copy = { title: string; message: string }
@@ -86,6 +86,11 @@ function buildRecipientPlan(
     seen.add(id)
     plan.push({ recipientId: id, role })
   }
+  const pushActor = (id: string | null | undefined, role: RecipientPlan['role']) => {
+    if (!id || seen.has(id)) return
+    seen.add(id)
+    plan.push({ recipientId: id, role })
+  }
 
   switch (event) {
     case 'order_created':
@@ -97,6 +102,7 @@ function buildRecipientPlan(
       push(ctx.order.copywriter_id, 'copywriter')
       push(ctx.order.user_id, 'client')
       for (const id of managerIds) push(id, 'manager')
+      pushActor(ctx.actorUserId, 'actorManager')
       break
 
     case 'copywriter_reassigned':
@@ -104,6 +110,7 @@ function buildRecipientPlan(
       push(ctx.previousCopywriterId, 'previousCopywriter')
       push(ctx.order.user_id, 'client')
       for (const id of managerIds) push(id, 'manager')
+      pushActor(ctx.actorUserId, 'actorManager')
       break
 
     case 'content_submitted':
@@ -182,6 +189,12 @@ function copyFor(
           message: `A copywriter has been assigned to your order for ${entity}.`,
         }
       }
+      if (role === 'actorManager') {
+        return {
+          title: 'Copywriter assigned',
+          message: `You assigned ${newCw} to ${entity}.`,
+        }
+      }
       return {
         title: 'Copywriter assigned',
         message: `${actor} assigned ${newCw} to ${entity}.`,
@@ -204,6 +217,12 @@ function copyFor(
         return {
           title: 'Copywriter changed',
           message: `The copywriter on your order for ${entity} was changed.`,
+        }
+      }
+      if (role === 'actorManager') {
+        return {
+          title: 'Copywriter reassigned',
+          message: `You reassigned ${entity} from ${prevCw} to ${newCw}.`,
         }
       }
       return {

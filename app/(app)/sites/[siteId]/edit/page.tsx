@@ -89,8 +89,8 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
 
   const sc = site.site_countries as unknown as SiteCountries
   const sl = site.site_languages as unknown as SiteLangs
-  const countriesCsv = [...new Set((sc ?? []).map((r) => r.country))].sort().join(', ')
-  const languagesCsv = [...new Set((sl ?? []).map((r) => r.language))].sort().join(', ')
+  const countries = [...new Set((sc ?? []).map((r) => r.country))].sort()
+  const languages = [...new Set((sl ?? []).map((r) => r.language))].sort()
 
   return (
     <div className="gap-layout mx-auto flex max-w-6xl flex-col">
@@ -131,8 +131,8 @@ export default async function EditSitePage(props: { params: Promise<{ siteId: st
           organic_keywords_count: site.organic_keywords_count ?? 0,
           organic_traffic_count: site.organic_traffic_count ?? 0,
           top_countries: site.top_countries ?? '',
-          countriesCsv,
-          languagesCsv,
+          countries,
+          languages,
           sourcer_id: site.sourcer_id ?? '',
         }}
       />

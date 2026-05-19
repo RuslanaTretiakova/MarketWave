@@ -233,8 +233,8 @@ export function InvoicesList({
             <div className="gap-inset flex w-full min-w-0 flex-row items-center sm:w-auto sm:flex-wrap sm:justify-end">
               <SearchField
                 name="client"
-                placeholder="Filter by client…"
-                ariaLabel="Filter by client"
+                placeholder="Search by name or email…"
+                ariaLabel="Search by client name or email"
               />
             </div>
           ) : undefined
@@ -300,8 +300,8 @@ export function InvoicesList({
               <span className="text-muted-foreground px-1 text-[10px] font-medium">Invoice #</span>
               <SearchField
                 name="invoiceNumber"
-                placeholder="Search…"
-                ariaLabel="Invoice number"
+                placeholder="e.g. INV-001…"
+                ariaLabel="Search by invoice number"
                 className="w-28 flex-none"
                 inputClassName="h-8 rounded-full px-3 text-xs"
                 withIcon={false}

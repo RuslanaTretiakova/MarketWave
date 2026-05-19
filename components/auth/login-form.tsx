@@ -33,10 +33,6 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
   const [loading, setLoading] = useState(false)
   const [testLoginLoading, setTestLoginLoading] = useState<string | null>(null)
 
-  const showTestLoginPanel =
-    process.env.NODE_ENV === 'development' ||
-    process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN?.trim().toLowerCase() === 'true'
-
   const testRoles = ['sourcer', 'manager', 'client', 'copywriter'] as const
   const adminEmail = 'ruslana.tretiakova@archysoft.com'
 
@@ -109,18 +105,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         setError(`No prepared test user found for role: ${role}`)
         return
       }
-      const supabase = createClient()
-      const { error: signError } = await supabase.auth.signInWithPassword({
-        email: target.email,
-        password: prep.passwordHint,
-      })
-      if (signError) {
-        const mapped = mapAuthError(signError)
-        reportAuthErrorClient(mapped, 'auth/test-sign-in')
-        setError(mapped.message)
-        return
-      }
-      router.push(safeReturnPath(redirectTo))
+      setEmail(target.email)
+      setPassword(prep.passwordHint)
     } finally {
       setTestLoginLoading(null)
     }
@@ -211,49 +197,44 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       <AuthPrimaryButton type="submit" disabled={loading}>
         {loading ? 'Signing in…' : 'Sign in'}
       </AuthPrimaryButton>
-      {showTestLoginPanel ? (
-        <div
-          className="bg-muted/40 flex flex-col gap-2 rounded-lg border border-sky-500/30 px-3 py-3"
-          suppressHydrationWarning
-        >
-          <div className="flex items-center gap-2" suppressHydrationWarning>
-            <FlaskConical className="size-4 shrink-0 text-sky-600 dark:text-sky-300" aria-hidden />
-            <p className="text-foreground text-sm font-medium">Fill test credentials</p>
-          </div>
-          <p className="text-muted-foreground text-xs leading-relaxed" suppressHydrationWarning>
-            Click a role to fill the form, then sign in.
-          </p>
-          <div className="flex flex-wrap items-center gap-2" suppressHydrationWarning>
+      <div className="bg-muted/40 flex flex-col gap-2 rounded-lg border border-sky-500/30 px-3 py-3">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="size-4 shrink-0 text-sky-600 dark:text-sky-300" aria-hidden />
+          <p className="text-foreground text-sm font-medium">Fill test credentials</p>
+        </div>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Click a role to fill the form, then sign in.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={Boolean(testLoginLoading)}
+            onClick={onAdminLogin}
+            className="inline-flex items-center justify-center rounded-full opacity-100 transition-opacity disabled:opacity-50"
+          >
+            {testLoginLoading === 'admin' ? (
+              <span className="text-muted-foreground text-xs">Loading…</span>
+            ) : (
+              <RoleBadge role="admin" />
+            )}
+          </button>
+          {testRoles.map((role) => (
             <button
+              key={role}
               type="button"
               disabled={Boolean(testLoginLoading)}
-              onClick={onAdminLogin}
+              onClick={() => onQuickTestLogin(role)}
               className="inline-flex items-center justify-center rounded-full opacity-100 transition-opacity disabled:opacity-50"
             >
-              {testLoginLoading === 'admin' ? (
+              {testLoginLoading === role ? (
                 <span className="text-muted-foreground text-xs">Loading…</span>
               ) : (
-                <RoleBadge role="admin" />
+                <RoleBadge role={role} />
               )}
             </button>
-            {testRoles.map((role) => (
-              <button
-                key={role}
-                type="button"
-                disabled={Boolean(testLoginLoading)}
-                onClick={() => onQuickTestLogin(role)}
-                className="inline-flex items-center justify-center rounded-full opacity-100 transition-opacity disabled:opacity-50"
-              >
-                {testLoginLoading === role ? (
-                  <span className="text-muted-foreground text-xs">Loading…</span>
-                ) : (
-                  <RoleBadge role={role} />
-                )}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
-      ) : null}
+      </div>
       <p className="text-muted-foreground pt-inset text-center text-sm leading-relaxed">
         Access is by invitation. Your admin invites teammates by email.
       </p>
