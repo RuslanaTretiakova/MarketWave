@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
+import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
+import { Button } from '@/components/ui/button'
 import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigger'
 
@@ -40,15 +42,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
-type DialogKind =
-  | 'cancel_order'
+type SheetAction =
   | 'request_changes'
   | 'publish'
   | 'assign_copywriter'
   | 'edit_order'
   | 'override_status'
-  | 'delete_order'
-  | null
+
+type DialogKind = 'cancel_order' | 'delete_order' | null
 
 function OrderSummaryBanner({
   domain,
@@ -100,6 +101,7 @@ export function OrderActionsMenu({
 }) {
   const [pending, startTransition] = useTransition()
   const [dialog, setDialog] = useState<DialogKind>(null)
+  const [sheetAction, setSheetAction] = useState<SheetAction | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [changeComment, setChangeComment] = useState('')
   const [publishedUrl, setPublishedUrl] = useState('')
@@ -162,7 +164,7 @@ export function OrderActionsMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href={detailHref} />}>Open details</DropdownMenuItem>
             {isOrderActionEnabled(actions, 'edit_order') && (
-              <DropdownMenuItem onClick={() => setDialog('edit_order')}>
+              <DropdownMenuItem onClick={() => setSheetAction('edit_order')}>
                 Edit order
               </DropdownMenuItem>
             )}
@@ -174,7 +176,7 @@ export function OrderActionsMenu({
               </DropdownMenuItem>
             )}
             {isOrderActionEnabled(actions, 'assign_copywriter') && (
-              <DropdownMenuItem onClick={() => setDialog('assign_copywriter')}>
+              <DropdownMenuItem onClick={() => setSheetAction('assign_copywriter')}>
                 {context.copywriterId ? 'Reassign copywriter' : 'Assign copywriter'}
               </DropdownMenuItem>
             )}
@@ -221,7 +223,7 @@ export function OrderActionsMenu({
                   </DropdownMenuItem>
                 )}
                 {isOrderActionEnabled(actions, 'request_changes') && (
-                  <DropdownMenuItem onClick={() => setDialog('request_changes')}>
+                  <DropdownMenuItem onClick={() => setSheetAction('request_changes')}>
                     Needs changes
                   </DropdownMenuItem>
                 )}
@@ -235,7 +237,7 @@ export function OrderActionsMenu({
                   </DropdownMenuItem>
                 )}
                 {isOrderActionEnabled(actions, 'publish_order') && (
-                  <DropdownMenuItem onClick={() => setDialog('publish')}>
+                  <DropdownMenuItem onClick={() => setSheetAction('publish')}>
                     Publish order
                   </DropdownMenuItem>
                 )}
@@ -290,7 +292,7 @@ export function OrderActionsMenu({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {isOrderActionEnabled(actions, 'override_status') && (
-                  <DropdownMenuItem onClick={() => setDialog('override_status')}>
+                  <DropdownMenuItem onClick={() => setSheetAction('override_status')}>
                     Override status
                   </DropdownMenuItem>
                 )}
@@ -305,12 +307,6 @@ export function OrderActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {error && (
-        <p className="text-destructive mt-inset text-sm" role="alert">
-          {error}
-        </p>
-      )}
-
       <MenuActionDialog
         open={dialog === 'cancel_order'}
         onOpenChange={(open) => !open && setDialog(null)}
@@ -322,18 +318,118 @@ export function OrderActionsMenu({
         onConfirm={() => runAction(() => cancelOrder(orderId), 'Order canceled.')}
       />
 
-      <MenuActionDialog
-        open={dialog === 'request_changes'}
+      <SettingsRightSheet
+        open={sheetAction !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setDialog(null)
+            setSheetAction(null)
             setChangeComment('')
+            setPublishedUrl('')
+            setPublishDateForPublish(initialPublishDate ?? '')
+            setCopywriterId(context.copywriterId ?? '')
             setError(null)
           }
         }}
-        title="Leave a comment"
-        description="Describe what should change. The copywriter and team will see this."
-        middle={
+        title={
+          sheetAction === 'request_changes'
+            ? 'Leave a comment'
+            : sheetAction === 'publish'
+              ? 'Mark published'
+              : sheetAction === 'assign_copywriter'
+                ? context.copywriterId
+                  ? 'Reassign copywriter'
+                  : 'Assign copywriter'
+                : sheetAction === 'edit_order'
+                  ? 'Edit order'
+                  : 'Override status'
+        }
+        description={
+          sheetAction === 'request_changes'
+            ? 'Describe what should change. The copywriter and team will see this.'
+            : sheetAction === 'publish'
+              ? 'Provide the public URL and confirm the publish date.'
+              : sheetAction === 'assign_copywriter'
+                ? context.copywriterId
+                  ? 'Pick a different copywriter for this order. Both copywriters and the client will be notified.'
+                  : 'Choose a copywriter for this order.'
+                : sheetAction === 'edit_order'
+                  ? 'Update order-level details and requirements.'
+                  : 'Admin only: set a manual status for this order.'
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                setSheetAction(null)
+                setChangeComment('')
+                setPublishedUrl('')
+                setPublishDateForPublish(initialPublishDate ?? '')
+                setCopywriterId(context.copywriterId ?? '')
+                setError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="cta"
+              disabled={
+                pending ||
+                (sheetAction === 'request_changes' && !changeComment.trim()) ||
+                (sheetAction === 'publish' && !publishedUrl.trim())
+              }
+              onClick={() => {
+                if (sheetAction === 'request_changes') {
+                  runAction(() => requestChanges(orderId, changeComment), 'Change request sent.')
+                } else if (sheetAction === 'publish') {
+                  runAction(
+                    () => markPublished(orderId, publishedUrl, publishDateForPublish || null),
+                    'Order marked published.'
+                  )
+                } else if (sheetAction === 'assign_copywriter') {
+                  runAction(
+                    () => assignCopywriter(orderId, copywriterId || null),
+                    copywriterId ? 'Copywriter assigned.' : 'Copywriter unassigned.'
+                  )
+                } else if (sheetAction === 'edit_order') {
+                  runAction(
+                    () =>
+                      updateOrderFields({
+                        orderId,
+                        publishDate: publishDate || null,
+                        anchorText,
+                        targetUrl,
+                        clientNotes,
+                      }),
+                    'Order updated.'
+                  )
+                } else if (sheetAction === 'override_status') {
+                  runAction(
+                    () => overrideOrderStatus(orderId, overrideStatus),
+                    'Order status overridden.'
+                  )
+                }
+              }}
+            >
+              {pending
+                ? 'Saving…'
+                : sheetAction === 'request_changes'
+                  ? 'Send'
+                  : sheetAction === 'publish'
+                    ? 'Publish'
+                    : sheetAction === 'override_status'
+                      ? 'Apply'
+                      : sheetAction === 'edit_order'
+                        ? 'Save changes'
+                        : 'Save'}
+            </Button>
+          </>
+        }
+      >
+        {sheetAction === 'request_changes' && (
           <textarea
             value={changeComment}
             onChange={(event) => setChangeComment(event.target.value)}
@@ -342,29 +438,8 @@ export function OrderActionsMenu({
             className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
             placeholder="Describe what should be changed…"
           />
-        }
-        confirmVariant="cta"
-        confirmLabel={pending ? 'Sending…' : 'Send'}
-        confirmDisabled={!changeComment.trim()}
-        busy={pending}
-        onConfirm={() =>
-          runAction(() => requestChanges(orderId, changeComment), 'Change request sent.')
-        }
-      />
-
-      <MenuActionDialog
-        open={dialog === 'publish'}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDialog(null)
-            setPublishedUrl('')
-            setPublishDateForPublish(initialPublishDate ?? '')
-            setError(null)
-          }
-        }}
-        title="Mark published"
-        description="Provide the public URL and confirm the publish date."
-        middle={
+        )}
+        {sheetAction === 'publish' && (
           <div className="gap-inset flex flex-col">
             <OrderSummaryBanner domain={siteDomain} status={context.status} price={price} />
             <label className="gap-1 text-sm">
@@ -387,34 +462,8 @@ export function OrderActionsMenu({
               />
             </label>
           </div>
-        }
-        confirmVariant="cta"
-        confirmLabel={pending ? 'Publishing…' : 'Publish'}
-        confirmDisabled={!publishedUrl.trim()}
-        busy={pending}
-        onConfirm={() =>
-          runAction(
-            () => markPublished(orderId, publishedUrl, publishDateForPublish || null),
-            'Order marked published.'
-          )
-        }
-      />
-
-      <MenuActionDialog
-        open={dialog === 'assign_copywriter'}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDialog(null)
-            setCopywriterId(context.copywriterId ?? '')
-          }
-        }}
-        title={context.copywriterId ? 'Reassign copywriter' : 'Assign copywriter'}
-        description={
-          context.copywriterId
-            ? 'Pick a different copywriter for this order. Both copywriters and the client will be notified.'
-            : 'Choose a copywriter for this order.'
-        }
-        middle={
+        )}
+        {sheetAction === 'assign_copywriter' && (
           <>
             <OrderSummaryBanner domain={siteDomain} status={context.status} price={price} />
             <select
@@ -430,25 +479,8 @@ export function OrderActionsMenu({
               ))}
             </select>
           </>
-        }
-        confirmVariant="cta"
-        confirmLabel={pending ? 'Saving…' : 'Save'}
-        busy={pending}
-        onConfirm={() =>
-          runAction(
-            () => assignCopywriter(orderId, copywriterId || null),
-            copywriterId ? 'Copywriter assigned.' : 'Copywriter unassigned.'
-          )
-        }
-      />
-
-      <MenuActionDialog
-        open={dialog === 'edit_order'}
-        onOpenChange={(open) => !open && setDialog(null)}
-        title="Edit order"
-        description="Update order-level details and requirements."
-        contentClassName="max-w-lg"
-        middle={
+        )}
+        {sheetAction === 'edit_order' && (
           <div className="gap-inset flex flex-col">
             <label className="gap-1 text-sm">
               <span className="text-muted-foreground">Publish date</span>
@@ -490,31 +522,8 @@ export function OrderActionsMenu({
               />
             </label>
           </div>
-        }
-        confirmVariant="cta"
-        confirmLabel={pending ? 'Saving…' : 'Save changes'}
-        busy={pending}
-        onConfirm={() =>
-          runAction(
-            () =>
-              updateOrderFields({
-                orderId,
-                publishDate: publishDate || null,
-                anchorText,
-                targetUrl,
-                clientNotes,
-              }),
-            'Order updated.'
-          )
-        }
-      />
-
-      <MenuActionDialog
-        open={dialog === 'override_status'}
-        onOpenChange={(open) => !open && setDialog(null)}
-        title="Override status"
-        description="Admin only: set a manual status for this order."
-        middle={
+        )}
+        {sheetAction === 'override_status' && (
           <select
             value={overrideStatus}
             onChange={(event) => setOverrideStatus(event.target.value as typeof overrideStatus)}
@@ -526,14 +535,13 @@ export function OrderActionsMenu({
               </option>
             ))}
           </select>
-        }
-        confirmVariant="cta"
-        confirmLabel={pending ? 'Applying…' : 'Apply'}
-        busy={pending}
-        onConfirm={() =>
-          runAction(() => overrideOrderStatus(orderId, overrideStatus), 'Order status overridden.')
-        }
-      />
+        )}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
+      </SettingsRightSheet>
 
       <MenuActionDialog
         open={dialog === 'delete_order'}

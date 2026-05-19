@@ -132,7 +132,6 @@ export function SiteListingForm({
         }
         toast.success('Site created.')
         router.push('/sites')
-        router.refresh()
         return
       }
 

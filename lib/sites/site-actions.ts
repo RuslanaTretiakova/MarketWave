@@ -564,10 +564,20 @@ export async function addSiteToCart(
 
   if (authErr || !authData.user) return { ok: false, message: 'You must be signed in.' }
   if (profile?.role !== 'client') return { ok: false, message: 'Only clients use the cart.' }
-  if (!cart) return { ok: false, message: 'Cart not found.' }
+
+  let resolvedCart = cart
+  if (!resolvedCart) {
+    const { data: newCart, error: createErr } = await adminClient
+      .from('carts')
+      .insert({ user_id: authData.user.id })
+      .select('id')
+      .maybeSingle()
+    if (createErr || !newCart) return { ok: false, message: 'Cart not found.' }
+    resolvedCart = newCart
+  }
 
   const { error: itemErr } = await supabase.from('cart_items').insert({
-    cart_id: cart.id,
+    cart_id: resolvedCart.id,
     site_id: siteId,
   })
 

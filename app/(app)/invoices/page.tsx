@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 
-import { GenerateMonthlyInvoices } from '@/components/invoices/generate-monthly-invoices'
 import { InvoicesList } from '@/components/invoices/invoices-list'
 import { INVOICE_STATUSES_ORDERED, type InvoiceStatus } from '@/lib/invoices/invoice-status-labels'
 import { loadInvoicesPage } from '@/lib/invoices/load-invoices'
@@ -77,7 +76,6 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
 
   return (
     <div className="space-y-block">
-      {(profile.role === 'admin' || profile.role === 'manager') && <GenerateMonthlyInvoices />}
       <InvoicesList
         role={profile.role}
         rows={rows}

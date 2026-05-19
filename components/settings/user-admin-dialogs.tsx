@@ -2,22 +2,11 @@
 
 import type { OrgUserRowJson } from '@/lib/org-users/types'
 import { splitDisplayName } from '@/lib/user-display-name'
+import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { FormControlSelect } from '@/components/ui/form-control'
 import { Label } from '@/components/ui/label'
-import {
-  MenuActionDialog,
-  menuActionDialogContentClassName,
-  menuActionDialogTitleClassName,
-} from '@/components/ui/menu-action-dialog'
+import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 
 export type AdminDisableDialogState =
   | null
@@ -103,14 +92,13 @@ export function AdminUserDisableDialog({
     ) : null
 
   return (
-    <Dialog open={!!state} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={!busy} className={menuActionDialogContentClassName}>
-        <DialogHeader className="gap-2">
-          <DialogTitle className={menuActionDialogTitleClassName}>Disable user</DialogTitle>
-          {description ? <DialogDescription>{description}</DialogDescription> : null}
-        </DialogHeader>
-        {middle}
-        <DialogFooter>
+    <SettingsRightSheet
+      open={!!state}
+      onOpenChange={onOpenChange}
+      title="Disable user"
+      description={description ?? undefined}
+      footer={
+        <>
           <Button
             type="button"
             variant="outline"
@@ -127,9 +115,11 @@ export function AdminUserDisableDialog({
           >
             {busy ? 'Disabling…' : 'Confirm disable'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      {middle}
+    </SettingsRightSheet>
   )
 }
 
