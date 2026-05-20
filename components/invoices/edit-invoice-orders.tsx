@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Minus, Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -36,6 +37,7 @@ function EditInvoiceOrdersInner({
   invoice: InvoiceDetail
   onClose: () => void
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [items, setItems] = useState<InvoiceItem[]>(invoice.items)
   const [removedItemIds, setRemovedItemIds] = useState<string[]>([])
@@ -145,6 +147,7 @@ function EditInvoiceOrdersInner({
       } else {
         toast.success('Invoice updated.')
         onClose()
+        router.refresh()
       }
     })
   }

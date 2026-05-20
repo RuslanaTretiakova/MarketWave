@@ -132,9 +132,7 @@ export async function loadSitesCatalogPage(
     for (const token of tokens) {
       const pat = `%${token}%`
       const quoted = quotePostgrestFilterValue(pat)
-      q = q.or(
-        `domain.ilike.${quoted},keywords_text.ilike.${quoted},description.ilike.${quoted},categories.name.ilike.${quoted}`
-      )
+      q = q.or(`domain.ilike.${quoted},keywords_text.ilike.${quoted},description.ilike.${quoted}`)
     }
 
     if (params.categoryId !== undefined && Number.isFinite(params.categoryId)) {

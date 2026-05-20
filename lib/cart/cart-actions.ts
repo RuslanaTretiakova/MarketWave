@@ -2,6 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 
+import {
+  CART_MUTATION_MAX_PER_KEY,
+  CART_MUTATION_WINDOW_MS,
+  checkAndRecordPublicRateLimit,
+} from '@/lib/auth/public-rate-limit'
+import { logDbError, mapDbError } from '@/lib/errors/map-db-error'
 import { createClient } from '@/lib/supabase/server'
 
 type SessionCtx =
@@ -32,12 +38,24 @@ export async function removeCartItem(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getClientSession()
   if ('error' in ctx) return { ok: false, message: ctx.error }
+
+  const rl = await checkAndRecordPublicRateLimit({
+    kind: 'cart_mutation',
+    key: `uid:${ctx.userId}`,
+    windowMs: CART_MUTATION_WINDOW_MS,
+    max: CART_MUTATION_MAX_PER_KEY,
+  })
+  if (!rl.ok) return { ok: false, message: 'Too many requests. Slow down and try again.' }
+
   const { supabase } = ctx
 
   // RLS ensures this only matches items in the current user's cart
   const { error } = await supabase.from('cart_items').delete().eq('id', itemId)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not remove item.' }
+  if (error) {
+    void logDbError({ context: 'cart/removeCartItem', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/cart')
   revalidatePath('/cart/checkout')
@@ -69,7 +87,7 @@ export async function removeFromCartBySiteId(
     .eq('cart_id', cart.id)
     .eq('site_id', siteId)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not remove item.' }
+  if (error) return { ok: false, message: mapDbError(error).message }
 
   revalidatePath('/cart')
   revalidatePath('/cart/checkout')
@@ -83,6 +101,15 @@ export async function updateCartItemPublishDate(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getClientSession()
   if ('error' in ctx) return { ok: false, message: ctx.error }
+
+  const rl = await checkAndRecordPublicRateLimit({
+    kind: 'cart_mutation',
+    key: `uid:${ctx.userId}`,
+    windowMs: CART_MUTATION_WINDOW_MS,
+    max: CART_MUTATION_MAX_PER_KEY,
+  })
+  if (!rl.ok) return { ok: false, message: 'Too many requests. Slow down and try again.' }
+
   const { supabase } = ctx
 
   if (publishDate !== null) {
@@ -100,7 +127,10 @@ export async function updateCartItemPublishDate(
     .update({ publish_date: publishDate })
     .eq('id', itemId)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not update date.' }
+  if (error) {
+    void logDbError({ context: 'cart/updatePublishDate', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/cart')
   return { ok: true }
@@ -145,6 +175,15 @@ export async function updateCartItemDetails(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const ctx = await getClientSession()
   if ('error' in ctx) return { ok: false, message: ctx.error }
+
+  const rl = await checkAndRecordPublicRateLimit({
+    kind: 'cart_mutation',
+    key: `uid:${ctx.userId}`,
+    windowMs: CART_MUTATION_WINDOW_MS,
+    max: CART_MUTATION_MAX_PER_KEY,
+  })
+  if (!rl.ok) return { ok: false, message: 'Too many requests. Slow down and try again.' }
+
   const { supabase } = ctx
 
   const patch: {
@@ -178,7 +217,10 @@ export async function updateCartItemDetails(
   }
 
   const { error } = await supabase.from('cart_items').update(patch).eq('id', input.itemId)
-  if (error) return { ok: false, message: error.message ?? 'Could not update cart item.' }
+  if (error) {
+    void logDbError({ context: 'cart/updateDetails', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/cart')
   revalidatePath('/cart/checkout')
@@ -192,11 +234,14 @@ export async function clearCart(): Promise<{ ok: true } | { ok: false; message: 
 
   const { data: cart, error: cartErr } = await supabase.from('carts').select('id').maybeSingle()
 
-  if (cartErr || !cart) return { ok: false, message: cartErr?.message ?? 'Cart not found.' }
+  if (cartErr || !cart) return { ok: false, message: 'Cart not found.' }
 
   const { error } = await supabase.from('cart_items').delete().eq('cart_id', cart.id)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not clear cart.' }
+  if (error) {
+    void logDbError({ context: 'cart/clearCart', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/cart')
   revalidatePath('/cart/checkout')

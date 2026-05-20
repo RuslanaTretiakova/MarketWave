@@ -2,7 +2,12 @@ import { createHmac } from 'node:crypto'
 
 import { adminClient } from '@/lib/supabase/admin'
 
-export type PublicRateLimitKind = 'password_reset' | 'client_error' | 'set_password'
+export type PublicRateLimitKind =
+  | 'password_reset'
+  | 'client_error'
+  | 'set_password'
+  | 'cart_mutation'
+  | 'content_save'
 
 export type PublicRateLimitResult = { ok: true } | { ok: false; reason: 'rate_limited' }
 
@@ -17,6 +22,14 @@ export const SET_PASSWORD_MAX_PER_KEY = 20
 /** Client error POST: per IP (1m, 40). */
 export const CLIENT_ERROR_WINDOW_MS = 60_000
 export const CLIENT_ERROR_MAX_PER_KEY = 40
+
+/** Cart mutations: per user ID (1m, 60). Key format: `uid:<userId>`. */
+export const CART_MUTATION_WINDOW_MS = 60_000
+export const CART_MUTATION_MAX_PER_KEY = 60
+
+/** Content draft saves: per user ID (5m, 120). Key format: `uid:<userId>`. */
+export const CONTENT_SAVE_WINDOW_MS = 300_000
+export const CONTENT_SAVE_MAX_PER_KEY = 120
 
 function rateLimitHmacSecret(): string {
   return (

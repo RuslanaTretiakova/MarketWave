@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { ArrowLeft, Download, Mail, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
@@ -44,6 +45,7 @@ export function InvoiceDetailView({
   invoice: InvoiceDetail
   role: Database['public']['Enums']['user_role']
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const canManage = role === 'admin' || role === 'manager'
   const [editOpen, setEditOpen] = useState(false)
@@ -65,7 +67,10 @@ export function InvoiceDetailView({
     startTransition(async () => {
       const res = await action()
       if (!res.ok) toast.error((res as { ok: false; message: string }).message)
-      else toast.success(successMessage)
+      else {
+        toast.success(successMessage)
+        router.refresh()
+      }
     })
   }
 

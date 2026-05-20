@@ -2,6 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 
+import {
+  CONTENT_SAVE_MAX_PER_KEY,
+  CONTENT_SAVE_WINDOW_MS,
+  checkAndRecordPublicRateLimit,
+} from '@/lib/auth/public-rate-limit'
+import { withRollback } from '@/lib/db/with-rollback'
+import { logDbError, mapDbError } from '@/lib/errors/map-db-error'
 import { notifyOrderEvent } from '@/lib/notifications/notify-order-event'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -68,13 +75,6 @@ function revalidateOrder(orderId: string) {
   revalidatePath(`/orders/${orderId}`)
 }
 
-function mapPostgresError(msg: string): string {
-  if (msg.includes('P0001') || msg.includes('Invalid order status transition')) {
-    return 'This status transition is not allowed.'
-  }
-  return msg
-}
-
 export type SaveDraftInput = {
   title: string
   metaDescription: string
@@ -94,6 +94,14 @@ export async function saveContentDraft(
   if (ctx.role !== 'copywriter') {
     return { ok: false, message: 'Only copywriters can save content drafts.' }
   }
+
+  const rl = await checkAndRecordPublicRateLimit({
+    kind: 'content_save',
+    key: `uid:${ctx.userId}`,
+    windowMs: CONTENT_SAVE_WINDOW_MS,
+    max: CONTENT_SAVE_MAX_PER_KEY,
+  })
+  if (!rl.ok) return { ok: false, message: 'Saving too frequently. Wait a moment.' }
 
   const orderCheck = await loadOrderForCopywriter(orderId, ctx.userId)
   if (!orderCheck.ok) return orderCheck
@@ -204,19 +212,58 @@ export async function submitContent(
   }
   const nextVersion = (prior?.version_number ?? 0) + 1
 
-  const { error: insertErr } = await adminClient.from('order_content_versions').insert({
-    order_id: orderId,
-    copywriter_id: ctx.userId,
-    status: 'submitted',
-    version_number: nextVersion,
-    title: draft.title,
-    meta_description: draft.meta_description,
-    body_html: draft.body_html,
-    word_count: draft.word_count,
-  })
-  if (insertErr) {
-    console.error('[content-actions/submit/insert]', insertErr.message)
-    return { ok: false, message: 'Could not submit content.' }
+  // Insert submitted version + update order status atomically from the app's
+  // perspective: if the status update fails, delete the submitted version so the
+  // copywriter can retry without leaving a dangling submitted row.
+  let submittedVersionId: string | null = null
+  try {
+    await withRollback(async () => {
+      const { data: inserted, error: insertErr } = await adminClient
+        .from('order_content_versions')
+        .insert({
+          order_id: orderId,
+          copywriter_id: ctx.userId,
+          status: 'submitted',
+          version_number: nextVersion,
+          title: draft.title,
+          meta_description: draft.meta_description,
+          body_html: draft.body_html,
+          word_count: draft.word_count,
+        })
+        .select('id')
+        .single()
+      if (insertErr) {
+        console.error('[content-actions/submit/insert]', insertErr.message)
+        throw new Error('Could not submit content.')
+      }
+      submittedVersionId = inserted.id
+
+      // Transition order status — DB trigger enforces valid transitions.
+      const { error: statusErr } = await adminClient
+        .from('orders')
+        .update({ status: 'content_sent' })
+        .eq('id', orderId)
+      if (statusErr) {
+        void logDbError({
+          context: 'content/submitContent/status',
+          error: statusErr,
+          userId: ctx.userId,
+        })
+        throw new Error(
+          mapDbError(statusErr, {
+            trigger_exception: 'This status transition is not allowed.',
+          }).message
+        )
+      }
+    }, [
+      async () => {
+        if (submittedVersionId) {
+          await adminClient.from('order_content_versions').delete().eq('id', submittedVersionId)
+        }
+      },
+    ])
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Could not submit content.' }
   }
 
   // Best-effort: drop the draft so the editor starts clean for any next round.
@@ -228,22 +275,6 @@ export async function submitContent(
     .eq('id', draft.id)
   if (deleteErr) {
     console.error('[content-actions/submit/draft-delete]', deleteErr.message)
-  }
-
-  // Transition order status. The DB trigger now allows
-  //  in_progress    -> content_sent
-  //  needs_changes  -> content_sent
-  const { error: statusErr } = await adminClient
-    .from('orders')
-    .update({ status: 'content_sent' })
-    .eq('id', orderId)
-
-  if (statusErr) {
-    console.error('[content-actions/submit/status]', statusErr.message)
-    return {
-      ok: false,
-      message: mapPostgresError(statusErr.message ?? 'Could not update order status.'),
-    }
   }
 
   const { data: orderForNotif } = await adminClient

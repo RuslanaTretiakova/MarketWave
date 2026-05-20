@@ -2,6 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/supabase/admin', () => ({
+  adminClient: {
+    from: vi.fn().mockReturnValue({ insert: vi.fn().mockResolvedValue({ error: null }) }),
+    auth: { admin: {} },
+  },
+}))
+vi.mock('@/lib/auth/public-rate-limit', () => ({
+  checkAndRecordPublicRateLimit: vi.fn().mockResolvedValue({ ok: true }),
+  CART_MUTATION_WINDOW_MS: 60_000,
+  CART_MUTATION_MAX_PER_KEY: 60,
+}))
 
 import { createClient } from '@/lib/supabase/server'
 import { clearCart, removeCartItem, updateCartItemDetails } from '@/lib/cart/cart-actions'
@@ -91,7 +102,7 @@ describe('removeCartItem', () => {
     )
     const r = await removeCartItem('item-1')
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.message).toBe('DB error')
+    if (!r.ok) expect(r.message).toBe('An unexpected error occurred. Please try again.')
   })
 })
 

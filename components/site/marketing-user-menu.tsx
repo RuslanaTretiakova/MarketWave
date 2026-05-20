@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 
 import {
@@ -37,6 +37,8 @@ export function MarketingUserMenu({
   avatarUrl: initialAvatarUrl,
 }: MarketingUserMenuProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const onDashboard = pathname === '/dashboard'
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() =>
     normalizeAccountAvatarUrl(initialAvatarUrl)
   )
@@ -98,10 +100,12 @@ export function MarketingUserMenu({
             <User aria-hidden />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleNavigateDashboard}>
-            <LayoutDashboard aria-hidden />
-            Dashboard
-          </DropdownMenuItem>
+          {!onDashboard && (
+            <DropdownMenuItem onClick={handleNavigateDashboard}>
+              <LayoutDashboard aria-hidden />
+              Dashboard
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

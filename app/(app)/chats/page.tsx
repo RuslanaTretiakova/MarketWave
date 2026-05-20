@@ -6,6 +6,7 @@ import { ChatsToolbar } from '@/components/chat/chats-toolbar'
 import { NewChatDialog } from '@/components/chat/new-chat-dialog'
 import { PageHeader } from '@/components/ui/page-header'
 import { chatListFiltersFromSearchParams, loadChatRooms } from '@/lib/chat/load-rooms'
+import { ensureOnboardingChatsForUser } from '@/lib/chat/ensure-onboarding-chats'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -31,6 +32,8 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) notFound()
+
+  await ensureOnboardingChatsForUser(user.id)
 
   const filters = chatListFiltersFromSearchParams(sp)
   const rooms = await loadChatRooms(user.id, filters)

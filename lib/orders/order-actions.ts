@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { logDbError, mapDbError } from '@/lib/errors/map-db-error'
 import { notifyOrderEvent } from '@/lib/notifications/notify-order-event'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -37,13 +38,6 @@ function revalidateOrder(orderId: string) {
   revalidatePath(`/orders/${orderId}`)
 }
 
-function mapPostgresError(msg: string): string {
-  if (msg.includes('P0001') || msg.includes('Invalid order status transition')) {
-    return 'This status transition is not allowed.'
-  }
-  return msg
-}
-
 async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
@@ -65,7 +59,12 @@ async function updateOrderStatus(
   const patch = { status, ...extraPatch }
   const { error } = await adminClient.from('orders').update(patch).eq('id', orderId)
   if (error)
-    return { ok: false, message: mapPostgresError(error.message ?? 'Could not update order.') }
+    return {
+      ok: false,
+      message: mapDbError(error, {
+        trigger_exception: 'This status transition is not allowed.',
+      }).message,
+    }
   return { ok: true }
 }
 
@@ -100,8 +99,15 @@ export async function approveContent(
     .eq('id', orderId)
     .eq('user_id', ctx.userId)
 
-  if (error)
-    return { ok: false, message: mapPostgresError(error.message ?? 'Could not approve content.') }
+  if (error) {
+    void logDbError({ context: 'orders/approveContent', error, userId: ctx.userId })
+    return {
+      ok: false,
+      message: mapDbError(error, {
+        trigger_exception: 'This status transition is not allowed.',
+      }).message,
+    }
+  }
 
   const { data: orderData } = await adminClient
     .from('orders')
@@ -165,7 +171,10 @@ export async function requestChanges(
     status: 'open',
   })
 
-  if (crErr) return { ok: false, message: crErr.message ?? 'Could not submit change request.' }
+  if (crErr) {
+    void logDbError({ context: 'orders/requestChanges/insert', error: crErr, userId: ctx.userId })
+    return { ok: false, message: mapDbError(crErr).message }
+  }
 
   // Transition order to needs_changes
   const { error: statusErr } = await adminClient
@@ -173,11 +182,15 @@ export async function requestChanges(
     .update({ status: 'needs_changes' })
     .eq('id', orderId)
 
-  if (statusErr)
+  if (statusErr) {
+    void logDbError({ context: 'orders/requestChanges', error: statusErr, userId: ctx.userId })
     return {
       ok: false,
-      message: mapPostgresError(statusErr.message ?? 'Could not update order status.'),
+      message: mapDbError(statusErr, {
+        trigger_exception: 'This status transition is not allowed.',
+      }).message,
     }
+  }
 
   const { data: actorProfile } = await adminClient
     .from('profiles')
@@ -299,8 +312,15 @@ export async function cancelOrder(
       .eq('user_id', ctx.userId)
       .eq('status', 'new')
 
-    if (error)
-      return { ok: false, message: mapPostgresError(error.message ?? 'Could not cancel order.') }
+    if (error) {
+      void logDbError({ context: 'orders/cancelOrder', error, userId: ctx.userId })
+      return {
+        ok: false,
+        message: mapDbError(error, {
+          trigger_exception: 'This status transition is not allowed.',
+        }).message,
+      }
+    }
   } else if (ctx.role === 'admin' || ctx.role === 'manager') {
     const { data: order, error: loadErr } = await adminClient
       .from('orders')
@@ -412,7 +432,10 @@ export async function updateOrderFields(input: {
   }
 
   const { error } = await adminClient.from('orders').update(patch).eq('id', input.orderId)
-  if (error) return { ok: false, message: error.message ?? 'Could not update order.' }
+  if (error) {
+    void logDbError({ context: 'orders/updateOrderFields', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidateOrder(input.orderId)
   return { ok: true }
@@ -430,8 +453,15 @@ export async function overrideOrderStatus(
 
   const { supabase } = ctx
   const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
-  if (error)
-    return { ok: false, message: mapPostgresError(error.message ?? 'Could not update order.') }
+  if (error) {
+    void logDbError({ context: 'orders/overrideOrderStatus', error, userId: ctx.userId })
+    return {
+      ok: false,
+      message: mapDbError(error, {
+        trigger_exception: 'This status transition is not allowed.',
+      }).message,
+    }
+  }
 
   revalidateOrder(orderId)
   return { ok: true }
@@ -457,7 +487,10 @@ export async function deleteOrder(
   }
 
   const { error } = await adminClient.from('orders').delete().eq('id', orderId)
-  if (error) return { ok: false, message: error.message ?? 'Could not delete order.' }
+  if (error) {
+    void logDbError({ context: 'orders/deleteOrder', error, userId: ctx.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/orders')
   return { ok: true }

@@ -98,10 +98,6 @@ test.describe('Site edit page — sourcer', () => {
   test('sourcer cannot edit a site they do not own', async ({ page }) => {
     const siteId = await getSiteIdByDomain('e2e-active-site.com')
     await page.goto(`/sites/${siteId}/edit`)
-    // Expect 404 — either a not-found heading or no edit form
-    await expect((editPage) =>
-      page.getByRole('heading', { name: /not found|404/i }).or(page.locator('form'))
-    ).toBeTruthy()
     await expect(page.locator('form')).not.toBeVisible({ timeout: 6_000 })
   })
 })

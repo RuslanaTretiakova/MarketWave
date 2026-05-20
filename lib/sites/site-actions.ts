@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { mapDbError } from '@/lib/errors/map-db-error'
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import type { Database, Json } from '@/lib/supabase/types'
@@ -483,7 +484,7 @@ export async function changeSiteStatus(params: {
       userId,
       payload: { siteId: params.siteId, transition: params.transition },
     })
-    return { ok: false, message: error.message ?? 'Could not update status.' }
+    return { ok: false, message: mapDbError(error).message }
   }
 
   // Notify the sourcer (fire-and-forget)
@@ -555,10 +556,8 @@ export async function addSiteToCart(
   if (itemErr) {
     return {
       ok: false,
-      message:
-        itemErr.code === '23505'
-          ? 'This site is already in your cart.'
-          : (itemErr.message ?? 'Could not add to cart.'),
+      message: mapDbError(itemErr, { unique_violation: 'This site is already in your cart.' })
+        .message,
     }
   }
 
