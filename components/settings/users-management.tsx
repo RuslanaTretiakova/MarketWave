@@ -120,6 +120,7 @@ export function UsersManagement({
   q,
   roleFilter,
   statusFilter,
+  myClients = false,
   copywriterCandidates,
   currentUserId,
   managers = [],
@@ -132,6 +133,7 @@ export function UsersManagement({
   q: string
   roleFilter: OrgUsersListRoleFilter
   statusFilter: OrgUsersListStatusFilter
+  myClients?: boolean
   copywriterCandidates: OrgUserRowJson[]
   currentUserId: string
   managers?: ManagerOption[]
@@ -144,20 +146,23 @@ export function UsersManagement({
       page?: number
       role?: OrgUsersListRoleFilter
       status?: OrgUsersListStatusFilter
+      myClients?: boolean
     }) => {
       const params = new URLSearchParams()
       const roleUse = updates.role !== undefined ? updates.role : roleFilter
       const statusUse = updates.status !== undefined ? updates.status : statusFilter
       const pageUse = updates.page !== undefined ? updates.page : page
+      const myClientsUse = updates.myClients !== undefined ? updates.myClients : myClients
 
       if (q.trim()) params.set('q', q.trim())
       if (roleUse !== 'all') params.set('role', roleUse)
       if (statusUse !== 'all') params.set('status', statusUse)
+      if (myClientsUse) params.set('myClients', '1')
       if (pageUse > 1) params.set('page', String(pageUse))
       const s = params.toString()
       return s ? `/settings/users?${s}` : '/settings/users'
     },
-    [q, roleFilter, statusFilter, page]
+    [q, roleFilter, statusFilter, myClients, page]
   )
 
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -438,6 +443,24 @@ export function UsersManagement({
           )}
         >
           <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
+            {listMode === 'manager' ? (
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">Clients</span>
+                <FilterSelect
+                  aria-label="Filter by client assignment"
+                  value={myClients ? '1' : ''}
+                  onChange={(e) =>
+                    router.push(buildListHref({ page: 1, myClients: e.target.value === '1' }), {
+                      scroll: false,
+                    })
+                  }
+                  className="h-8 w-auto max-w-36 min-w-0 rounded-full px-1 text-xs"
+                >
+                  <option value="">All clients</option>
+                  <option value="1">My clients</option>
+                </FilterSelect>
+              </div>
+            ) : null}
             <div className="flex shrink-0 flex-col gap-0.5">
               <span className="text-muted-foreground px-1 text-[10px] font-medium">Role</span>
               <FilterSelect
@@ -478,7 +501,7 @@ export function UsersManagement({
                 ))}
               </FilterSelect>
             </div>
-            {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() ? (
+            {roleFilter !== 'all' || statusFilter !== 'all' || q.trim() || myClients ? (
               <Link
                 href={'/settings/users'}
                 scroll={false}

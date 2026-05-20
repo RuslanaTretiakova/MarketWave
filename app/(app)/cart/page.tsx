@@ -29,7 +29,7 @@ export default async function CartPage() {
   const { items } = await loadCartWithTotal(supabase)
 
   return (
-    <div className="space-y-layout mx-auto max-w-3xl">
+    <div className="gap-layout mx-auto flex max-w-2xl flex-col">
       <PageHeader title="Cart" description="Review your selected sites before placing an order." />
       <CartView initialItems={items} />
     </div>

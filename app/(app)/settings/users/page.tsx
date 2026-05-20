@@ -24,6 +24,7 @@ type SearchParams = {
   q?: string | string[]
   role?: string | string[]
   status?: string | string[]
+  myClients?: string | string[]
 }
 
 export default async function SettingsUsersPage(props: { searchParams: Promise<SearchParams> }) {
@@ -53,6 +54,7 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
   const q = qRaw !== undefined ? qRaw : ''
   const roleFilter = parseOrgUsersListRoleFilter(searchParamFirstString(sp.role))
   const status = parseOrgUsersListStatusFilter(searchParamFirstString(sp.status))
+  const myClients = role === 'manager' && searchParamFirstString(sp.myClients) === '1'
 
   let listResult
   let copywriterCandidates: Awaited<ReturnType<typeof loadOrgCopywriterCandidatesForAdmin>>
@@ -65,6 +67,7 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
         q,
         role: roleFilter,
         status,
+        managerId: myClients ? user.id : undefined,
       }),
       loadOrgCopywriterCandidatesForAdmin(),
       loadManagerOptions(),
@@ -90,6 +93,7 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
       q={q}
       roleFilter={roleFilter}
       statusFilter={status}
+      myClients={myClients}
       copywriterCandidates={copywriterCandidates}
       currentUserId={user.id}
       managers={managers}

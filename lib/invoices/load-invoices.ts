@@ -41,6 +41,8 @@ export type InvoicesSearchParams = {
   invoiceNumber?: string
   minAmount?: number
   maxAmount?: number
+  /** When set, restrict results to invoices whose client_id is in this list (manager "My clients" filter). */
+  myClientsIds?: string[]
 }
 
 type InvoiceViewerRole = Database['public']['Enums']['user_role']
@@ -79,6 +81,10 @@ export async function loadInvoicesPage(
       { count: 'exact' }
     )
 
+    if (params.myClientsIds !== undefined) {
+      if (params.myClientsIds.length === 0) return { rows: [], totalCount: 0 }
+      q = q.in('client_id', params.myClientsIds)
+    }
     if (params.status) q = q.eq('status', params.status)
     if (params.minAmount !== undefined) q = q.gte('total', params.minAmount)
     if (params.maxAmount !== undefined) q = q.lte('total', params.maxAmount)
@@ -184,6 +190,10 @@ export async function loadInvoicesPage(
       { count: 'exact' }
     )
 
+    if (params.myClientsIds !== undefined) {
+      if (params.myClientsIds.length === 0) return { rows: [], totalCount: 0 }
+      q = q.in('client_id', params.myClientsIds)
+    }
     if (params.status) q = q.eq('status', params.status)
     if (params.minAmount !== undefined) q = q.gte('amount', params.minAmount)
     if (params.maxAmount !== undefined) q = q.lte('amount', params.maxAmount)
