@@ -220,7 +220,7 @@ export function InvoicesList({
   }, [rows])
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Invoices"
         description={

@@ -57,7 +57,7 @@ export function ManagerDashboard({
   }))
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Manager dashboard"
         description="Track open orders, copywriter assignments, billing, and approvals at a glance."

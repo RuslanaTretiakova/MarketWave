@@ -50,7 +50,7 @@ export function AdminDashboard({
         : `${data.ordersCompletedDelta}`
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Admin dashboard"
         description="Track orders, sites, billing, and team activity across the whole organization."

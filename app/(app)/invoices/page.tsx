@@ -75,19 +75,17 @@ export default async function InvoicesPage(props: { searchParams: Promise<Search
   })
 
   return (
-    <div className="space-y-block">
-      <InvoicesList
-        role={profile.role}
-        rows={rows}
-        totalCount={totalCount}
-        page={page}
-        client={client}
-        status={status}
-        billingPeriod={billingPeriod}
-        invoiceNumber={invoiceNumber}
-        minAmount={minAmountRaw?.trim() || undefined}
-        maxAmount={maxAmountRaw?.trim() || undefined}
-      />
-    </div>
+    <InvoicesList
+      role={profile.role}
+      rows={rows}
+      totalCount={totalCount}
+      page={page}
+      client={client}
+      status={status}
+      billingPeriod={billingPeriod}
+      invoiceNumber={invoiceNumber}
+      minAmount={minAmountRaw?.trim() || undefined}
+      maxAmount={maxAmountRaw?.trim() || undefined}
+    />
   )
 }

@@ -96,13 +96,12 @@ export function AppNavLinks({
     <nav className={cn('gap-block flex flex-col', className)}>
       {items.map(({ href, label, Icon }) => {
         const active = isAppNavItemActive(pathname, href, items)
-        if (href === '/dashboard' && active) return null
         const badge = navBadges?.[href] ?? 0
         return (
           <Link
             key={href}
             href={href}
-            title={collapsed ? label : undefined}
+            aria-label={collapsed ? label : undefined}
             onClick={onNavigate}
             className={cn(
               'gap-block focus-visible:ring-sidebar-ring focus-visible:ring-offset-sidebar relative flex h-10 w-full items-center rounded-xl border font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2',

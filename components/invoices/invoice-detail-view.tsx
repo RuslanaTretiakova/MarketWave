@@ -1,9 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { ArrowLeft, Download, Mail, Pencil } from 'lucide-react'
+import { Download, ExternalLink, Mail, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { EditInvoiceOrders } from '@/components/invoices/edit-invoice-orders'
@@ -75,14 +74,8 @@ export function InvoiceDetailView({
   }
 
   return (
-    <div className="space-y-layout mx-auto max-w-4xl">
+    <div className="gap-layout flex flex-col">
       <div className="gap-block flex flex-col">
-        <Link
-          href="/invoices"
-          className="text-muted-foreground gap-inset hover:text-foreground inline-flex items-center text-sm font-medium"
-        >
-          <ArrowLeft className="size-4" /> Back to invoices
-        </Link>
         <PageHeader
           title={`Invoice ${invoiceLabel}`}
           meta={
@@ -221,12 +214,15 @@ export function InvoiceDetailView({
                   <tr key={item.id} className="border-border border-b last:border-b-0">
                     <td className="px-section py-block">{item.site_domain ?? '—'}</td>
                     <td className="px-section py-block">
-                      <Link
+                      <a
                         href={`/orders/${item.order_id}`}
-                        className="text-primary font-mono text-xs hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary gap-inset inline-flex items-center font-mono text-xs hover:underline"
                       >
                         {item.order_id.slice(0, 8)}
-                      </Link>
+                        <ExternalLink className="size-3 opacity-60" />
+                      </a>
                     </td>
                     <td className="text-muted-foreground px-section py-block">
                       {item.order_publish_date ?? '—'}

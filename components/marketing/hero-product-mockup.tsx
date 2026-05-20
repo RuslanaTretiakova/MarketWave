@@ -38,7 +38,7 @@ export function HeroProductMockup() {
           <span className="bg-foreground/15 h-2.5 w-2.5 rounded-full" aria-hidden />
           <span className="bg-foreground/15 h-2.5 w-2.5 rounded-full" aria-hidden />
           <span className="font-mono-ui text-muted-foreground ml-3 text-[11px] tracking-wider uppercase">
-            marketweave / pipeline
+            marketwave / pipeline
           </span>
         </div>
 

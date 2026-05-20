@@ -1,4 +1,4 @@
-export const SITE_NAME = 'MarketWeave'
+export const SITE_NAME = 'MarketWave'
 
 export const SITE_TAGLINE =
   'One workflow from site selection to billing—link-building ops without the spreadsheet chaos.'
@@ -11,5 +11,5 @@ export const metadataKeywords = [
   'client portal',
   'approval',
   'billing',
-  'MarketWeave',
+  'MarketWave',
 ]

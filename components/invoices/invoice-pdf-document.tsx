@@ -188,7 +188,7 @@ export function InvoicePdfDocument({ invoice }: { invoice: InvoiceDetail }) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.brand}>MarketWeave</Text>
+            <Text style={styles.brand}>MarketWave</Text>
             <Text style={styles.statusPill}>{INVOICE_STATUS_LABEL[invoice.status]}</Text>
           </View>
           <View style={styles.meta}>

@@ -36,7 +36,7 @@ export function CopywriterDashboard({
 }) {
   const who = greetingName?.trim() || 'there'
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title={`Copy workspace, ${who}`}
         description="Your assigned orders, change requests, and review queue."

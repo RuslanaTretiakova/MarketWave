@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 
-import { updateTeamMemberProfile } from '@/lib/auth/user-admin-actions'
+import { setClientAccountManager, updateTeamMemberProfile } from '@/lib/auth/user-admin-actions'
+import type { ManagerOption } from '@/lib/org-users/load-manager-options'
 import type { OrgUserRowJson } from '@/lib/org-users/types'
 import { ORG_INVITABLE_ROLE_VALUES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 import { SETTINGS_RIGHT_SHEET_CONTENT_CLASS } from '@/components/settings/settings-right-sheet'
@@ -45,11 +46,13 @@ function editUserFormKey(target: OrgUserRowJson): string {
 function EditUserForm({
   target,
   viewerRole = 'admin',
+  managers = [],
   onCancel,
   onSaved,
 }: {
   target: OrgUserRowJson
   viewerRole?: 'admin' | 'manager'
+  managers?: ManagerOption[]
   onCancel: () => void
   onSaved: () => void
 }) {
@@ -60,6 +63,7 @@ function EditUserForm({
   const [editPhone, setEditPhone] = useState(() => target.phone ?? '')
   const [editBio, setEditBio] = useState(() => target.bio ?? '')
   const [editRole, setEditRole] = useState<OrgInviteRole>(() => initialInviteRole(target))
+  const [editManagerId, setEditManagerId] = useState(() => target.account_manager_id ?? '')
   const [editBusy, setEditBusy] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -75,11 +79,26 @@ function EditUserForm({
       phone: editPhone.trim() || null,
       bio: editBio.trim() || null,
     })
-    setEditBusy(false)
     if (!res.ok) {
+      setEditBusy(false)
       setSubmitError(res.message)
       return
     }
+    if (target.role === 'client' && viewerRole === 'admin') {
+      const currentManagerId = target.account_manager_id ?? ''
+      if (editManagerId !== currentManagerId) {
+        const mgRes = await setClientAccountManager({
+          clientUserId: target.id,
+          managerId: editManagerId || null,
+        })
+        if (!mgRes.ok) {
+          setEditBusy(false)
+          setSubmitError(mgRes.message)
+          return
+        }
+      }
+    }
+    setEditBusy(false)
     onSaved()
   }
 
@@ -155,6 +174,27 @@ function EditUserForm({
         />
       </div>
 
+      {target.role === 'client' && viewerRole === 'admin' ? (
+        <div className="gap-inset flex flex-col">
+          <Label htmlFor="users-edit-manager" className="text-foreground text-sm font-medium">
+            Account Manager
+          </Label>
+          <select
+            id="users-edit-manager"
+            value={editManagerId}
+            onChange={(e) => setEditManagerId(e.target.value)}
+            className="border-input bg-background text-foreground focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+          >
+            <option value="">(none)</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name ?? m.email ?? m.id}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
       {target.role === 'admin' || (viewerRole === 'manager' && target.role === 'manager') ? (
         <p className="text-muted-foreground text-sm leading-relaxed">
           Role cannot be changed for this user.
@@ -195,12 +235,14 @@ export function EditUserSheet({
   target,
   viewerRole = 'admin',
   onSaved,
+  managers = [],
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   target: OrgUserRowJson | null
   viewerRole?: 'admin' | 'manager'
   onSaved: () => void
+  managers?: ManagerOption[]
 }) {
   const roleChangeable =
     target?.role !== 'admin' && !(viewerRole === 'manager' && target?.role === 'manager')
@@ -220,6 +262,7 @@ export function EditUserSheet({
             key={editUserFormKey(target)}
             target={target}
             viewerRole={viewerRole}
+            managers={managers}
             onCancel={() => onOpenChange(false)}
             onSaved={() => {
               onOpenChange(false)

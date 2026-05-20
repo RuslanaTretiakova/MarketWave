@@ -39,7 +39,7 @@ export default async function ChatsIndexPage(props: { searchParams: Promise<Sear
   const rooms = await loadChatRooms(user.id, filters)
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Chats"
         description="Direct messages and order rooms."
