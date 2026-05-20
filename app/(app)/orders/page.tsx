@@ -86,7 +86,9 @@ export default async function OrdersPage(props: { searchParams: Promise<SearchPa
       invoiceStatus,
     }),
     isStaff ? loadCopywriterOptions() : Promise.resolve(undefined),
-    isStaff ? loadClientOptions() : Promise.resolve(undefined),
+    isStaff
+      ? loadClientOptions({ userId: user.id, role: profile.role })
+      : Promise.resolve(undefined),
   ])
 
   return (

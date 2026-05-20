@@ -386,7 +386,7 @@ export async function setClientAccountManager(input: {
   clientUserId: string
   managerId: string | null
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const gate = await assertAdminOrManager()
+  const gate = await assertAdmin()
   if ('error' in gate) {
     return { ok: false, message: gate.error }
   }

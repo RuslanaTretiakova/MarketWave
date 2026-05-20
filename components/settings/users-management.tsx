@@ -69,6 +69,7 @@ import { isValidEmail, normalizeEmail } from '@/lib/validation/email'
 import { cn } from '@/lib/utils'
 
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
+import type { ManagerOption } from '@/lib/org-users/load-manager-options'
 import {
   SETTINGS_RIGHT_SHEET_CONTENT_CLASS,
   SettingsRightSheet,
@@ -121,6 +122,7 @@ export function UsersManagement({
   statusFilter,
   copywriterCandidates,
   currentUserId,
+  managers = [],
 }: {
   listMode?: 'admin' | 'manager'
   initialRows: OrgUserRowJson[]
@@ -132,6 +134,7 @@ export function UsersManagement({
   statusFilter: OrgUsersListStatusFilter
   copywriterCandidates: OrgUserRowJson[]
   currentUserId: string
+  managers?: ManagerOption[]
 }) {
   const canChangeStatus = listMode === 'admin'
   const router = useRouter()
@@ -161,6 +164,7 @@ export function UsersManagement({
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviteRole, setInviteRole] = useState<OrgInviteRole>('client')
+  const [inviteManagerId, setInviteManagerId] = useState('')
   const [inviteBusy, setInviteBusy] = useState(false)
 
   const [editOpen, setEditOpen] = useState(false)
@@ -193,12 +197,22 @@ export function UsersManagement({
       toast.error('Enter a valid email address.')
       return
     }
+    if (
+      listMode === 'admin' &&
+      inviteRole === 'client' &&
+      managers.length > 0 &&
+      !inviteManagerId
+    ) {
+      toast.error('Select an account manager for this client.')
+      return
+    }
     setInviteBusy(true)
     try {
       const res = await inviteTeamMember({
         email: normalizeEmail(inviteEmail),
         role: inviteRole,
         fullName: inviteName.trim() || undefined,
+        managerId: inviteManagerId || undefined,
       })
       if (!res.ok) {
         toast.error(res.message)
@@ -207,6 +221,7 @@ export function UsersManagement({
       setFormMessage(res.message ?? 'Invitation sent.')
       setInviteEmail('')
       setInviteName('')
+      setInviteManagerId('')
       setInviteOpen(false)
       router.refresh()
     } catch (err) {
@@ -788,6 +803,7 @@ export function UsersManagement({
           setInviteOpen(open)
           if (open) {
             setFormMessage(null)
+            setInviteManagerId('')
             if (listMode === 'manager') setInviteRole('client')
           }
         }}
@@ -831,10 +847,40 @@ export function UsersManagement({
               <SettingsRoleSelect
                 id="users-invite-role"
                 value={inviteRole}
-                onChange={setInviteRole}
+                onChange={(r) => {
+                  setInviteRole(r)
+                  if (r !== 'client') setInviteManagerId('')
+                }}
                 excludeRoles={listMode === 'manager' ? ['manager'] : []}
               />
             </div>
+            {listMode === 'admin' && inviteRole === 'client' && managers.length > 0 && (
+              <div className="gap-inset flex flex-col">
+                <Label
+                  htmlFor="users-invite-manager"
+                  className="text-foreground text-sm font-medium"
+                >
+                  Account manager
+                  <span className="text-destructive ml-1">*</span>
+                </Label>
+                <select
+                  id="users-invite-manager"
+                  value={inviteManagerId}
+                  onChange={(e) => setInviteManagerId(e.target.value)}
+                  className="border-input bg-background text-foreground focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+                  required
+                >
+                  <option value="" disabled>
+                    Select a manager…
+                  </option>
+                  {managers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.full_name ?? m.email ?? m.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <SheetFooter className="gap-block pt-block px-0 sm:flex-row">
               <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>
                 Cancel
@@ -975,6 +1021,7 @@ export function UsersManagement({
         target={editTarget}
         viewerRole={listMode}
         onSaved={() => router.refresh()}
+        managers={managers}
       />
 
       <AdminUserDisableDialog

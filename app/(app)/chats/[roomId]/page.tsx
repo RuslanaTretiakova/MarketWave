@@ -50,7 +50,7 @@ export default async function ChatRoomPage(props: {
   if (!room) notFound()
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="gap-layout flex flex-col">
       <ChatLayout rooms={rooms} activeRoomId={room.id} currentUserId={user.id}>
         <ChatShell key={room.id} room={room} currentUserId={user.id} />
       </ChatLayout>

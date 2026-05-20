@@ -45,7 +45,7 @@ export function ClientDashboard({
 }) {
   const who = greetingName?.trim() || 'there'
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title={`Welcome back, ${who}`}
         description="Your hub for orders, approvals, and billing."

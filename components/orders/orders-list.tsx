@@ -124,7 +124,7 @@ export function OrdersList({
   ]
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="All orders"
         description="Open an order to view details, edit (when new), or review content when it has been sent."

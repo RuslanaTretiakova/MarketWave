@@ -9,10 +9,10 @@ type Role = Database['public']['Enums']['user_role']
 const TEST_PASSWORD = 'hello12345'
 
 const TEST_USERS: Array<{ role: Role; email: string; fullName: string }> = [
-  { role: 'sourcer', email: 'test.sourcer@local.marketweave', fullName: 'Test Sourcer' },
-  { role: 'manager', email: 'test.manager@local.marketweave', fullName: 'Test Manager' },
-  { role: 'client', email: 'test.client@local.marketweave', fullName: 'Test Client' },
-  { role: 'copywriter', email: 'test.copywriter@local.marketweave', fullName: 'Test Copywriter' },
+  { role: 'sourcer', email: 'test.sourcer@local.marketwave', fullName: 'Test Sourcer' },
+  { role: 'manager', email: 'test.manager@local.marketwave', fullName: 'Test Manager' },
+  { role: 'client', email: 'test.client@local.marketwave', fullName: 'Test Client' },
+  { role: 'copywriter', email: 'test.copywriter@local.marketwave', fullName: 'Test Copywriter' },
 ]
 
 export async function ensureTestUsersForLogin(): Promise<

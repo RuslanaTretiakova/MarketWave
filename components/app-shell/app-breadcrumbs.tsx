@@ -103,19 +103,22 @@ function buildCrumbs(pathname: string, navItems: AppNavItem[]): Crumb[] {
   const segments = cleanPath.split('/').filter(Boolean)
   if (segments.length === 0) return []
 
-  const crumbs: Crumb[] = []
+  // Treat /settings/* sub-pages as their own top-level sections so
+  // "Settings" never appears as a breadcrumb — /settings/users shows "Users",
+  // /settings/users/[id] shows "Users > User", etc.
+  const skipFirst = segments[0] === 'settings'
+  const visibleSegments = skipFirst ? segments.slice(1) : segments
+  let runningPath = skipFirst ? '/settings' : ''
 
-  let runningPath = ''
-  for (const [index, segment] of segments.entries()) {
+  const crumbs: Crumb[] = []
+  for (const [index, segment] of visibleSegments.entries()) {
     runningPath += `/${segment}`
+    const originalIndex = skipFirst ? index + 1 : index
     const label =
       index === 0
         ? navTitleForPath(runningPath, navItems)
-        : inferLabel(cleanPath, segment, index, segments)
-    crumbs.push({
-      href: runningPath,
-      label,
-    })
+        : inferLabel(cleanPath, segment, originalIndex, segments)
+    crumbs.push({ href: runningPath, label })
   }
 
   return crumbs

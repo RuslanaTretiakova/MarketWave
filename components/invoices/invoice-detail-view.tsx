@@ -75,7 +75,7 @@ export function InvoiceDetailView({
   }
 
   return (
-    <div className="space-y-layout mx-auto max-w-4xl">
+    <div className="gap-layout flex flex-col">
       <div className="gap-block flex flex-col">
         <Link
           href="/invoices"

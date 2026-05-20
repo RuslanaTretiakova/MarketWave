@@ -116,7 +116,7 @@ export function OrderDetailView({
   const submittedVersions = order.content.submitted
 
   return (
-    <div className="space-y-layout mx-auto max-w-4xl">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title={order.site_domain}
         meta={

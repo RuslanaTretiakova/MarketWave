@@ -96,7 +96,6 @@ export function AppNavLinks({
     <nav className={cn('gap-block flex flex-col', className)}>
       {items.map(({ href, label, Icon }) => {
         const active = isAppNavItemActive(pathname, href, items)
-        if (href === '/dashboard' && active) return null
         const badge = navBadges?.[href] ?? 0
         return (
           <Link

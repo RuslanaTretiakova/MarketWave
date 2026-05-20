@@ -77,6 +77,7 @@ export async function inviteTeamMember(input: {
   email: string
   role: string
   fullName?: string
+  managerId?: string
 }): Promise<InviteActionResult> {
   try {
     const gate = await assertAdminOrManager()
@@ -107,7 +108,7 @@ export async function inviteTeamMember(input: {
       return { ok: false, message: redirectBlock }
     }
 
-    const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: {
         role,
         full_name: input.fullName?.trim() || null,
@@ -133,6 +134,19 @@ export async function inviteTeamMember(input: {
         }
       }
       return { ok: false, message: mapped.message }
+    }
+
+    if (role === 'client' && inviteData?.user?.id) {
+      const accountManagerId = gate.role === 'manager' ? gate.userId : (input.managerId ?? null)
+      if (accountManagerId) {
+        const { error: mgmtErr } = await adminClient
+          .from('profiles')
+          .update({ account_manager_id: accountManagerId })
+          .eq('id', inviteData.user.id)
+        if (mgmtErr) {
+          console.error('[inviteTeamMember] set account_manager_id:', mgmtErr.message)
+        }
+      }
     }
 
     await audit(gate.userId, 'invite', email, { role })

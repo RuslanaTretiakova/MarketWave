@@ -90,7 +90,7 @@ export function EarningsView({
   }
 
   return (
-    <div className="space-y-layout mx-auto max-w-6xl">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title={title}
         description="Earnings are calculated as your commission on published and completed orders in the selected month."

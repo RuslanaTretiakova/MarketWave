@@ -55,7 +55,7 @@ export function SourcerDashboard({
     data.approvalRateDeltaPoints !== null && data.approvalRateDeltaPoints !== 0
 
   return (
-    <div className="gap-layout mx-auto flex max-w-6xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Sourcing status overview"
         description="Volume, listing health, and trends — use Site catalog filters for counts by status."

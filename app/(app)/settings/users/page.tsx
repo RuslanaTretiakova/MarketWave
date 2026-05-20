@@ -10,6 +10,7 @@ import {
   parseOrgUsersListStatusFilter,
   parseSettingsTablePage,
 } from '@/lib/org-users/load-org-users'
+import { loadManagerOptions } from '@/lib/org-users/load-manager-options'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -55,8 +56,9 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
 
   let listResult
   let copywriterCandidates: Awaited<ReturnType<typeof loadOrgCopywriterCandidatesForAdmin>>
+  let managers: Awaited<ReturnType<typeof loadManagerOptions>>
   try {
-    const [listRes, cwRes] = await Promise.all([
+    const [listRes, cwRes, mgrs] = await Promise.all([
       loadOrgUsersListForAdmin({
         page,
         pageSize: SETTINGS_TABLE_PAGE_SIZE,
@@ -65,12 +67,14 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
         status,
       }),
       loadOrgCopywriterCandidatesForAdmin(),
+      loadManagerOptions(),
     ])
     if ('forbidden' in listRes || 'forbidden' in cwRes) {
       notFound()
     }
     listResult = listRes
     copywriterCandidates = cwRes
+    managers = mgrs
   } catch (err) {
     console.error('[settings/users] load list', err)
     throw err instanceof Error ? err : new Error('Failed to load organization users.')
@@ -88,6 +92,7 @@ export default async function SettingsUsersPage(props: { searchParams: Promise<S
       statusFilter={status}
       copywriterCandidates={copywriterCandidates}
       currentUserId={user.id}
+      managers={managers}
     />
   )
 }

@@ -56,7 +56,7 @@ export function HowItWorks() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold">
-                    Maria, you&apos;ve been invited to MarketWeave
+                    Maria, you&apos;ve been invited to MarketWave
                   </p>
                   <p className="mt-inset text-xs text-[#9ca8b8]">
                     Role: Copywriter · Expires in 7 days

@@ -40,7 +40,7 @@ export function Logo({ className, serifWordmark = false, compact = false }: Logo
             serifWordmark ? 'marketing-heading' : 'logo-wordmark font-sans'
           )}
         >
-          Market<span className="text-primary">Weave</span>
+          Market<span className="text-primary">Wave</span>
         </span>
       ) : null}
     </div>
