@@ -70,7 +70,10 @@ export function getOrderActionAvailability(ctx: OrderActionContext): OrderAction
       group: 'order',
       enabled:
         isStaff &&
-        (ctx.status === 'new' || ctx.status === 'in_progress' || ctx.status === 'needs_changes'),
+        (ctx.status === 'new' ||
+          ctx.status === 'in_progress' ||
+          ctx.status === 'content_sent' ||
+          ctx.status === 'needs_changes'),
     },
     {
       id: 'submit_content',

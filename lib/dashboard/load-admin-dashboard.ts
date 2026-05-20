@@ -107,7 +107,7 @@ export async function loadAdminDashboard(
     supabase.from('invoices').select('amount').eq('status', 'sent'),
     supabase.from('invoices').select('amount').eq('status', 'paid'),
     supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-    supabase.from('chat_rooms').select('id', { count: 'exact', head: true }),
+    supabase.from('chat_rooms').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     Promise.all(
       ORDER_PIPELINE.map((stage) =>
         supabase

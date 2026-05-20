@@ -52,7 +52,7 @@ export function getAppNavItems(role: AppNavRole): AppNavItem[] {
     case 'admin':
       return [dashboard, users, categories, sites, orders, invoices, chats, earnings]
     case 'manager':
-      return [dashboard, users, sites, orders, invoices, chats, earnings]
+      return [dashboard, users, sites, orders, invoices, chats]
     case 'sourcer':
       return [dashboard, sites, chats, earnings]
     case 'copywriter':
