@@ -35,6 +35,9 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# local MCP config (contains project-specific refs) — use .mcp.json.example as template
+.mcp.json
+
 # vercel
 .vercel
 
