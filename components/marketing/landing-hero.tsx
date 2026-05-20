@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react'
 
 import { HeroProductMockup } from '@/components/marketing/hero-product-mockup'
 import { buttonVariants } from '@/components/ui/button'
+import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 
 const trust = ['Invitation-based access', 'Role-aware UI', 'Audit-ready history'] as const
@@ -10,7 +11,11 @@ const trust = ['Invitation-based access', 'Role-aware UI', 'Audit-ready history'
 const heroButtonClass =
   'inline-flex h-12 min-h-12 shrink-0 flex-row flex-nowrap items-center justify-center gap-2 whitespace-nowrap rounded-full px-7 text-[0.9375rem] font-semibold sm:h-14 sm:min-h-14 sm:px-8 sm:text-base md:px-10 md:text-lg w-full sm:w-auto sm:min-w-[11.5rem] md:min-w-[13rem] [&_svg]:size-[1.125rem] md:[&_svg]:size-5 [&_svg]:shrink-0'
 
-export function LandingHero() {
+export async function LandingHero() {
+  const supabase = await createClientOrNull()
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
   return (
     <section
       id="hero"
@@ -45,14 +50,14 @@ export function LandingHero() {
 
           <div className="mt-10 flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <a
-              href="/auth/login"
+              href={user ? '/dashboard' : '/auth/login'}
               className={cn(
                 buttonVariants({ variant: 'cta', size: 'xl' }),
                 heroButtonClass,
                 'shadow-accent overflow-hidden'
               )}
             >
-              <span>Log in</span>
+              <span>{user ? 'Go to Dashboard' : 'Log in'}</span>
               <ArrowRight className="shrink-0" data-icon="inline-end" aria-hidden />
             </a>
             <a

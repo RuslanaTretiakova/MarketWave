@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { Logo } from '@/components/brand/logo'
 import { SITE_NAME } from '@/lib/brand'
+import { createClientOrNull } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -10,7 +11,11 @@ const links = [
   { label: 'Invites', href: '#invites' },
 ] as const
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const supabase = await createClientOrNull()
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } }
   const y = new Date().getFullYear()
   return (
     <footer className="border-border/70 py-layout mt-auto border-t bg-(--marketing-page-bg)">
@@ -30,12 +35,12 @@ export function SiteFooter() {
             </Link>
           ))}
           <Link
-            href="/auth/login"
+            href={user ? '/dashboard' : '/auth/login'}
             className={cn(
               'marketing-lift-hover inline-flex font-semibold text-(--accent-teal-strong)'
             )}
           >
-            Log in →
+            {user ? 'Go to Dashboard' : 'Log in'} →
           </Link>
         </nav>
       </div>
