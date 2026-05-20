@@ -63,7 +63,7 @@ export function EarningsView({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const canFilterBySourcer = role === 'admin' || role === 'manager'
+  const canFilterBySourcer = role === 'admin'
   const [isOpen, setIsOpen] = useState(false)
 
   function handleSourcerChange(e: ChangeEvent<HTMLSelectElement>) {

@@ -24,6 +24,15 @@ Quick pins: **Next.js** 16.2.4 (App Router) · **React** 19.2.4 · **TypeScript*
 | `lib/supabase/server.ts` | Server Components, most Server Actions                                                                       |
 | `lib/supabase/admin.ts`  | Server Actions that need to bypass RLS (order creation, privileged writes) — **never import in client code** |
 
+**When NOT to use `adminClient`:** Never use it for reads a user could perform themselves. If RLS already allows the row (reading your own profile, cart, orders), use the server client — `adminClient` bypasses every policy and makes accidental data leakage easier to introduce. Reserve `adminClient` for:
+
+- Multi-row batch inserts that need service-role to bypass RLS (order creation, notification fan-out)
+- Privileged auth mutations (`auth.admin.*` — invite, update user, delete user)
+- Server-to-server cron operations (no user session present)
+- Explicit server-side logging to `error_logs`
+
+**Heuristic:** if the operation is on behalf of the logged-in user's own data → server client. If it touches other users' data or creates cross-user records → `adminClient`.
+
 After any schema change regenerate types. The app imports generated types from **`lib/supabase/types/database.types.new.ts`** (see `lib/supabase/types/index.ts`); `database.types.ts` in that folder is a placeholder—do not overwrite it with codegen.
 
 ```

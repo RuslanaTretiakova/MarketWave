@@ -70,8 +70,7 @@ export async function loadEarningsSummary(
 ): Promise<EarningsSummary> {
   const effectiveSourcerId =
     opts.viewerRole === 'sourcer' ? opts.viewerId : (opts.sourcerId ?? null)
-  const client =
-    opts.viewerRole === 'admin' || opts.viewerRole === 'manager' ? adminClient : supabase
+  const client = opts.viewerRole === 'admin' ? adminClient : supabase
   const { from, to } = monthToRange(opts.month)
 
   let q = client
@@ -107,8 +106,7 @@ export async function loadEarningsRows(
 ): Promise<{ rows: EarningsRow[]; totalCount: number }> {
   const effectiveSourcerId =
     opts.viewerRole === 'sourcer' ? opts.viewerId : (opts.sourcerId ?? null)
-  const client =
-    opts.viewerRole === 'admin' || opts.viewerRole === 'manager' ? adminClient : supabase
+  const client = opts.viewerRole === 'admin' ? adminClient : supabase
   const { from, to } = monthToRange(opts.month)
   const pageSize = SETTINGS_TABLE_PAGE_SIZE
   const page = Math.max(1, Math.floor(opts.page) || 1)
@@ -152,7 +150,7 @@ export async function loadEarningsRows(
 
   // Fetch sourcer names only when staff is viewing all sourcers.
   const sourcerMap = new Map<string, string>()
-  if ((opts.viewerRole === 'admin' || opts.viewerRole === 'manager') && !effectiveSourcerId) {
+  if (opts.viewerRole === 'admin' && !effectiveSourcerId) {
     const sourcerIds = [...new Set(rawRows.map((r) => r.sourcer_id).filter(Boolean))]
     if (sourcerIds.length > 0) {
       const { data: profiles } = await adminClient

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { ensureOnboardingChatsForUser } from '@/lib/chat/ensure-onboarding-chats'
 import { ACTIVE_ORDER_STATUSES } from '@/lib/org-users/active-order-statuses'
 import { ORG_INVITABLE_ROLES, type OrgInviteRole } from '@/lib/org-users/org-invite-roles'
 import { mapAuthError } from '@/lib/auth/map-auth-error'
@@ -418,6 +419,8 @@ export async function setClientAccountManager(input: {
   if (error) {
     return { ok: false, message: error.message ?? 'Could not update account manager.' }
   }
+
+  await ensureOnboardingChatsForUser(input.clientUserId)
 
   revalidatePath('/settings/users')
   revalidatePath(`/settings/users/${input.clientUserId}`)

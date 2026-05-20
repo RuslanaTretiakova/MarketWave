@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Download, MailCheck, Send } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -52,6 +53,7 @@ export function StatementCard({
   role: Role
   defaultExpanded?: boolean
 }) {
+  const router = useRouter()
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [pending, startTransition] = useTransition()
 
@@ -78,6 +80,7 @@ export function StatementCard({
         sent += 1
       }
       toast.success(`Sent ${sent} invoice${sent === 1 ? '' : 's'}.`)
+      router.refresh()
     })
   }
 
@@ -94,6 +97,7 @@ export function StatementCard({
         marked += 1
       }
       toast.success(`Marked ${marked} invoice${marked === 1 ? '' : 's'} paid.`)
+      router.refresh()
     })
   }
 

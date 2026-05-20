@@ -51,8 +51,7 @@ export default async function EarningsPage({
     .eq('id', user.id)
     .maybeSingle()
   if (!profile) notFound()
-  if (profile.role !== 'sourcer' && profile.role !== 'admin' && profile.role !== 'manager')
-    notFound()
+  if (profile.role !== 'sourcer' && profile.role !== 'admin') notFound()
 
   const params = (await searchParams) ?? {}
   const rawMonth = typeof params.month === 'string' ? params.month : undefined
@@ -79,8 +78,7 @@ export default async function EarningsPage({
     }),
   ])
 
-  const sourcerOptions =
-    profile.role === 'admin' || profile.role === 'manager' ? await loadSourcerOptions() : []
+  const sourcerOptions = profile.role === 'admin' ? await loadSourcerOptions() : []
 
   return (
     <EarningsView

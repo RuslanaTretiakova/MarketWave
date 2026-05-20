@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
@@ -11,6 +12,7 @@ import { TableRowActionsTrigger } from '@/components/ui/table-row-actions-trigge
 
 import { assignCopywriter } from '@/lib/orders/assign-copywriter-action'
 import { submitContent } from '@/lib/orders/content-actions'
+import { createOrderChatRoom } from '@/lib/chat/chat-actions'
 import {
   cancelOrder,
   startOrder,
@@ -101,7 +103,9 @@ export function OrderActionsMenu({
   price?: number
   triggerVariant?: 'icon' | 'button'
 }) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [chatPending, startChatTransition] = useTransition()
   const [dialog, setDialog] = useState<DialogKind>(null)
   const [sheetAction, setSheetAction] = useState<SheetAction | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -168,6 +172,21 @@ export function OrderActionsMenu({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href={detailHref} />}>Open details</DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={chatPending}
+              onClick={() =>
+                startChatTransition(async () => {
+                  const res = await createOrderChatRoom(orderId)
+                  if (!res.ok) {
+                    toast.error(res.message)
+                    return
+                  }
+                  router.push(`/chats/${res.roomId}`)
+                })
+              }
+            >
+              Open chat
+            </DropdownMenuItem>
             {isOrderActionEnabled(actions, 'edit_order') && (
               <DropdownMenuItem
                 onClick={() => {

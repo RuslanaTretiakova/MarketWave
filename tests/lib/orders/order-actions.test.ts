@@ -105,7 +105,7 @@ describe('startOrder', () => {
   it('maps P0001 trigger error to friendly message', async () => {
     mockCreateClient.mockResolvedValue(makeServerClient({ profileRole: 'admin' }) as never)
     setupAdmin({
-      orders: { data: null, error: { message: 'P0001: Invalid order status transition' } },
+      orders: { data: null, error: { code: 'P0001', message: 'Invalid order status transition' } },
     })
     const r = await startOrder('order-1')
     expect(r.ok).toBe(false)

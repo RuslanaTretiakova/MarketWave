@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 
 import type { AppShellUser } from '@/components/app-shell/app-shell-user'
@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils'
 
 export function AppUserMenu({ user }: { user: AppShellUser }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const onDashboard = pathname === '/dashboard'
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() =>
     normalizeAccountAvatarUrl(user.avatarUrl)
   )
@@ -90,10 +92,12 @@ export function AppUserMenu({ user }: { user: AppShellUser }) {
             <User aria-hidden />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleNavigateDashboard}>
-            <LayoutDashboard aria-hidden />
-            Dashboard
-          </DropdownMenuItem>
+          {!onDashboard && (
+            <DropdownMenuItem onClick={handleNavigateDashboard}>
+              <LayoutDashboard aria-hidden />
+              Dashboard
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

@@ -7,6 +7,7 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { EditChatSheet } from '@/components/chat/edit-chat-sheet'
+import { MenuActionDialog } from '@/components/ui/menu-action-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,16 +52,17 @@ export function ChatRoomRow({
   const chatHref = qs ? `/chats/${room.id}?${qs}` : `/chats/${room.id}`
   const [pending, startTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const isActive = activeRoomId === room.id
   const title = room.title ?? room.order_site_domain ?? 'Conversation'
 
-  const showEdit = canEditChatMetadata(room.channel) && !room.system_managed
+  const currentUserRole = room.participants.find((p) => p.user_id === currentUserId)?.role
+  const showEdit = canEditChatMetadata(room.channel, currentUserRole)
   const showArchive = canArchiveChat(room.channel, room.status)
   const showUnarchive = canUnarchiveChat(room.channel, room.status)
   const showMenu = showEdit || showArchive || showUnarchive
 
   function runArchive() {
-    if (!confirm('Archive this chat? You can restore it later from the list.')) return
     startTransition(async () => {
       const res = await archiveChat(room.id)
       if (!res.ok) toast.error(res.message)
@@ -153,7 +155,7 @@ export function ChatRoomRow({
                     variant="destructive"
                     onClick={(e) => {
                       e.preventDefault()
-                      runArchive()
+                      setArchiveOpen(true)
                     }}
                   >
                     Archive
@@ -185,6 +187,20 @@ export function ChatRoomRow({
           onSaved={() => router.refresh()}
         />
       ) : null}
+
+      <MenuActionDialog
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        title="Archive this chat?"
+        description="You can restore it later from the chat list."
+        confirmLabel="Archive"
+        confirmVariant="destructive"
+        busy={pending}
+        onConfirm={() => {
+          setArchiveOpen(false)
+          runArchive()
+        }}
+      />
     </>
   )
 }

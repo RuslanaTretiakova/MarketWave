@@ -14,6 +14,7 @@ const CHAT_ROOM_PREFIX_RE = /^\[room:([0-9a-f-]{36})\]\s*/i
 function hrefFor(row: NotificationRow): string | null {
   if (row.site_id) return `/sites/${row.site_id}`
   if (row.order_id) return `/orders/${row.order_id}`
+  if (row.invoice_id) return `/invoices/${row.invoice_id}`
   return null
 }
 

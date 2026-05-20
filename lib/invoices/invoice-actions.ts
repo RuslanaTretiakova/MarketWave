@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { logDbError, mapDbError } from '@/lib/errors/map-db-error'
 import { notifyInvoiceEvent } from '@/lib/notifications/notify-order-event'
 import type { Database } from '@/lib/supabase/types'
 
@@ -56,7 +57,7 @@ export async function sendInvoice(
     .eq('id', invoiceId)
     .maybeSingle()
 
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
+  if (loadErr || !invoice) return { ok: false, message: 'Invoice not found.' }
   if (invoice.status === 'paid')
     return { ok: false, message: 'Paid invoices cannot be sent again.' }
   if (invoice.status !== 'draft') return { ok: false, message: 'Only draft invoices can be sent.' }
@@ -67,7 +68,10 @@ export async function sendInvoice(
     .update({ status: 'sent', sent_at: sentAt, sent_by: auth.userId })
     .eq('id', invoiceId)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not send invoice.' }
+  if (error) {
+    void logDbError({ context: 'invoices/send', error, userId: auth.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   void notifyInvoiceEvent('invoice_sent', {
     invoiceId,
@@ -98,7 +102,7 @@ export async function markInvoicePaid(
     .eq('id', invoiceId)
     .maybeSingle()
 
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
+  if (loadErr || !invoice) return { ok: false, message: 'Invoice not found.' }
   if (invoice.status === 'paid') return { ok: false, message: 'Invoice is already paid.' }
   if (invoice.status !== 'sent')
     return { ok: false, message: 'Only sent invoices can be marked as paid.' }
@@ -112,7 +116,10 @@ export async function markInvoicePaid(
     })
     .eq('id', invoiceId)
 
-  if (error) return { ok: false, message: error.message ?? 'Could not mark invoice as paid.' }
+  if (error) {
+    void logDbError({ context: 'invoices/markPaid', error, userId: auth.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   void notifyInvoiceEvent('invoice_paid', {
     invoiceId,
@@ -150,7 +157,7 @@ export async function editInvoiceOrders(
     .eq('id', invoiceId)
     .maybeSingle()
 
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
+  if (loadErr || !invoice) return { ok: false, message: 'Invoice not found.' }
   if (invoice.status !== 'draft')
     return { ok: false, message: 'Only draft invoices can be edited.' }
 
@@ -161,7 +168,10 @@ export async function editInvoiceOrders(
       .delete()
       .eq('invoice_id', invoiceId)
       .in('id', input.removeItemIds)
-    if (error) return { ok: false, message: error.message ?? 'Could not remove invoice items.' }
+    if (error) {
+      void logDbError({ context: 'invoices/editOrders/removeItems', error, userId: auth.userId })
+      return { ok: false, message: mapDbError(error).message }
+    }
   }
 
   // Add orders
@@ -187,10 +197,17 @@ export async function editInvoiceOrders(
         amount: order.price,
       })
       if (iErr) {
-        if (iErr.message?.includes('unique') || iErr.code === '23505') {
-          return { ok: false, message: `Order ${orderId} is already on another invoice.` }
+        void logDbError({
+          context: 'invoices/editInvoiceOrders/addOrder',
+          error: iErr,
+          userId: auth.userId,
+        })
+        return {
+          ok: false,
+          message: mapDbError(iErr, {
+            unique_violation: `Order ${orderId} is already on another invoice.`,
+          }).message,
         }
-        return { ok: false, message: iErr.message ?? 'Could not add order to invoice.' }
       }
     }
   }
@@ -218,7 +235,10 @@ export async function editInvoiceOrders(
 
   if (Object.keys(patch).length > 0) {
     const { error } = await adminClient.from('invoices').update(patch).eq('id', invoiceId)
-    if (error) return { ok: false, message: error.message ?? 'Could not update invoice.' }
+    if (error) {
+      void logDbError({ context: 'invoices/editOrders/updateInvoice', error, userId: auth.userId })
+      return { ok: false, message: mapDbError(error).message }
+    }
   }
 
   revalidateInvoicePaths(invoiceId)
@@ -245,7 +265,7 @@ export async function updateInvoice(
     .eq('id', invoiceId)
     .maybeSingle()
 
-  if (loadErr || !invoice) return { ok: false, message: loadErr?.message ?? 'Invoice not found.' }
+  if (loadErr || !invoice) return { ok: false, message: 'Invoice not found.' }
   if (invoice.status !== 'draft')
     return { ok: false, message: 'Only draft invoices can be edited.' }
 
@@ -259,7 +279,10 @@ export async function updateInvoice(
         .update({ amount: Math.round(item.amount * 100) / 100 })
         .eq('id', item.id)
         .eq('invoice_id', invoiceId)
-      if (error) return { ok: false, message: error.message ?? 'Could not update invoice item.' }
+      if (error) {
+        void logDbError({ context: 'invoices/update/items', error, userId: auth.userId })
+        return { ok: false, message: mapDbError(error).message }
+      }
     }
   }
 
@@ -271,7 +294,10 @@ export async function updateInvoice(
 
   if (Object.keys(patch).length > 0) {
     const { error } = await adminClient.from('invoices').update(patch).eq('id', invoiceId)
-    if (error) return { ok: false, message: error.message ?? 'Could not update invoice.' }
+    if (error) {
+      void logDbError({ context: 'invoices/update/invoice', error, userId: auth.userId })
+      return { ok: false, message: mapDbError(error).message }
+    }
   }
 
   revalidateInvoicePaths(invoiceId)
@@ -297,7 +323,10 @@ export async function generateMonthlyInvoices(
     p_billing_month: billingMonth,
   })
 
-  if (error) return { ok: false, message: error.message ?? 'Could not generate invoices.' }
+  if (error) {
+    void logDbError({ context: 'invoices/generateMonthly', error, userId: auth.userId })
+    return { ok: false, message: mapDbError(error).message }
+  }
 
   revalidatePath('/invoices')
   return { ok: true, count: (data as number) ?? 0 }

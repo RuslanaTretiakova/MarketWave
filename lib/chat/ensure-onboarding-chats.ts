@@ -53,9 +53,6 @@ export async function ensureOnboardingChatsForUser(userId: string): Promise<void
     }
   }
 
-  const managerId = profile.account_manager_id
-  if (!managerId) return
-
   const { data: existingSales } = await adminClient
     .from('chat_rooms')
     .select('id')
@@ -64,6 +61,12 @@ export async function ensureOnboardingChatsForUser(userId: string): Promise<void
     .maybeSingle()
 
   if (existingSales) return
+
+  const { data: managers } = await adminClient.from('profiles').select('id').eq('role', 'manager')
+  const managerIds = (managers ?? []).map((m) => m.id)
+
+  const salesParticipantIds = [...new Set([userId, ...managerIds])]
+  if (profile.account_manager_id) salesParticipantIds.push(profile.account_manager_id)
 
   const { data: room, error } = await adminClient
     .from('chat_rooms')
@@ -86,9 +89,8 @@ export async function ensureOnboardingChatsForUser(userId: string): Promise<void
     return
   }
 
-  const { error: pErr } = await adminClient.from('chat_room_participants').insert([
-    { room_id: room.id, user_id: userId },
-    { room_id: room.id, user_id: managerId },
-  ])
+  const { error: pErr } = await adminClient
+    .from('chat_room_participants')
+    .insert(salesParticipantIds.map((uid) => ({ room_id: room.id, user_id: uid })))
   if (pErr) console.error('[chat/onboarding] sales participants', pErr.message)
 }

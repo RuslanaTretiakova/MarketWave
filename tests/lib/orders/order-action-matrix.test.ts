@@ -97,15 +97,15 @@ describe('cancel_order', () => {
 })
 
 describe('assign_copywriter', () => {
-  it('staff can assign on new/in_progress/needs_changes', () => {
+  it('staff can assign on new/in_progress/content_sent/needs_changes', () => {
     const staffCtx = { role: 'admin' as const }
     expect(enabled({ ...staffCtx, status: 'new' }, 'assign_copywriter')).toBe(true)
     expect(enabled({ ...staffCtx, status: 'in_progress' }, 'assign_copywriter')).toBe(true)
+    expect(enabled({ ...staffCtx, status: 'content_sent' }, 'assign_copywriter')).toBe(true)
     expect(enabled({ ...staffCtx, status: 'needs_changes' }, 'assign_copywriter')).toBe(true)
   })
 
   it('staff cannot assign on other statuses', () => {
-    expect(enabled({ role: 'admin', status: 'content_sent' }, 'assign_copywriter')).toBe(false)
     expect(enabled({ role: 'admin', status: 'published' }, 'assign_copywriter')).toBe(false)
   })
 

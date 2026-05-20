@@ -70,12 +70,19 @@ export async function upsertTestUser(role: TestRole) {
 }
 
 /** Seed a test site and return its id. Idempotent by domain. */
-export async function upsertTestSite(domain: string, status: 'active' | 'inactive' = 'active') {
+export async function upsertTestSite(
+  domain: string,
+  status: 'active' | 'inactive' = 'active',
+  sourcerId?: string
+) {
   const db = getAdminClient()
   const { data: existing } = await db.from('sites').select('id').eq('domain', domain).maybeSingle()
 
   if (existing) {
-    await db.from('sites').update({ status }).eq('id', existing.id)
+    await db
+      .from('sites')
+      .update({ status, ...(sourcerId !== undefined ? { sourcer_id: sourcerId } : {}) })
+      .eq('id', existing.id)
     return existing.id as string
   }
 
@@ -88,6 +95,7 @@ export async function upsertTestSite(domain: string, status: 'active' | 'inactiv
       dr: 50,
       traffic: 5000,
       link_type: 'dofollow',
+      ...(sourcerId !== undefined ? { sourcer_id: sourcerId } : {}),
     })
     .select('id')
     .single()

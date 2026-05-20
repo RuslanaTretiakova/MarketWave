@@ -101,10 +101,11 @@ async function assertCanMutateStandardRoom(
   meta: RoomMeta,
   opts: { requireActive?: boolean } = {}
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  if (!canEditChatMetadata(meta.channel)) {
+  const isStaff = auth.role === 'admin' || auth.role === 'manager'
+  if (!canEditChatMetadata(meta.channel, auth.role)) {
     return { ok: false, message: 'Action forbidden: only Standard chats can be changed.' }
   }
-  if (meta.system_managed) {
+  if (meta.system_managed && !isStaff) {
     return { ok: false, message: 'Action forbidden: this chat is managed by the system.' }
   }
   if (opts.requireActive && !canSendMessages(meta.status)) {

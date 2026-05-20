@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { logDbError, mapDbError } from '@/lib/errors/map-db-error'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -89,10 +90,13 @@ export async function createCategory(input: {
   })
 
   if (error) {
-    if (error.code === '23505') {
-      return { ok: false, message: 'A category with this name or slug already exists.' }
+    void logDbError({ context: 'categories/create', error, userId: gate.userId })
+    return {
+      ok: false,
+      message: mapDbError(error, {
+        unique_violation: 'A category with this name or slug already exists.',
+      }).message,
     }
-    return { ok: false, message: error.message }
   }
 
   revalidatePath('/settings/categories')
@@ -128,10 +132,13 @@ export async function updateCategory(input: {
     .eq('id', input.id)
 
   if (error) {
-    if (error.code === '23505') {
-      return { ok: false, message: 'A category with this name or slug already exists.' }
+    void logDbError({ context: 'categories/update', error, userId: gate.userId })
+    return {
+      ok: false,
+      message: mapDbError(error, {
+        unique_violation: 'A category with this name or slug already exists.',
+      }).message,
     }
-    return { ok: false, message: error.message }
   }
 
   revalidatePath('/settings/categories')
