@@ -37,6 +37,8 @@ export type OrdersSearchParams = {
   clientId?: string
   publishDate?: string
   invoiceStatus?: Database['public']['Enums']['invoice_status']
+  /** When set, restrict results to orders whose user_id is in this list (manager scope). */
+  managerClientIds?: string[]
 }
 
 export async function loadOrdersPage(
@@ -81,6 +83,10 @@ export async function loadOrdersPage(
 
     if (params.copywriterId) {
       q = q.eq('copywriter_id', params.copywriterId)
+    }
+    if (params.managerClientIds !== undefined) {
+      if (params.managerClientIds.length === 0) return { rows: [], totalCount: 0 }
+      q = q.in('user_id', params.managerClientIds)
     }
     if (params.clientId) {
       q = q.eq('user_id', params.clientId)

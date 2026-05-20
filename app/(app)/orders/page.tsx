@@ -8,6 +8,7 @@ import { searchParamFirstString } from '@/lib/pagination/search-param-first-stri
 import { loadOrdersPage } from '@/lib/orders/load-orders'
 import type { OrderStatus } from '@/lib/orders/load-orders'
 import { ORDER_STATUSES_ORDERED } from '@/lib/orders/order-status-labels'
+import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -75,6 +76,16 @@ export default async function OrdersPage(props: { searchParams: Promise<SearchPa
     ? (invoiceStatusRaw as (typeof INVOICE_STATUSES_ORDERED)[number])
     : undefined
 
+  let managerClientIds: string[] | undefined
+  if (profile.role === 'manager') {
+    const { data: assigned } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('account_manager_id', user.id)
+      .eq('role', 'client')
+    managerClientIds = (assigned ?? []).map((p) => p.id)
+  }
+
   const [{ rows, totalCount }, copywriterOptions, clientOptions] = await Promise.all([
     loadOrdersPage(supabase, profile.role, {
       page,
@@ -84,6 +95,7 @@ export default async function OrdersPage(props: { searchParams: Promise<SearchPa
       clientId,
       publishDate,
       invoiceStatus,
+      managerClientIds,
     }),
     isStaff ? loadCopywriterOptions() : Promise.resolve(undefined),
     isStaff

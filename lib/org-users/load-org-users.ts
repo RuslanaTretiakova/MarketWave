@@ -136,6 +136,8 @@ async function loadOrgUsersListWithSupabase(
     role: OrgUsersListRoleFilter
     status: OrgUsersListStatusFilter
     excludeId?: string
+    /** When set, restrict results to users assigned to this manager (account_manager_id). */
+    managerId?: string
   }
 ): Promise<{ rows: OrgUserRowJson[]; totalCount: number; page: number }> {
   const pageSize = input.pageSize
@@ -147,6 +149,7 @@ async function loadOrgUsersListWithSupabase(
     const filtered = merged.filter((row) => {
       if (input.excludeId && row.id === input.excludeId) return false
       if (input.role !== 'all' && row.role !== input.role) return false
+      if (input.managerId && row.account_manager_id !== input.managerId) return false
       if (!rowMatchesOrgSearch(row, trimmedQ)) return false
       if (!rowMatchesStatusFilter(row, input.status)) return false
       return true
@@ -166,6 +169,9 @@ async function loadOrgUsersListWithSupabase(
     }
     if (input.excludeId) {
       q = q.neq('id', input.excludeId)
+    }
+    if (input.managerId) {
+      q = q.eq('account_manager_id', input.managerId)
     }
     return q
       .order('email', { ascending: true, nullsFirst: true })
@@ -218,6 +224,7 @@ export async function loadOrgUsersListForAdmin(input: {
   q: string
   role: OrgUsersListRoleFilter
   status: OrgUsersListStatusFilter
+  managerId?: string
 }): Promise<{ forbidden: true } | { rows: OrgUserRowJson[]; totalCount: number; page: number }> {
   const pageSize = input.pageSize ?? SETTINGS_TABLE_PAGE_SIZE
   const gate = await assertAdminOrManagerOrgList()

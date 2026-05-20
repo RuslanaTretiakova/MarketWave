@@ -39,17 +39,31 @@ const ORDER_EVENTS: ReadonlyArray<NotificationEvent> = [
   'invoice_sent',
 ]
 
-async function loadManagerRecipientIds(excludeUserId: string): Promise<string[]> {
-  const { data, error } = await adminClient
-    .from('profiles')
-    .select('id')
-    .in('role', ['admin', 'manager'] satisfies UserRole[])
-    .neq('id', excludeUserId)
-  if (error) {
-    console.error('[notify-order-event/load-managers]', error.message)
-    return []
+/** Loads all admins + the specific manager assigned to the client (if any). */
+async function loadAdminAndClientManagerIds(
+  clientUserId: string,
+  excludeUserId: string
+): Promise<string[]> {
+  const [adminsResult, clientResult] = await Promise.all([
+    adminClient
+      .from('profiles')
+      .select('id')
+      .eq('role', 'admin' satisfies UserRole)
+      .neq('id', excludeUserId),
+    adminClient.from('profiles').select('account_manager_id').eq('id', clientUserId).maybeSingle(),
+  ])
+
+  if (adminsResult.error) {
+    console.error('[notify-order-event/load-admins]', adminsResult.error.message)
   }
-  return (data ?? []).map((row) => row.id)
+
+  const ids = new Set<string>()
+  for (const row of adminsResult.data ?? []) ids.add(row.id)
+
+  const managerId = clientResult.data?.account_manager_id
+  if (managerId && managerId !== excludeUserId) ids.add(managerId)
+
+  return [...ids]
 }
 
 async function loadOrderRoomParticipantIds(
@@ -336,7 +350,7 @@ export async function notifyInvoiceEvent(
 
   if (!invoice) return
 
-  const managerIds = await loadManagerRecipientIds(ctx.actorUserId)
+  const managerIds = await loadAdminAndClientManagerIds(invoice.client_id, ctx.actorUserId)
 
   type R = { recipientId: string; role: 'client' | 'manager' }
   const seen = new Set<string>()
@@ -437,7 +451,7 @@ export async function notifyOrderEvent(
     managerIds = (mgrs ?? []).map((r) => r.id)
     allowedIds = new Set(roomParticipantIds)
   } else {
-    managerIds = await loadManagerRecipientIds(ctx.actorUserId)
+    managerIds = await loadAdminAndClientManagerIds(ctx.order.user_id, ctx.actorUserId)
   }
 
   const plan = buildRecipientPlan(event, ctx, managerIds, allowedIds)
