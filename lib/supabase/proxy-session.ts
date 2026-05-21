@@ -60,7 +60,7 @@ function failureResponse(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   if (isAppProtectedPath(pathname)) {
     const url = request.nextUrl.clone()
-    url.pathname = '/404'
+    url.pathname = '/auth/login'
     url.search = ''
     return NextResponse.redirect(url)
   }

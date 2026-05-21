@@ -16,7 +16,7 @@ export async function loginAndSaveSession(page: Page, role: TestRole) {
   const { email } = TEST_USERS[role]
   await page.goto('/auth/login')
   await page.getByLabel(/email/i).fill(email)
-  await page.getByLabel(/password/i).fill(TEST_PASSWORD)
+  await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD)
   await page.getByRole('button', { name: /sign in|log in/i }).click()
   await page.waitForURL('**/dashboard**', { timeout: 15_000 })
   await page.context().storageState({ path: storageStatePath(role) })
