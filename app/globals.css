@@ -587,6 +587,17 @@
   .article-content strong {
     font-weight: 600;
   }
+  /* Card image edge rounding — avoids Tailwind v4 Windows CSS-emitter bug with :first-child/:last-child in arbitrary variants */
+  [data-slot='card']:has(> img:first-child) {
+    padding-top: 0;
+  }
+  [data-slot='card'] > img:first-child {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+  [data-slot='card'] > img:last-child {
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  }
+
   /* TipTap empty placeholder hint */
   .article-content .ProseMirror p.is-editor-empty:first-child::before {
     color: hsl(var(--muted-foreground));

@@ -92,7 +92,7 @@ export function NotificationsList({
   }
 
   return (
-    <div className="space-y-layout mx-auto max-w-6xl">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Notifications"
         description="Track assignments, content review events, publication updates, and invoice updates."

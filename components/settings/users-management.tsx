@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ChevronDown,
+  ExternalLink,
   Filter,
   Mail,
   Plus,
@@ -358,12 +359,6 @@ export function UsersManagement({
     router.refresh()
   }
 
-  function navigateToUser(e: React.MouseEvent, userId: string) {
-    const el = e.target as HTMLElement
-    if (el.closest('[data-row-actions]')) return
-    router.push(`/settings/users/${userId}`)
-  }
-
   const roleFilters: { key: RoleFilter; label: string }[] = [
     { key: 'all', label: 'All roles' },
     { key: 'admin', label: ROLE_LABEL.admin },
@@ -603,14 +598,12 @@ export function UsersManagement({
                       return (
                         <TableRow
                           key={row.id}
-                          className="group/user-row border-border cursor-pointer hover:bg-transparent has-aria-expanded:bg-transparent data-[state=selected]:bg-transparent"
-                          onClick={(e) => navigateToUser(e, row.id)}
+                          className="group/user-row border-border hover:bg-transparent has-aria-expanded:bg-transparent data-[state=selected]:bg-transparent"
                         >
                           <TableCell className={USER_ROW_CELL}>
                             <Link
                               href={`/settings/users/${row.id}`}
                               className="gap-block flex min-w-0 items-center"
-                              onClick={(e) => e.stopPropagation()}
                             >
                               <UserAvatar fullName={row.full_name} email={email || name} />
                               <div className="min-w-0 text-left">
@@ -646,6 +639,13 @@ export function UsersManagement({
                                     Manage
                                   </DropdownMenuLabel>
                                   <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => router.push(`/settings/users/${row.id}`)}
+                                    className="gap-inset"
+                                  >
+                                    <ExternalLink className="size-4" aria-hidden />
+                                    Open details
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem
                                     disabled={disabledRow}
                                     onClick={() => openEdit(row)}
@@ -752,6 +752,13 @@ export function UsersManagement({
                                       Manage
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => router.push(`/settings/users/${row.id}`)}
+                                      className="gap-inset"
+                                    >
+                                      <ExternalLink className="size-4" aria-hidden />
+                                      Open details
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       disabled={disabledRow}
                                       onClick={() => openEdit(row)}
