@@ -62,10 +62,7 @@ export async function ensureOnboardingChatsForUser(userId: string): Promise<void
 
   if (existingSales) return
 
-  const { data: managers } = await adminClient.from('profiles').select('id').eq('role', 'manager')
-  const managerIds = (managers ?? []).map((m) => m.id)
-
-  const salesParticipantIds = [...new Set([userId, ...managerIds])]
+  const salesParticipantIds = [userId]
   if (profile.account_manager_id) salesParticipantIds.push(profile.account_manager_id)
 
   const { data: room, error } = await adminClient

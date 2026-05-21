@@ -9,7 +9,6 @@ import { toast } from 'sonner'
 import { createOrderChatRoom } from '@/lib/chat/chat-actions'
 
 import { OrderActionsMenu } from '@/components/orders/order-actions-menu'
-import { AssignCopywriterButton } from '@/components/orders/assign-copywriter-select'
 import { ChangeRequestsList } from '@/components/orders/change-requests-list'
 import { ClientContentReviewActions } from '@/components/orders/client-content-review-actions'
 import { CopywriterContentEditor } from '@/components/orders/copywriter-content-editor'
@@ -116,7 +115,7 @@ export function OrderDetailView({
   const submittedVersions = order.content.submitted
 
   return (
-    <div className="gap-layout flex flex-col">
+    <div className="gap-layout mx-auto flex w-full max-w-4xl flex-col">
       <PageHeader
         title={order.site_domain}
         meta={
@@ -190,221 +189,199 @@ export function OrderDetailView({
         }
       />
 
-      <div className="gap-layout grid lg:grid-cols-3">
-        {/* Main info */}
-        <div className="space-y-layout lg:col-span-2">
-          {/* Order summary */}
+      <div className="gap-layout grid">
+        {/* Order summary */}
+        <Card className="p-section space-y-block">
+          <h3 className="text-foreground text-base font-semibold">Order details</h3>
+          <dl className="space-y-inset">
+            <DetailRow label="Domain" value={order.site_domain} />
+            <DetailRow label="Category" value={order.site_category} />
+            <DetailRow label="DR" value={order.site_dr !== null ? String(order.site_dr) : null} />
+            <DetailRow
+              label="Link type"
+              value={<span className="capitalize">{order.site_link_type}</span>}
+            />
+            <DetailRow label="Countries" value={order.site_countries.join(', ') || null} />
+            <DetailRow label="Languages" value={order.site_languages.join(', ') || null} />
+            <DetailRow label="Publish date" value={order.publish_date ?? '—'} />
+            <DetailRow
+              label="Publication month"
+              value={order.publish_month ? order.publish_month.slice(0, 7) : '—'}
+            />
+            <DetailRow label="Anchor text" value={order.anchor_text} />
+            <DetailRow
+              label="Target URL"
+              value={
+                order.target_url ? (
+                  <a
+                    href={order.target_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary break-all hover:underline"
+                  >
+                    {order.target_url}
+                  </a>
+                ) : null
+              }
+            />
+            <DetailRow label="Client notes" value={order.client_notes} />
+            <DetailRow
+              label="Published URL"
+              value={
+                order.published_url ? (
+                  <a
+                    href={order.published_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary break-all hover:underline"
+                  >
+                    {order.published_url}
+                  </a>
+                ) : null
+              }
+            />
+            <DetailRow label="Placed" value={new Date(order.created_at).toLocaleDateString()} />
+            <DetailRow
+              label="Assigned at"
+              value={order.assigned_at ? new Date(order.assigned_at).toLocaleString() : null}
+            />
+            <DetailRow
+              label="Content submitted at"
+              value={
+                order.content_submitted_at
+                  ? new Date(order.content_submitted_at).toLocaleString()
+                  : null
+              }
+            />
+            <DetailRow
+              label="Approved at"
+              value={order.approved_at ? new Date(order.approved_at).toLocaleString() : null}
+            />
+            <DetailRow
+              label="Published at"
+              value={order.published_at ? new Date(order.published_at).toLocaleString() : null}
+            />
+            <DetailRow
+              label="Completed at"
+              value={order.completed_at ? new Date(order.completed_at).toLocaleString() : null}
+            />
+            <DetailRow
+              label="Canceled at"
+              value={order.canceled_at ? new Date(order.canceled_at).toLocaleString() : null}
+            />
+            {isStaff && order.client_name && <DetailRow label="Client" value={order.client_name} />}
+          </dl>
+        </Card>
+
+        {/* Site snapshot */}
+        {(order.site_description || order.site_requirements || order.site_keywords_relevance) && (
           <Card className="p-section space-y-block">
-            <h3 className="text-foreground text-base font-semibold">Order details</h3>
+            <h3 className="text-foreground text-base font-semibold">Site details</h3>
             <dl className="space-y-inset">
-              <DetailRow label="Domain" value={order.site_domain} />
-              <DetailRow label="Category" value={order.site_category} />
-              <DetailRow label="DR" value={order.site_dr !== null ? String(order.site_dr) : null} />
-              <DetailRow
-                label="Link type"
-                value={<span className="capitalize">{order.site_link_type}</span>}
-              />
-              <DetailRow label="Countries" value={order.site_countries.join(', ') || null} />
-              <DetailRow label="Languages" value={order.site_languages.join(', ') || null} />
-              <DetailRow label="Publish date" value={order.publish_date ?? '—'} />
-              <DetailRow
-                label="Publication month"
-                value={order.publish_month ? order.publish_month.slice(0, 7) : '—'}
-              />
-              <DetailRow label="Anchor text" value={order.anchor_text} />
-              <DetailRow
-                label="Target URL"
-                value={
-                  order.target_url ? (
-                    <a
-                      href={order.target_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary break-all hover:underline"
-                    >
-                      {order.target_url}
-                    </a>
-                  ) : null
-                }
-              />
-              <DetailRow label="Client notes" value={order.client_notes} />
-              <DetailRow
-                label="Published URL"
-                value={
-                  order.published_url ? (
-                    <a
-                      href={order.published_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary break-all hover:underline"
-                    >
-                      {order.published_url}
-                    </a>
-                  ) : null
-                }
-              />
-              <DetailRow label="Placed" value={new Date(order.created_at).toLocaleDateString()} />
-              <DetailRow
-                label="Assigned at"
-                value={order.assigned_at ? new Date(order.assigned_at).toLocaleString() : null}
-              />
-              <DetailRow
-                label="Content submitted at"
-                value={
-                  order.content_submitted_at
-                    ? new Date(order.content_submitted_at).toLocaleString()
-                    : null
-                }
-              />
-              <DetailRow
-                label="Approved at"
-                value={order.approved_at ? new Date(order.approved_at).toLocaleString() : null}
-              />
-              <DetailRow
-                label="Published at"
-                value={order.published_at ? new Date(order.published_at).toLocaleString() : null}
-              />
-              <DetailRow
-                label="Completed at"
-                value={order.completed_at ? new Date(order.completed_at).toLocaleString() : null}
-              />
-              <DetailRow
-                label="Canceled at"
-                value={order.canceled_at ? new Date(order.canceled_at).toLocaleString() : null}
-              />
-              {isStaff && order.client_name && (
-                <DetailRow label="Client" value={order.client_name} />
+              <DetailRow label="Description" value={order.site_description} />
+              <DetailRow label="Requirements" value={order.site_requirements} />
+              <DetailRow label="Keywords" value={order.site_keywords_relevance} />
+              {order.site_organic_keywords_count !== null && (
+                <DetailRow
+                  label="Organic keywords"
+                  value={order.site_organic_keywords_count.toLocaleString()}
+                />
+              )}
+              {order.site_organic_traffic_count !== null && (
+                <DetailRow
+                  label="Organic traffic"
+                  value={order.site_organic_traffic_count.toLocaleString()}
+                />
+              )}
+              {isStaff && order.site_contact_info && (
+                <DetailRow label="Contact info" value={order.site_contact_info} />
               )}
             </dl>
           </Card>
+        )}
 
-          {/* Site snapshot */}
-          {(order.site_description || order.site_requirements || order.site_keywords_relevance) && (
-            <Card className="p-section space-y-block">
-              <h3 className="text-foreground text-base font-semibold">Site details</h3>
-              <dl className="space-y-inset">
-                <DetailRow label="Description" value={order.site_description} />
-                <DetailRow label="Requirements" value={order.site_requirements} />
-                <DetailRow label="Keywords" value={order.site_keywords_relevance} />
-                {order.site_organic_keywords_count !== null && (
-                  <DetailRow
-                    label="Organic keywords"
-                    value={order.site_organic_keywords_count.toLocaleString()}
-                  />
-                )}
-                {order.site_organic_traffic_count !== null && (
-                  <DetailRow
-                    label="Organic traffic"
-                    value={order.site_organic_traffic_count.toLocaleString()}
-                  />
-                )}
-                {isStaff && order.site_contact_info && (
-                  <DetailRow label="Contact info" value={order.site_contact_info} />
-                )}
-              </dl>
-            </Card>
-          )}
-
-          {/* Article content */}
-          <Card className="p-section space-y-block">
-            <div className="gap-block flex flex-wrap items-center justify-between">
-              <h3 className="text-foreground text-base font-semibold">Article content</h3>
-              {submittedVersions.length > 0 && (
-                <span className="text-muted-foreground text-xs">
-                  {submittedVersions.length}{' '}
-                  {submittedVersions.length === 1 ? 'submission' : 'submissions'}
-                </span>
-              )}
-            </div>
-
-            {isClientOwner && order.status === 'content_sent' ? (
-              <ClientContentReviewActions orderId={order.id} />
-            ) : null}
-
-            {canEditContent ? (
-              <>
-                <CopywriterContentEditor
-                  orderId={order.id}
-                  status={order.status}
-                  initialDraft={order.content.draft}
-                  latestSubmitted={submittedVersions[0] ?? null}
-                  openChangeRequests={order.change_requests}
-                />
-                {submittedVersions.length > 0 && (
-                  <div className="border-border pt-block space-y-block border-t">
-                    <h4 className="text-foreground text-sm font-semibold">Previously submitted</h4>
-                    <OrderContentViewer versions={submittedVersions} />
-                  </div>
-                )}
-              </>
-            ) : submittedVersions.length > 0 ? (
-              <OrderContentViewer versions={submittedVersions} />
-            ) : isAssignedCopywriter ? (
-              <p className="text-muted-foreground text-sm italic">
-                Content editing opens once the order moves to In progress.
-              </p>
-            ) : (
-              <p className="text-muted-foreground text-sm italic">
-                Copywriter has not submitted content yet.
-              </p>
+        {/* Article content */}
+        <Card className="p-section space-y-block">
+          <div className="gap-block flex flex-wrap items-center justify-between">
+            <h3 className="text-foreground text-base font-semibold">Article content</h3>
+            {submittedVersions.length > 0 && (
+              <span className="text-muted-foreground text-xs">
+                {submittedVersions.length}{' '}
+                {submittedVersions.length === 1 ? 'submission' : 'submissions'}
+              </span>
             )}
-          </Card>
+          </div>
 
-          {/* Change requests */}
-          <Card className="p-section space-y-block">
-            <h3 className="text-foreground text-base font-semibold">Change requests</h3>
-            <ChangeRequestsList changeRequests={order.change_requests} role={role} />
-          </Card>
+          {isClientOwner && order.status === 'content_sent' ? (
+            <ClientContentReviewActions orderId={order.id} />
+          ) : null}
 
-          <Card className="p-section space-y-block">
-            <h3 className="text-foreground text-base font-semibold">Status history</h3>
-            {order.status_history.length === 0 ? (
-              <p className="text-muted-foreground text-sm italic">
-                No status transitions recorded yet.
-              </p>
-            ) : (
-              <div className="space-y-inset">
-                {order.status_history.map((item) => (
-                  <div key={item.id} className="border-border rounded-md border p-3 text-sm">
-                    <p className="text-foreground font-medium">
-                      {ORDER_STATUS_LABEL[item.from_status]} {'->'}{' '}
-                      {ORDER_STATUS_LABEL[item.to_status]}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
-                    {item.comment ? (
-                      <p className="text-muted-foreground mt-1">{item.comment}</p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-layout">
-          {/* Invoice */}
-          {order.invoice && (
-            <Card className="p-section">
-              <InvoicePanel invoice={order.invoice} role={role} />
-            </Card>
-          )}
-
-          {/* Copywriter assignment */}
-          {isStaff && copywriterOptions && (
-            <Card className="p-section space-y-block">
-              <h3 className="text-foreground text-base font-semibold">Assignment</h3>
-              <AssignCopywriterButton
+          {canEditContent ? (
+            <>
+              <CopywriterContentEditor
                 orderId={order.id}
-                currentCopywriterId={order.copywriter_id}
-                currentCopywriterName={order.copywriter_name}
-                copywriterOptions={copywriterOptions}
+                status={order.status}
+                initialDraft={order.content.draft}
+                latestSubmitted={submittedVersions[0] ?? null}
+                openChangeRequests={order.change_requests}
               />
-            </Card>
+              {submittedVersions.length > 0 && (
+                <div className="border-border pt-block space-y-block border-t">
+                  <h4 className="text-foreground text-sm font-semibold">Previously submitted</h4>
+                  <OrderContentViewer versions={submittedVersions} />
+                </div>
+              )}
+            </>
+          ) : submittedVersions.length > 0 ? (
+            <OrderContentViewer versions={submittedVersions} />
+          ) : isAssignedCopywriter ? (
+            <p className="text-muted-foreground text-sm italic">
+              Content editing opens once the order moves to In progress.
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm italic">
+              Copywriter has not submitted content yet.
+            </p>
           )}
-        </div>
+        </Card>
+
+        {/* Change requests */}
+        <Card className="p-section space-y-block">
+          <h3 className="text-foreground text-base font-semibold">Change requests</h3>
+          <ChangeRequestsList changeRequests={order.change_requests} role={role} />
+        </Card>
+
+        {order.invoice && (
+          <Card className="p-section">
+            <InvoicePanel invoice={order.invoice} role={role} />
+          </Card>
+        )}
+
+        <Card className="p-section space-y-block">
+          <h3 className="text-foreground text-base font-semibold">Status history</h3>
+          {order.status_history.length === 0 ? (
+            <p className="text-muted-foreground text-sm italic">
+              No status transitions recorded yet.
+            </p>
+          ) : (
+            <div className="space-y-inset max-h-54 overflow-y-auto">
+              {order.status_history.map((item) => (
+                <div key={item.id} className="border-border rounded-md border p-3 text-sm">
+                  <p className="text-foreground font-medium">
+                    {ORDER_STATUS_LABEL[item.from_status]} {'->'}{' '}
+                    {ORDER_STATUS_LABEL[item.to_status]}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {new Date(item.created_at).toLocaleString()}
+                  </p>
+                  {item.comment ? (
+                    <p className="text-muted-foreground mt-1">{item.comment}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )

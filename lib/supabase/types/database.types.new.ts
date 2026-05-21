@@ -1416,6 +1416,7 @@ export type Database = {
         | 'site_unarchived'
         | 'order_created'
         | 'invoice_sent'
+        | 'invoice_generated'
       order_content_status: 'draft' | 'submitted'
       order_status:
         | 'new'
@@ -1574,6 +1575,7 @@ export const Constants = {
         'site_unarchived',
         'order_created',
         'invoice_sent',
+        'invoice_generated',
       ],
       order_content_status: ['draft', 'submitted'],
       order_status: [
