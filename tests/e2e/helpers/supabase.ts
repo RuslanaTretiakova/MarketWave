@@ -93,7 +93,7 @@ export async function upsertTestSite(
       status,
       price: 100,
       dr: 50,
-      traffic: 5000,
+      organic_traffic_count: 5000,
       link_type: 'dofollow',
       ...(sourcerId !== undefined ? { sourcer_id: sourcerId } : {}),
     })
