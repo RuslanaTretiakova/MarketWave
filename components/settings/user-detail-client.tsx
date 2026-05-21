@@ -1,9 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Mail, UserMinus, UserPlus } from 'lucide-react'
+import { ClipboardList, Globe, Mail, PenLine, UserMinus, UserPlus } from 'lucide-react'
 
 import { resendTeamInvite } from '@/lib/auth/invite-actions'
 import {
@@ -18,7 +17,6 @@ import {
   orgUserResendInviteEmail,
 } from '@/lib/org-users/admin-resend-invite'
 import { formatRelativeLastActive } from '@/lib/format-relative-auth'
-import { cn } from '@/lib/utils'
 import { EditUserSheet } from '@/components/settings/edit-user-sheet'
 import { ROLE_LABEL, RoleBadge } from '@/components/settings/role-badge'
 import {
@@ -30,7 +28,7 @@ import {
 } from '@/components/settings/user-admin-dialogs'
 import { StatusBadge } from '@/components/settings/status-badge'
 import { UserAvatar } from '@/components/settings/user-avatar'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FilterSelect } from '@/components/ui/filter-bar'
 import { FormControlInput, FormControlTextarea } from '@/components/ui/form-control'
@@ -139,7 +137,6 @@ export function UserDetailClient({
   managerOptions?: ManagerOptionRow[]
 }) {
   const router = useRouter()
-  const isAdminView = viewerRole === 'admin'
   const canChangeStatus = viewerRole === 'admin'
   const [editOpen, setEditOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -278,17 +275,6 @@ export function UserDetailClient({
 
   return (
     <div className="gap-layout flex flex-col">
-      <Link
-        href="/settings/users"
-        className={cn(
-          buttonVariants({ variant: 'ghost', size: 'sm' }),
-          'text-muted-foreground hover:text-foreground gap-inset w-fit px-0'
-        )}
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {isAdminView ? 'All users' : 'Users'}
-      </Link>
-
       <section className="border-border/60 bg-card shadow-soft overflow-hidden rounded-2xl border">
         <div className="gap-block border-border/60 px-section py-block flex flex-col border-b sm:flex-row sm:items-start sm:justify-between">
           <div className="gap-block flex min-w-0 items-start">
@@ -353,25 +339,53 @@ export function UserDetailClient({
         </div>
 
         <div className="gap-block px-section py-block grid sm:grid-cols-3">
-          <div className="border-border/60 bg-muted/20 p-block rounded-xl border">
-            <p className="text-muted-foreground text-xs font-medium">Active orders (as client)</p>
-            <p className="font-display text-foreground mt-inset text-2xl font-semibold tabular-nums">
+          <div className="border-border/60 bg-muted/20 p-block gap-inset flex flex-col rounded-xl border">
+            <div className="gap-inset flex items-center justify-between">
+              <p className="text-muted-foreground font-heading text-xs leading-snug font-semibold tracking-wider uppercase">
+                Active orders (as client)
+              </p>
+              <span
+                className="bg-primary-soft text-primary-ink inline-flex size-8 shrink-0 items-center justify-center rounded-lg"
+                aria-hidden
+              >
+                <ClipboardList className="size-4 shrink-0" aria-hidden />
+              </span>
+            </div>
+            <div className="text-foreground font-sans text-xl leading-none font-semibold tracking-tight tabular-nums">
               {counts.clientActiveOrders}
-            </p>
+            </div>
           </div>
-          <div className="border-border/60 bg-muted/20 p-block rounded-xl border">
-            <p className="text-muted-foreground text-xs font-medium">
-              Active orders (as copywriter)
-            </p>
-            <p className="font-display text-foreground mt-inset text-2xl font-semibold tabular-nums">
+          <div className="border-border/60 bg-muted/20 p-block gap-inset flex flex-col rounded-xl border">
+            <div className="gap-inset flex items-center justify-between">
+              <p className="text-muted-foreground font-heading text-xs leading-snug font-semibold tracking-wider uppercase">
+                Active orders (as copywriter)
+              </p>
+              <span
+                className="bg-primary-soft text-primary-ink inline-flex size-8 shrink-0 items-center justify-center rounded-lg"
+                aria-hidden
+              >
+                <PenLine className="size-4 shrink-0" aria-hidden />
+              </span>
+            </div>
+            <div className="text-foreground font-sans text-xl leading-none font-semibold tracking-tight tabular-nums">
               {counts.copywriterActiveOrders}
-            </p>
+            </div>
           </div>
-          <div className="border-border/60 bg-muted/20 p-block rounded-xl border">
-            <p className="text-muted-foreground text-xs font-medium">Sites assigned (as sourcer)</p>
-            <p className="font-display text-foreground mt-inset text-2xl font-semibold tabular-nums">
+          <div className="border-border/60 bg-muted/20 p-block gap-inset flex flex-col rounded-xl border">
+            <div className="gap-inset flex items-center justify-between">
+              <p className="text-muted-foreground font-heading text-xs leading-snug font-semibold tracking-wider uppercase">
+                Sites assigned (as sourcer)
+              </p>
+              <span
+                className="bg-primary-soft text-primary-ink inline-flex size-8 shrink-0 items-center justify-center rounded-lg"
+                aria-hidden
+              >
+                <Globe className="size-4 shrink-0" aria-hidden />
+              </span>
+            </div>
+            <div className="text-foreground font-sans text-xl leading-none font-semibold tracking-tight tabular-nums">
               {counts.sourcerSitesCount}
-            </p>
+            </div>
           </div>
         </div>
       </section>

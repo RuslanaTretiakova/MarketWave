@@ -62,7 +62,7 @@ export function AppHeader({
             showCloseButton
             className="border-sidebar-border bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col gap-0 border-r p-0 shadow-(--shadow-shell)"
           >
-            <SheetHeader className="border-sidebar-border px-block py-block shrink-0 border-b text-left">
+            <SheetHeader className="border-sidebar-border px-block py-block shrink-0 border-b pr-14 text-left">
               <SheetTitle className="text-sidebar-foreground font-heading text-base font-semibold">
                 {SITE_NAME}
               </SheetTitle>

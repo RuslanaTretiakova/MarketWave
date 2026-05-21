@@ -401,7 +401,7 @@ function ProfileSettingsForm({
   }
 
   return (
-    <div className="gap-layout mx-auto flex max-w-2xl flex-col">
+    <div className="gap-layout flex flex-col">
       <PageHeader
         title="Profile"
         description="Update your personal information, profile photo, and password — tied to your workspace account."
