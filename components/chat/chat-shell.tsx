@@ -102,7 +102,7 @@ export function ChatShell({
 
   return (
     <div className="bg-background flex h-full min-h-0 flex-col">
-      <header className="border-border gap-inset p-block flex items-center border-b">
+      <header className="border-border gap-inset px-inset flex h-16 items-center border-b">
         <div className="min-w-0 flex-1">
           <h2 className="text-foreground truncate text-sm font-semibold">
             {room.title ?? room.order_site_domain ?? 'Conversation'}

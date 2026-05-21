@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 
 import { CartView } from '@/components/cart/cart-view'
-import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { loadCartWithTotal } from '@/lib/cart/load-cart'
 
@@ -28,10 +27,5 @@ export default async function CartPage() {
 
   const { items } = await loadCartWithTotal(supabase)
 
-  return (
-    <div className="gap-layout mx-auto flex max-w-2xl flex-col">
-      <PageHeader title="Cart" description="Review your selected sites before placing an order." />
-      <CartView initialItems={items} />
-    </div>
-  )
+  return <CartView initialItems={items} />
 }

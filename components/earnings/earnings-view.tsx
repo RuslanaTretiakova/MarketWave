@@ -89,6 +89,14 @@ export function EarningsView({
     )
   }
 
+  function formatMonthLabel(ym: string): string {
+    const [y, m] = ym.split('-').map(Number)
+    return new Date(y, m - 1, 1).toLocaleString('default', { month: 'short', year: 'numeric' })
+  }
+
+  const prevMonthLabel = formatMonthLabel(shiftMonth(month, -1))
+  const nextMonthLabel = formatMonthLabel(shiftMonth(month, 1))
+
   return (
     <div className="gap-layout flex flex-col">
       <PageHeader
@@ -120,15 +128,37 @@ export function EarningsView({
           )}
         >
           <div className="px-section pb-block gap-inset flex items-end overflow-x-auto sm:flex-wrap">
-            <div className="flex shrink-0 flex-col gap-0.5">
-              <span className="text-muted-foreground px-1 text-[10px] font-medium">Month</span>
-              <FilterInput
-                type="month"
-                value={month}
-                onChange={handleMonthChange}
-                className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
-                aria-label="Month"
-              />
+            <div className="gap-inset flex shrink-0 items-end">
+              <div className="flex shrink-0 flex-col gap-0.5">
+                <span className="text-muted-foreground px-1 text-[10px] font-medium">Month</span>
+                <FilterInput
+                  type="month"
+                  value={month}
+                  onChange={handleMonthChange}
+                  className="h-8 w-auto max-w-32 min-w-0 rounded-full px-1 text-xs"
+                  aria-label="Month"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 self-end rounded-full px-3 text-xs"
+                onClick={() => handleShift(-1)}
+              >
+                <ChevronLeft className="size-3.5" aria-hidden />
+                {prevMonthLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 self-end rounded-full px-3 text-xs"
+                onClick={() => handleShift(1)}
+              >
+                {nextMonthLabel}
+                <ChevronRight className="size-3.5" aria-hidden />
+              </Button>
             </div>
             {canFilterBySourcer ? (
               <div className="flex shrink-0 flex-col gap-0.5">
@@ -148,26 +178,6 @@ export function EarningsView({
                 </FilterSelect>
               </div>
             ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1 self-end rounded-full px-3 text-xs"
-              onClick={() => handleShift(-1)}
-            >
-              <ChevronLeft className="size-3.5" aria-hidden />
-              Prev
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1 self-end rounded-full px-3 text-xs"
-              onClick={() => handleShift(1)}
-            >
-              Next
-              <ChevronRight className="size-3.5" aria-hidden />
-            </Button>
             {canFilterBySourcer && !!selectedSourcerId ? (
               <Link
                 href="/earnings"

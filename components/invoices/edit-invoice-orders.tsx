@@ -42,7 +42,7 @@ function EditInvoiceOrdersInner({
   const [items, setItems] = useState<InvoiceItem[]>(invoice.items)
   const [removedItemIds, setRemovedItemIds] = useState<string[]>([])
   const [addedOrderIds, setAddedOrderIds] = useState<string[]>([])
-  const [adjustments, setAdjustments] = useState(String(invoice.adjustments))
+  const [adjustments, setAdjustments] = useState(String(invoice.adjustments ?? 0))
   const [dueDate, setDueDate] = useState(invoice.due_date ?? '')
   const [notes, setNotes] = useState(invoice.notes ?? '')
   const [search, setSearch] = useState('')

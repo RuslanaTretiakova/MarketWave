@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { SettingsRightSheet } from '@/components/settings/settings-right-sheet'
@@ -104,6 +104,8 @@ export function OrderActionsMenu({
   triggerVariant?: 'icon' | 'button'
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isOnDetailPage = pathname === detailHref
   const [pending, startTransition] = useTransition()
   const [chatPending, startChatTransition] = useTransition()
   const [dialog, setDialog] = useState<DialogKind>(null)
@@ -171,7 +173,9 @@ export function OrderActionsMenu({
               Order
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href={detailHref} />}>Open details</DropdownMenuItem>
+            {!isOnDetailPage && (
+              <DropdownMenuItem render={<Link href={detailHref} />}>Open details</DropdownMenuItem>
+            )}
             <DropdownMenuItem
               disabled={chatPending}
               onClick={() =>

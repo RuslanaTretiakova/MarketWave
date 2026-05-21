@@ -56,9 +56,9 @@ export function PipelineCard({
           {stages.map((stage) => (
             <div
               key={stage.key}
-              className="border-border bg-muted/15 gap-inset p-inset relative flex flex-col overflow-hidden rounded-xl border"
+              className="border-border bg-muted/15 gap-inset p-block relative flex flex-col overflow-hidden rounded-xl border"
             >
-              <div className="gap-inset flex items-start justify-between">
+              <div className="gap-inset flex items-center justify-between">
                 <span className="text-muted-foreground font-sans text-[0.65rem] font-semibold tracking-wider uppercase">
                   {stage.label}
                 </span>
@@ -66,7 +66,7 @@ export function PipelineCard({
                   {stage.count}
                 </span>
               </div>
-              <p className="font-heading text-foreground text-2xl font-semibold tabular-nums">
+              <p className="text-foreground font-sans text-2xl font-semibold tabular-nums">
                 {stage.count}
               </p>
               <div className="bg-muted mt-auto h-1.5 w-full overflow-hidden rounded-full">

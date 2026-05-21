@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 
 import { CartItemRow } from '@/components/cart/cart-item-row'
 import { buttonVariants } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 import { removeCartItem, updateCartItemDetails } from '@/lib/cart/cart-actions'
 import {
   CART_NON_ACTIVE_SITE_DISCLAIMER,
@@ -74,50 +75,50 @@ export function CartView({ initialItems }: { initialItems: CartItemRowType[] }) 
 
   const checkoutBlocked = hasNonActiveSiteInCart(initialItems)
 
-  if (initialItems.length === 0) {
-    return (
-      <div className="py-hero gap-block flex flex-col items-center text-center">
-        <ShoppingCart className="text-muted-foreground size-10" />
-        <div className="space-y-inset">
-          <p className="text-foreground font-semibold">Your cart is empty</p>
-          <p className="text-muted-foreground text-sm">
-            Browse the site catalog to add sites to your cart.
-          </p>
-        </div>
-        <Link
-          href="/sites"
-          className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'mt-block h-10')}
-        >
-          Browse site catalog
-        </Link>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-block">
-      {checkoutBlocked ? (
-        <div
-          className="border-destructive/40 bg-destructive/5 text-foreground px-section py-block rounded-xl border text-sm leading-relaxed"
-          role="alert"
-        >
-          <p className="font-medium">Order creation unavailable</p>
-          <p className="text-muted-foreground mt-inset">{CART_NON_ACTIVE_SITE_DISCLAIMER}</p>
+    <div className="gap-layout flex flex-col">
+      <PageHeader title="Cart" description="Review your selected sites before placing an order." />
+
+      {initialItems.length === 0 ? (
+        <div className="py-hero gap-block flex flex-col items-center text-center">
+          <ShoppingCart className="text-muted-foreground size-10" />
+          <div className="space-y-inset">
+            <p className="text-foreground font-semibold">Your cart is empty</p>
+            <p className="text-muted-foreground text-sm">
+              Browse the site catalog to add sites to your cart.
+            </p>
+          </div>
+          <Link
+            href="/sites"
+            className={cn(buttonVariants({ variant: 'cta', size: 'default' }), 'h-10')}
+          >
+            Browse site catalog
+          </Link>
         </div>
-      ) : null}
-      <div className="space-y-block">
-        {initialItems.map((item) => (
-          <CartItemRow
-            key={item.id}
-            item={item}
-            onRemove={handleRemove}
-            onDetailsChange={handleDetailsChange}
-            onCreateOrder={handleCreateSingleOrder}
-            pending={mutatingItemId === item.id}
-            creatingOrder={creatingOrderItemId === item.id}
-          />
-        ))}
-      </div>
+      ) : (
+        <div className="space-y-block">
+          {checkoutBlocked ? (
+            <div
+              className="border-destructive/40 bg-destructive/5 text-foreground px-section py-block rounded-xl border text-sm leading-relaxed"
+              role="alert"
+            >
+              <p className="font-medium">Order creation unavailable</p>
+              <p className="text-muted-foreground mt-inset">{CART_NON_ACTIVE_SITE_DISCLAIMER}</p>
+            </div>
+          ) : null}
+          {initialItems.map((item) => (
+            <CartItemRow
+              key={item.id}
+              item={item}
+              onRemove={handleRemove}
+              onDetailsChange={handleDetailsChange}
+              onCreateOrder={handleCreateSingleOrder}
+              pending={mutatingItemId === item.id}
+              creatingOrder={creatingOrderItemId === item.id}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

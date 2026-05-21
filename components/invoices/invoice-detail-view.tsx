@@ -74,7 +74,7 @@ export function InvoiceDetailView({
   }
 
   return (
-    <div className="gap-layout flex flex-col">
+    <div className="gap-layout mx-auto flex w-full max-w-4xl flex-col">
       <div className="gap-block flex flex-col">
         <PageHeader
           title={`Invoice ${invoiceLabel}`}
@@ -204,7 +204,7 @@ export function InvoiceDetailView({
                   <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Publish date
                   </th>
-                  <th className="text-muted-foreground px-section py-block text-right font-medium">
+                  <th className="text-muted-foreground px-section py-block text-left font-medium">
                     Amount
                   </th>
                 </tr>
@@ -227,7 +227,7 @@ export function InvoiceDetailView({
                     <td className="text-muted-foreground px-section py-block">
                       {item.order_publish_date ?? '—'}
                     </td>
-                    <td className="px-section py-block text-right font-semibold tabular-nums">
+                    <td className="px-section py-block font-semibold tabular-nums">
                       {fmtMoney(item.amount)}
                     </td>
                   </tr>

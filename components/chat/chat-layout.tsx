@@ -20,7 +20,7 @@ export function ChatLayout({
   return (
     <div className="border-border/60 bg-card shadow-soft grid h-[calc(100vh-14rem)] w-full grid-cols-1 overflow-hidden rounded-2xl border md:grid-cols-[320px_1fr]">
       <aside className="border-border flex min-h-0 flex-col border-b md:border-r md:border-b-0">
-        <header className="border-border p-block flex items-center justify-between border-b">
+        <header className="border-border px-inset flex h-16 items-center justify-between border-b">
           <h2 className="text-foreground text-base font-semibold">Conversations</h2>
           {totalUnread > 0 && (
             <span className="bg-primary text-primary-foreground inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold tabular-nums">

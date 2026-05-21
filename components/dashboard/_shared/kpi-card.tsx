@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, TrendingDown } from 'lucide-react'
 
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 export type KpiTone = 'primary' | 'primaryMuted' | 'muted' | 'accent'
@@ -72,11 +72,11 @@ export function KpiCard({
           : 'hover:shadow-sm'
       )}
     >
-      <CardHeader className="gap-inset px-block py-block md:px-section md:py-section">
-        <div className="gap-inset flex items-start justify-between">
-          <CardDescription className="text-muted-foreground font-sans text-[0.7rem] leading-snug font-semibold tracking-wider uppercase">
+      <div className="gap-block px-block py-section flex flex-col">
+        <div className="gap-inset flex items-center justify-between">
+          <p className="text-muted-foreground font-heading text-xs leading-snug font-semibold tracking-wider uppercase">
             {label}
-          </CardDescription>
+          </p>
           <span
             className={cn(
               'inline-flex size-9 shrink-0 items-center justify-center rounded-lg',
@@ -87,18 +87,18 @@ export function KpiCard({
             <Icon className="size-4 shrink-0" />
           </span>
         </div>
-        <CardTitle className="font-heading text-foreground text-2xl leading-none font-semibold tracking-tight tabular-nums md:text-3xl">
+        <div className="text-foreground font-sans text-xl leading-none font-semibold tracking-tight tabular-nums md:text-2xl">
           {value}
-        </CardTitle>
+        </div>
         {showDelta && delta !== undefined ? (
           <div className="gap-inset flex flex-wrap items-center">
             <span
               className={cn(
-                'gap-inset px-inset inline-flex items-center rounded-full py-0.5 font-sans text-xs font-semibold tabular-nums',
+                'gap-inset px-inset font-heading inline-flex items-center rounded-full py-1 text-sm font-semibold tabular-nums',
                 pillClass
               )}
             >
-              <TrendGlyph className="size-3.5 shrink-0 stroke-[2.25]" aria-hidden />
+              <TrendGlyph className="size-4 shrink-0 stroke-[2.25]" aria-hidden />
               {delta}
             </span>
             {deltaLabel ? (
@@ -110,7 +110,7 @@ export function KpiCard({
         ) : (
           <div className="min-h-5" aria-hidden />
         )}
-      </CardHeader>
+      </div>
     </Card>
   )
 
