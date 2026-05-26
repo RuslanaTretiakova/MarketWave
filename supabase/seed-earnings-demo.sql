@@ -4,9 +4,11 @@
 -- Safe to re-run — all inserts use ON CONFLICT DO NOTHING.
 --
 -- Creates earnings for the existing test.sourcer@local.marketwave user.
--- Creates a demo client user if not present (for orders.user_id).
+-- Uses test.client@local.marketwave as the order owner (must already exist).
 -- NOTE: uses category_id=1; adjust if your categories differ.
 -- NOTE: published_url is required by the orders_published_url_required check constraint.
+-- WARNING: do NOT insert raw rows into auth.users — use adminClient.auth.admin.createUser
+--          instead. Direct inserts leave null tokens that break the auth Admin API.
 
 BEGIN;
 
@@ -31,25 +33,8 @@ BEGIN
   WHERE id = v_sourcer_id AND role <> 'sourcer';
 END $$;
 
--- ─── Demo client user (for orders.user_id) ────────────────────────────────────
--- Skipped silently if already present.
-
-INSERT INTO auth.users (
-  id, instance_id, aud, role,
-  email, encrypted_password, email_confirmed_at,
-  raw_user_meta_data, created_at, updated_at
-) VALUES
-  (
-    '00000000-0000-4000-8001-000000000003'::uuid,
-    '00000000-0000-0000-0000-000000000000'::uuid,
-    'authenticated', 'authenticated',
-    'demo.client@demo.dev',
-    crypt('Demo1234!', gen_salt('bf')),
-    now(),
-    '{"full_name": "Demo Client"}'::jsonb,
-    now(), now()
-  )
-ON CONFLICT (id) DO NOTHING;
+-- ─── Client user for orders.user_id ──────────────────────────────────────────
+-- Uses the existing test.client@local.marketwave — no raw auth.users insert needed.
 
 -- ─── Active sites linked to test.sourcer ─────────────────────────────────────
 -- sourcer_id resolved inline so we don't hard-code the UUID.
@@ -126,7 +111,7 @@ INSERT INTO public.orders (
 ) VALUES
   (
     '00000000-0000-4000-8003-000000000001'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000001'::uuid,
     'completed', 250.00,
     '2026-03-10'::date, '2026-03-01'::date,
@@ -136,7 +121,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000002'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000002'::uuid,
     'published', 180.00,
     '2026-03-14'::date, '2026-03-01'::date,
@@ -146,7 +131,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000003'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000001'::uuid,
     'completed', 250.00,
     '2026-03-22'::date, '2026-03-01'::date,
@@ -156,7 +141,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000004'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000003'::uuid,
     'completed', 300.00,
     '2026-03-18'::date, '2026-03-01'::date,
@@ -166,7 +151,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000005'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000004'::uuid,
     'published', 150.00,
     '2026-03-27'::date, '2026-03-01'::date,
@@ -187,7 +172,7 @@ INSERT INTO public.orders (
 ) VALUES
   (
     '00000000-0000-4000-8003-000000000006'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000001'::uuid,
     'completed', 250.00,
     '2026-05-08'::date, '2026-05-01'::date,
@@ -197,7 +182,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000007'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000002'::uuid,
     'completed', 180.00,
     '2026-05-12'::date, '2026-05-01'::date,
@@ -207,7 +192,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000008'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000003'::uuid,
     'published', 300.00,
     '2026-05-16'::date, '2026-05-01'::date,
@@ -217,7 +202,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000009'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000004'::uuid,
     'completed', 150.00,
     '2026-05-22'::date, '2026-05-01'::date,
@@ -227,7 +212,7 @@ INSERT INTO public.orders (
   ),
   (
     '00000000-0000-4000-8003-000000000010'::uuid,
-    '00000000-0000-4000-8001-000000000003'::uuid,
+    (SELECT p.id FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = 'test.client@local.marketwave' LIMIT 1),
     '00000000-0000-4000-8002-000000000001'::uuid,
     'published', 220.00,
     '2026-05-28'::date, '2026-05-01'::date,
