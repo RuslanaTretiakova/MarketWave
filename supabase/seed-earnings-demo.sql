@@ -5,6 +5,8 @@
 --
 -- Creates earnings for the existing test.sourcer@local.marketwave user.
 -- Creates a demo client user if not present (for orders.user_id).
+-- NOTE: uses category_id=1; adjust if your categories differ.
+-- NOTE: published_url is required by the orders_published_url_required check constraint.
 
 BEGIN;
 
