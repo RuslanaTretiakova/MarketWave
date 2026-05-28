@@ -184,8 +184,10 @@ function ProfileSettingsForm({
   const [firstName, setFirstName] = useState(parsedName.first)
   const [lastName, setLastName] = useState(parsedName.last)
   const [bio, setBio] = useState(profile.bio ?? '')
+  const [companyName, setCompanyName] = useState(profile.company_name ?? '')
+  const [phone, setPhone] = useState(profile.phone ?? '')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [busy, setBusy] = useState<'photo' | 'name' | 'bio' | false>(false)
+  const [busy, setBusy] = useState<'photo' | 'name' | 'bio' | 'workspace' | false>(false)
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null)
 
   const [pwCurrent, setPwCurrent] = useState('')
@@ -219,6 +221,8 @@ function ProfileSettingsForm({
   const nameDirty =
     firstName.trim() !== parsedName.first.trim() || lastName.trim() !== parsedName.last.trim()
   const bioDirty = bio !== (profile.bio ?? '')
+  const workspaceDirty =
+    companyName !== (profile.company_name ?? '') || phone !== (profile.phone ?? '')
 
   const profileSectionClass =
     'rounded-2xl border border-border/60 bg-white p-section shadow-soft ring-1 ring-border/60 dark:bg-background'
@@ -344,6 +348,28 @@ function ProfileSettingsForm({
         return
       }
       toast.success('Bio saved')
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onSubmitWorkspace(e: React.FormEvent) {
+    e.preventDefault()
+    if (!workspaceDirty || saving) return
+
+    setBusy('workspace')
+    setProfileSaveError(null)
+    try {
+      const res = await updateOwnProfile({
+        company_name: companyName.trim() || null,
+        phone: phone.trim() || null,
+      })
+      if (!res.ok) {
+        setProfileSaveError(res.message)
+        return
+      }
+      toast.success('Workspace info saved')
       router.refresh()
     } finally {
       setBusy(false)
@@ -607,48 +633,70 @@ function ProfileSettingsForm({
         </section>
 
         <section aria-labelledby="profile-workspace-heading" className={profileSectionClass}>
-          <h2 id="profile-workspace-heading" className="text-foreground text-sm font-semibold">
-            Workspace
-          </h2>
-          <div className="mt-block gap-inset grid sm:grid-cols-2">
-            <div className="gap-inset flex min-w-0 flex-col">
-              <Label
-                htmlFor="profile-company"
-                className="text-muted-foreground text-xs font-medium"
+          <form onSubmit={onSubmitWorkspace} className="flex flex-col gap-0">
+            <h2 id="profile-workspace-heading" className="text-foreground text-sm font-semibold">
+              Workspace
+            </h2>
+            <div className="mt-block gap-inset grid sm:grid-cols-2">
+              <div className="gap-inset flex min-w-0 flex-col">
+                <Label
+                  htmlFor="profile-company"
+                  className="text-muted-foreground text-xs font-medium"
+                >
+                  Company
+                </Label>
+                <FormControlInput
+                  id="profile-company"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  autoComplete="organization"
+                  placeholder="—"
+                  disabled={saving}
+                />
+              </div>
+              <div className="gap-inset flex min-w-0 flex-col">
+                <Label
+                  htmlFor="profile-phone"
+                  className="text-muted-foreground text-xs font-medium"
+                >
+                  Phone
+                </Label>
+                <FormControlInput
+                  id="profile-phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                  placeholder="—"
+                  disabled={saving}
+                />
+              </div>
+              <div className="gap-inset flex min-w-0 flex-col">
+                <Label htmlFor="profile-role" className="text-muted-foreground text-xs font-medium">
+                  Role
+                </Label>
+                <FormControlInput id="profile-role" readOnly value={ROLE_LABEL[profile.role]} />
+              </div>
+              <div className="gap-inset flex min-w-0 flex-col">
+                <Label
+                  htmlFor="profile-since"
+                  className="text-muted-foreground text-xs font-medium"
+                >
+                  Member since
+                </Label>
+                <FormControlInput id="profile-since" readOnly value={memberSince} />
+              </div>
+            </div>
+            <div className="mt-section flex justify-end">
+              <Button
+                type="submit"
+                variant="default"
+                className={cn(profileActionBtn)}
+                disabled={!workspaceDirty || saving}
               >
-                Company
-              </Label>
-              <FormControlInput
-                id="profile-company"
-                readOnly
-                value={profile.company_name ?? ''}
-                placeholder="—"
-              />
+                {busy === 'workspace' ? 'Saving…' : 'Save workspace info'}
+              </Button>
             </div>
-            <div className="gap-inset flex min-w-0 flex-col">
-              <Label htmlFor="profile-phone" className="text-muted-foreground text-xs font-medium">
-                Phone
-              </Label>
-              <FormControlInput
-                id="profile-phone"
-                readOnly
-                value={profile.phone ?? ''}
-                placeholder="—"
-              />
-            </div>
-            <div className="gap-inset flex min-w-0 flex-col">
-              <Label htmlFor="profile-role" className="text-muted-foreground text-xs font-medium">
-                Role
-              </Label>
-              <FormControlInput id="profile-role" readOnly value={ROLE_LABEL[profile.role]} />
-            </div>
-            <div className="gap-inset flex min-w-0 flex-col">
-              <Label htmlFor="profile-since" className="text-muted-foreground text-xs font-medium">
-                Member since
-              </Label>
-              <FormControlInput id="profile-since" readOnly value={memberSince} />
-            </div>
-          </div>
+          </form>
         </section>
 
         {profileSaveError ? (

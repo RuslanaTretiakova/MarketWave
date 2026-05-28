@@ -12,6 +12,8 @@ export type OwnProfilePatch = Partial<{
   full_name: string | null
   avatar_url: string | null
   bio: string | null
+  company_name: string | null
+  phone: string | null
 }>
 
 export async function updateOwnProfile(patch: OwnProfilePatch): Promise<UpdateOwnProfileResult> {
@@ -19,6 +21,8 @@ export async function updateOwnProfile(patch: OwnProfilePatch): Promise<UpdateOw
   if (patch.full_name !== undefined) updates.full_name = patch.full_name
   if (patch.avatar_url !== undefined) updates.avatar_url = patch.avatar_url
   if (patch.bio !== undefined) updates.bio = patch.bio
+  if (patch.company_name !== undefined) updates.company_name = patch.company_name
+  if (patch.phone !== undefined) updates.phone = patch.phone
 
   if (Object.keys(updates).length === 0) {
     return { ok: false, message: 'Nothing to update.' }
