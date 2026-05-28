@@ -1,0 +1,16 @@
+# Force LF line endings for all text files (prevents CRLF/LF mismatch on Windows)
+* text=auto eol=lf
+
+# Explicitly binary files — no line-ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
